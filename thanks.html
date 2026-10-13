@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>קיבלנו, תודה | טרינרג'י</title>
+<meta name="theme-color" content="#000B26">
+<link rel="icon" href="assets/brand/mark.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/hatzor-light.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/almoni-medium-aaa.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/almoni-regular-aaa.woff2" as="font" type="font/woff2" crossorigin>
+<script>
+  document.documentElement.classList.add("js");
+  // the visitor's display choices from the home page hold here too
+  (function (d) { var ax = {}; try { ax = JSON.parse(localStorage.getItem("tr-ax") || "{}"); } catch (e) {}
+    window.__still = !!ax.still;
+    ["contrast", "links", "read", "still"].forEach(function (k) { if (ax[k]) d.classList.add("ax-" + k); });
+    if (ax.text) d.classList.add("ax-t" + ax.text); })(document.documentElement);
+</script>
+<link rel="stylesheet" href="assets/css/site.css">
+<script type="module" src="assets/js/page.js"></script>
+</head>
+<body>
+<canvas id="sky" aria-hidden="true"></canvas>
+<a class="hskip" href="#main">דלג לתוכן</a>
+
+<!-- header: the power line. Menu on the start side, logo on the end side, and between them a wire whose nodes are the
+     stations of this page; it charges as the page is travelled and, once the page moves, climbs to the top edge -->
+<header class="hd" id="hd">
+  <div class="hd-start">
+    <button class="mn-btn" type="button" aria-expanded="false" aria-controls="mn"><span class="mn-dot" aria-hidden="true"><i></i></span><span class="mn-lbl">תפריט</span></button>
+    <a class="hd-tel" href="tel:*6223" aria-label="חייגו 6223*"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg><span class="num">6223*</span></a>
+  </div>
+  <nav class="hd-rail" aria-label="המסע בעמוד">
+    <span class="hd-wire" aria-hidden="true"><i class="hd-fill"></i></span>
+    <a class="hd-node" href="index.html#about"><i aria-hidden="true"></i><span>אודות</span></a>
+    <a class="hd-node" href="index.html#dom-solar"><i aria-hidden="true"></i><span>סולארי</span></a>
+    <a class="hd-node" href="index.html#dom-storage"><i aria-hidden="true"></i><span>אגירה</span></a>
+    <a class="hd-node" href="index.html#dom-charge"><i aria-hidden="true"></i><span>טעינה</span></a>
+    <a class="hd-node" href="index.html#knowledge"><i aria-hidden="true"></i><span>מרכז ידע</span></a>
+    <a class="hd-node" href="index.html#contact"><i aria-hidden="true"></i><span>צור קשר</span></a>
+  </nav>
+  <div class="hd-end">
+    <a class="hd-cta" href="index.html#calc">כמה תוכל להרוויח</a>
+    <a class="hd-logo" href="index.html"><img src="assets/brand/logo-on-dark.svg" alt="טרינרג'י, לעמוד הבית" width="507" height="125"><img class="hd-logo-l" src="assets/brand/logo-on-light.svg" alt="" width="507" height="125"></a>
+  </div>
+</header>
+
+<!-- the menu: a quiet room. The night closes over the page and the list rises line by line on hairlines -->
+<div class="mn" id="mn" role="dialog" aria-modal="true" aria-label="תפריט">
+  <div class="mn-bg" aria-hidden="true"></div>
+  <div class="mn-in">
+    <div class="mn-top">
+      <button class="mn-close" type="button"><span class="mn-x" aria-hidden="true"><i></i><i></i></span><span class="mn-lbl">סגירה</span></button>
+      <img class="mn-logo" src="assets/brand/logo-on-dark.svg" alt="" width="507" height="125">
+    </div>
+    <nav class="mn-nav" aria-label="ניווט ראשי">
+      <ol class="mn-list">
+        <li class="mn-it"><a href="index.html#dom-solar"><span class="mn-n num" aria-hidden="true">01</span><span class="mn-t">אנרגיה סולארית</span></a></li>
+        <li class="mn-it"><a href="index.html#dom-storage"><span class="mn-n num" aria-hidden="true">02</span><span class="mn-t">אגירת אנרגיה</span></a></li>
+        <li class="mn-it"><a href="index.html#dom-charge"><span class="mn-n num" aria-hidden="true">03</span><span class="mn-t">טעינת רכבים</span></a></li>
+        <li class="mn-it"><a href="index.html#knowledge"><span class="mn-n num" aria-hidden="true">04</span><span class="mn-t">מרכז הידע</span></a></li>
+        <li class="mn-it"><a href="index.html#about"><span class="mn-n num" aria-hidden="true">05</span><span class="mn-t">אודות</span></a></li>
+        <li class="mn-it"><a href="index.html#contact"><span class="mn-n num" aria-hidden="true">06</span><span class="mn-t">יצירת קשר</span></a></li>
+      </ol>
+    </nav>
+    <div class="mn-side">
+      <div class="mn-contact">
+        <a class="mn-tel" href="tel:*6223">חייגו <span class="num">6223*</span></a>
+        <a href="mailto:info@treenergy.co.il">info@treenergy.co.il</a>
+        <span>ישורון 3, תל אביב</span>
+        <a class="btn btn-lg" href="index.html#calc">כמה תוכל להרוויח<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- thanks: the lead lands here, so the conversion is counted here (once a visit). The line the visitor followed down
+     the home page arrives, and shows what comes next -->
+<main id="main" class="ty" data-thanks>
+  <div class="ty-head">
+    <p class="kick">הפרטים התקבלו</p>
+    <h1><span class="gword">תודה</span><span data-name-wrap>, <span data-name></span></span>. הפרטים אצלנו.</h1>
+    <p class="ty-lead">ככה זה ממשיך מכאן, כדי שלא תצטרכו לנחש.</p>
+  </div>
+  <ol class="ty-line">
+    <li class="is-done"><i aria-hidden="true"></i><div><h2>קיבלנו את הפרטים</h2><p>היום, <span class="num" data-now></span></p></div></li>
+    <li class="is-now"><i aria-hidden="true"></i><div><h2>שיחה קצרה איתכם</h2><p>יועץ אנרגיה יחזור אליכם בטלפון, כדי להכיר ולתאם את הבדיקה.</p></div></li>
+    <li><i aria-hidden="true"></i><div><h2>בדיקת היתכנות ראשונית</h2><p>אחד מיועצי האנרגיה שלנו יגיע עד אליכם לבדיקת התאמה, בחירת מודל והצגה ראשונית של המערכת האפשרית בנכס שלכם.</p></div></li>
+  </ol>
+  <div class="ty-more">
+    <p class="ty-k">בינתיים, אם בא לכם</p>
+    <a class="lnk" href="index.html#domains">התחומים שלנו<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
+    <a class="lnk" href="index.html#process">איך זה עובד<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
+    <a class="lnk" href="tel:*6223">או חייגו <span class="num">6223*</span></a>
+  </div>
+</main>
+
+<footer class="ft" id="ft">
+  <div class="ft-cols">
+    <nav class="ft-col" aria-label="ניווט מהיר"><p class="ft-k">ניווט מהיר</p><a href="index.html#about">אודות</a><a href="index.html#knowledge">מרכז הידע</a><a href="index.html#contact">יצירת קשר</a></nav>
+    <nav class="ft-col" aria-label="תחומי פעילות"><p class="ft-k">תחומי פעילות</p><a href="index.html#dom-solar">אנרגיה סולארית</a><a href="index.html#dom-charge">טעינת רכבים</a><a href="index.html#dom-storage">אגירת אנרגיה</a></nav>
+    <div class="ft-col"><p class="ft-k">דברו איתנו</p><a href="tel:*6223">חייגו <span class="num">6223*</span></a><a class="lat" href="mailto:info@treenergy.co.il">info@treenergy.co.il</a><span>ישורון 3, תל אביב</span></div>
+    <div class="ft-col"><p class="ft-k">עקבו אחרינו</p><a href="#ft">פייסבוק</a><a href="#ft">אינסטגרם</a></div>
+  </div>
+  <p class="ft-big" aria-hidden="true"><span class="lat">TREENERGY</span></p>
+  <div class="ft-base">
+    <p>© <span data-year>2026</span> כל הזכויות שמורות לרמי לוי טרינרג'י בע"מ</p>
+    <nav class="ft-legal" aria-label="מידע משפטי"><a href="#ft">מדיניות פרטיות</a><a href="#ft">הצהרת נגישות</a><a href="#ft">תקנון</a></nav>
+  </div>
+</footer>
+
+<!-- accessibility: a quiet disc in the corner; the panel holds the display choices, kept for the next visit -->
+<button class="ax-btn" type="button" aria-label="נגישות: התאמות תצוגה" aria-expanded="false" aria-controls="ax"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="7" r="1.3" fill="currentColor" stroke="none"/><path d="M7.4 9.7c3.1.8 6.1.8 9.2 0M12 10.6v3.5l-2.4 4.2M12 14.1l2.4 4.2"/></svg></button>
+<div class="ax-scrim" aria-hidden="true"></div>
+<div class="ax" id="ax" role="dialog" aria-modal="true" aria-labelledby="ax-h" inert>
+  <div class="ax-top">
+    <h2 id="ax-h">התאמות נגישות</h2>
+    <button class="ax-x" type="button" aria-label="סגירת התאמות הנגישות"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="ax-size" role="group" aria-labelledby="ax-size-l">
+    <p class="ax-lbl" id="ax-size-l">גודל הטקסט</p>
+    <div class="ax-seg"><button type="button" data-text="0" aria-pressed="true">רגיל</button><button type="button" data-text="1" aria-pressed="false">גדול</button><button type="button" data-text="2" aria-pressed="false">גדול מאוד</button></div>
+  </div>
+  <ul class="ax-list">
+    <li><button type="button" data-ax="contrast" aria-pressed="false"><span>ניגודיות גבוהה</span><i aria-hidden="true"></i></button></li>
+    <li><button type="button" data-ax="links" aria-pressed="false"><span>הדגשת קישורים</span><i aria-hidden="true"></i></button></li>
+    <li><button type="button" data-ax="read" aria-pressed="false"><span>גופן קריא</span><i aria-hidden="true"></i></button></li>
+    <li><button type="button" data-ax="still" aria-pressed="false"><span>עצירת תנועה</span><i aria-hidden="true"></i></button></li>
+  </ul>
+  <div class="ax-foot"><button class="ax-reset" type="button">איפוס הבחירות</button><p>נשמר לביקור הבא</p></div>
+</div>
+</body>
+</html>
