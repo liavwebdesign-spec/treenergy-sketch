@@ -119,9 +119,21 @@ addEventListener("keydown", (e) => {
 
 /* ---------- in-page links take the keyboard with them ---------- */
 // the scroll is smooth (Lenis), so the focus is moved by hand to where the link lands
+// Every in-page link glides there (this Lenis has no anchor option, so without this the page jumped): the time grows with
+// the distance and the move eases in and out, so a hop of one section and a trip down the whole page both read as one move.
+const glideEase = (k) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
 document.addEventListener("click", (e) => {
   const a = e.target.closest('a[href^="#"]'); if (!a) return;
   const id = a.getAttribute("href"), t = id.length > 1 ? $(id) : null; if (!t) return;
+  if (lenis) {
+    e.preventDefault();
+    const tr = t.getBoundingClientRect();
+    // a place shorter than the screen (a domain scene) lands centred, so its number and title are not under the header
+    const y = id === "#top" || id === "#main" ? 0 : tr.top + scrollY - (tr.height < innerHeight ? (innerHeight - tr.height) / 2 : 0);
+    const d = Math.abs(y - scrollY);
+    lenis.scrollTo(y, { duration: Math.min(1.6, 0.7 + d / 8000), easing: glideEase, force: true });
+    try { history.replaceState(null, "", id); } catch (err) {}
+  }
   if (!t.matches("a[href],button,input,select,textarea,[tabindex]")) t.setAttribute("tabindex", "-1");
   setTimeout(() => t.focus({ preventScroll: true }), 0);
 });
