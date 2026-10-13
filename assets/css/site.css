@@ -754,7 +754,7 @@ html.lenis,html.lenis body{height:auto}
 .kn-say p{font-size:var(--fs-lead);line-height:1.5;color:var(--ink-soft);max-width:42ch}
 .kn-view{min-width:0;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scrollbar-width:none}
 .kn-view::-webkit-scrollbar{display:none}
-.kn-track{--cw:clamp(268px,min(25vw,46vh),600px);display:flex;align-items:center;gap:clamp(12px,1.6vw,32px);width:max-content;padding:16px var(--gutter)}
+.kn-track{--cw:clamp(268px,min(25vw,46vh),600px);display:flex;align-items:stretch;gap:clamp(12px,1.6vw,32px);width:max-content;padding:16px var(--gutter)}
 .kn-track .art{flex:none;width:var(--cw);scroll-snap-align:center}
 .kn:not(.is-run) .kn-bar{display:none}
 .kn-bar{display:flex;align-items:center;gap:clamp(16px,2vw,32px);padding-inline:var(--gutter)}
@@ -765,6 +765,7 @@ html.lenis,html.lenis body{height:auto}
 [dir=rtl] .kn-line i{background:linear-gradient(to right,rgba(48,247,123,.2),var(--accent))}
 .kn-line::after{content:"";position:absolute;top:50%;inset-inline-start:calc(var(--kp,0) * 100%);width:12px;height:12px;margin-top:-6px;margin-inline-start:-6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(48,247,123,.16),0 0 16px rgba(48,247,123,.7)}
 /* the hold: one screen, the strip in the middle of it */
+.kn.is-run{padding-bottom:0}
 .kn.is-run .kn-pin{position:sticky;top:0;height:100vh;height:100svh;grid-template-rows:auto minmax(0,1fr) auto;align-content:stretch;overflow:hidden;
   padding-top:calc(var(--hd-h) + clamp(8px,2vh,32px));padding-bottom:clamp(16px,4vh,48px)}
 .kn.is-run .kn-view{overflow:visible;scroll-snap-type:none;display:flex;align-items:center;min-height:0}
@@ -773,7 +774,7 @@ html.lenis,html.lenis body{height:auto}
 .kn.is-run .art-img img{filter:saturate(calc(.55 + var(--kl,0) * .35)) brightness(calc(.62 + var(--kl,0) * .26))}
 .kn.is-run .art-img::after{opacity:calc(.72 - var(--kl,0) * .3)}
 .kn.is-run .art .art-t-wrap{opacity:calc(.5 + var(--kl,0) * .5)}
-.art{position:relative;overflow:hidden;isolation:isolate;display:grid;align-content:start;gap:clamp(14px,2vh,24px);padding:clamp(12px,1.2vw,24px);
+.art{position:relative;overflow:hidden;isolation:isolate;display:grid;grid-template-rows:auto 1fr;gap:clamp(14px,2vh,24px);padding:clamp(12px,1.2vw,24px);
   border-radius:var(--r);background:rgba(243,246,252,.022);box-shadow:inset 0 0 0 1px var(--line);text-decoration:none;color:var(--ink)}
 /* the charge: a level of light that comes in from the start side, its front the one bright line */
 .art::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:inherit;
@@ -784,7 +785,9 @@ html.lenis,html.lenis body{height:auto}
 /* the night grade of the projects: the brand navy laid over the daylight, lifted while the article is charged */
 .art-img::after,.say-pic::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(160deg,#0A3A9A,#000B26);mix-blend-mode:multiply;opacity:.62;
   transition:opacity .8s var(--ease)}
-.art-t-wrap{display:grid;justify-items:start;align-content:start;gap:10px}
+/* every card in the strip is as tall as the tallest, and "לקריאה" sits on one line along the bottom of all of them */
+.art-t-wrap{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+.art-go{margin-top:auto}
 .art-t{font-family:var(--display);font-weight:300;font-size:clamp(22px,1.7vw,44px);line-height:1.14;text-wrap:balance;min-height:2.28em;transition:color .4s var(--ease)}
 .art-d{font-size:var(--fs-small);line-height:1.5;color:var(--ink-soft);max-width:44ch}
 .art-go{display:inline-flex;align-items:center;gap:10px;min-height:44px;font-weight:500;font-size:17px;color:var(--accent)}
