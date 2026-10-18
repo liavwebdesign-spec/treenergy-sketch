@@ -481,6 +481,7 @@ function initIntro() {
 const domSvg = $(".dom-trail", dom), domMore = $(".dom-more", dom);
 const domRibbon = new Ribbon(domSvg, { ...BAND, amp: trailAmp, wave: 520, taperStart: 0, taperEnd: 0, sparks: 4, seed: 3 });
 let boxes = [];
+const KEY_TY = 0.15;
 
 function layoutDom() {
   measureSeam();
@@ -522,6 +523,9 @@ function layoutDom() {
     if (wide()) pts.push({ x: xEnd, y: yEnd, tx: -1, ty: 0.22 });
     else { const s = x0 > W / 2 ? 1 : -1; pts.push({ x: s > 0 ? W - xEnd : xEnd, y: yEnd, tx: s, ty: 0.6 }); }
   }
+  // wide screens: out of each machine the energy heads for the next one at once, not straight down, so it clears the key
+  // under the drawing (straight down it ran through "יחידת קירור" at 1024-1440)
+  if (wide()) for (let i = 1; i < pts.length - 1; i++) { const p = pts[i], q = pts[i + 1]; p.tx = q.x - p.x; p.ty = (q.y - p.y) * KEY_TY; }
   const segs = (pts.segs0 || []).concat(spline(pts));
   domRibbon.o.pinches = [];
   domRibbon.setPath(segs);
