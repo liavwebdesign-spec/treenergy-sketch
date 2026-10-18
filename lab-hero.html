@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>טרינרג'י | ניסוי הירו</title>
+<meta name="theme-color" content="#000B26">
+<link rel="icon" href="assets/brand/mark.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/hatzor-regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/almoni-regular-aaa.woff2" as="font" type="font/woff2" crossorigin>
+<script>
+  // sketch only (round 5 experiment): the hero rebuilt after Daniel's reference picture. ?v=scene opens straight on
+  // the scene; the default dives into it from the night Earth
+  document.documentElement.classList.add("js");
+  (function (d) { var v = new URLSearchParams(location.search).get("v"); d.setAttribute("data-v", v === "scene" ? "scene" : "dive"); })(document.documentElement);
+</script>
+<link rel="stylesheet" href="assets/css/lab-hero.css">
+<script type="importmap">{"imports":{"three":"./vendor/three/three.module.min.js"}}</script>
+<script type="module" src="assets/js/lab-hero.js"></script>
+</head>
+<body>
+<header class="lb-hd">
+  <a class="lb-logo" href="index.html"><img src="assets/brand/logo-on-dark.svg" alt="טרינרג'י, לעמוד הבית" width="507" height="125"></a>
+</header>
+
+<main>
+  <section class="lb" aria-labelledby="lb-h">
+    <div class="lb-stage">
+      <!-- the night Earth (the dive starts here) -->
+      <div class="lb-globe" aria-hidden="true"><canvas class="gl-canvas"></canvas></div>
+      <!-- the scene: the picture with the network off and on, lit live -->
+      <canvas class="lb-scene" aria-hidden="true"></canvas>
+      <img class="lb-still" src="assets/img/lab/wide-on.webp" alt="" aria-hidden="true">
+      <h1 id="lb-h" class="lb-h"><span>העתיד של האנרגיה</span><span>מתחיל <span class="gword">כאן</span></span></h1>
+      <!-- the places in the scene: a card opens on the one pointed at -->
+      <div class="lb-pins">
+        <a class="lb-pin" href="index.html#dom-solar" data-k="sol"><i></i><span class="lb-card"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg><b>אנרגיה סולארית</b><span>ייזום, תכנון והקמת מערכות סולאריות על שלל תשתיות ואלמנטים</span></span></a>
+        <a class="lb-pin" href="index.html#dom-storage" data-k="sto"><i></i><span class="lb-card"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="16" height="10" rx="2"/><path d="M21 10.5v3M6.5 10v4M10 10v4M13.5 10v4"/></svg><b>אגירת אנרגיה</b><span>ייזום, תכנון והקמת מערכות אגירת אנרגיה בשילוב סולארי, לצריכה עצמית ולייצור חשמל</span></span></a>
+        <a class="lb-pin" href="index.html#dom-charge" data-k="chg"><i></i><span class="lb-card"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2.5 5.5 13.5H12l-1 8 7.5-11H12z"/></svg><b>טעינת רכבים</b><span>הפעלת רשת טעינת רכבים אולטרה מהירה בפריסה ארצית</span></span></a>
+        <a class="lb-pin" href="index.html#contact" data-k="srv"><i></i><span class="lb-card"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3.5" width="16" height="7" rx="1.5"/><rect x="4" y="13.5" width="16" height="7" rx="1.5"/><path d="M8 7h.01M8 17h.01M12 7h4M12 17h4"/></svg><em>בצמיחה</em><b>חוות שרתים ותחנות כוח</b><span>בארץ ובאירופה</span></span></a>
+      </div>
+      <p class="lb-cue" aria-hidden="true">גללו</p>
+    </div>
+  </section>
+
+  <section class="lb-end">
+    <p>כאן ממשיך העמוד</p>
+    <a href="index.html">חזרה לעמוד הבית</a>
+    <p class="lb-also"><a href="lab-hero.html">צלילה מהכדור</a> · <a href="lab-hero.html?v=scene">הסצנה בלבד</a></p>
+  </section>
+</main>
+
+<nav class="lb-switch" aria-label="גרסאות הניסוי">
+  <a href="lab-hero.html" data-for="dive">צלילה מהכדור</a>
+  <a href="lab-hero.html?v=scene" data-for="scene">הסצנה בלבד</a>
+</nav>
+</body>
+</html>

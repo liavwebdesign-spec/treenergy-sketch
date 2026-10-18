@@ -1,0 +1,92 @@
+/* The hero experiment (sketch only, 18.10): Daniel's reference picture as a living scene. Same tokens as the site */
+@font-face{font-family:"Hatzor";src:url(../fonts/hatzor-regular.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Almoni";src:url(../fonts/almoni-regular-aaa.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Almoni";src:url(../fonts/almoni-medium-aaa.woff2) format("woff2");font-weight:500;font-style:normal;font-display:swap}
+:root{
+  --night-0:#000B26; --n0:0,11,38; --n1:0,16,51;
+  --ink:#F3F6FC; --ink-soft:rgba(243,246,252,.78); --muted:rgba(243,246,252,.56);
+  --accent:#30F77B; --tint:#8FB0FF;
+  --ease:cubic-bezier(.2,.6,.2,1);
+  --gutter:clamp(20px,4.4vw,112px);
+  --display:"Hatzor","Almoni",system-ui,sans-serif; --text:"Almoni",system-ui,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{background:var(--night-0);color:var(--ink);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--night-0);font-family:var(--text);font-size:17px;line-height:1.5;overflow-x:clip}
+a{color:inherit}
+
+.lb-hd{position:fixed;inset:0 0 auto;z-index:20;display:flex;justify-content:flex-end;padding:clamp(16px,2.4vw,32px) var(--gutter);pointer-events:none}
+.lb-logo{pointer-events:auto;display:inline-grid;place-items:center;min-height:44px}
+.lb-logo img{height:clamp(30px,2.5vw,42px);width:auto;display:block}
+
+/* the stage stays while the section scrolls under it: the dive, the landing, the network lighting up */
+.lb{position:relative;height:340vh}
+html[data-v="scene"] .lb{height:190vh}
+.lb-stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;background:var(--night-0)}
+.lb-globe,.lb-scene,.lb-still{position:absolute;inset:0;width:100%;height:100%}
+.lb-globe canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.lb-scene{display:block;opacity:0}
+.lb-still{object-fit:cover;opacity:0}
+/* no WebGL: the picture itself, network on */
+.no-gl .lb-still{opacity:1}
+.no-gl .lb-globe,.no-gl .lb-scene{display:none}
+html[data-v="scene"] .lb-globe{display:none}
+
+.lb-h{position:absolute;z-index:4;inset-inline-start:var(--gutter);top:clamp(96px,15vh,170px);margin:0;display:grid;
+  font-family:var(--display);font-weight:400;font-size:clamp(40px,5.4vw,104px);line-height:1.02;letter-spacing:-.005em;text-align:start;
+  text-shadow:0 2px 30px rgba(var(--n0),.6);opacity:var(--ho,1);transform:translateY(calc((1 - var(--ho,1)) * -18px));pointer-events:none}
+.gword{background:linear-gradient(100deg,var(--accent) 15%,var(--tint) 95%);-webkit-background-clip:text;background-clip:text;color:transparent;padding-bottom:.08em;text-shadow:none}
+
+/* the places: a breathing ring on the site, the card above it on a thin stem (the reference's callout) */
+.lb-pins{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:var(--po,0);transition:opacity .2s linear}
+.lb-pin{position:absolute;left:0;top:0;width:44px;height:44px;translate:-50% -50%;display:grid;place-items:center;text-decoration:none; /* qa-allow: physical, centred or placed in screen pixels, the same in both directions */
+  pointer-events:auto;transform:translate3d(var(--x,-200px),var(--y,-200px),0)}
+.lb-pin > i{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--accent);background:rgba(48,247,123,.25);
+  box-shadow:0 0 0 4px rgba(48,247,123,.12),0 0 18px 4px rgba(48,247,123,.55)}
+.lb-pin > i::after{content:"";position:absolute;left:50%; /* qa-allow: physical, centred */top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;border:1px solid rgba(48,247,123,.7);animation:lb-ring 2.6s var(--ease) infinite}
+@keyframes lb-ring{from{transform:scale(1);opacity:.9}to{transform:scale(3.2);opacity:0}}
+.lb-card{--gap:54px;position:absolute;bottom:calc(100% + var(--gap));left:50%;display:grid;grid-template-columns:auto 1fr;align-items:start;gap:3px 12px;width:max-content;max-width:min(290px,72vw); /* qa-allow: physical, centred or placed in screen pixels, the same in both directions */
+  padding:14px 18px 16px;border-radius:16px;background:rgba(0,14,46,.62);-webkit-backdrop-filter:blur(14px) saturate(1.2);backdrop-filter:blur(14px) saturate(1.2);
+  box-shadow:inset 0 0 0 1px rgba(48,247,123,.55),0 0 26px -6px rgba(48,247,123,.45),0 24px 48px -12px rgba(0,5,22,.7);text-align:start;
+  transform:translate(calc(-50% + var(--cx,0px)),8px) scale(.97);opacity:0;visibility:hidden;transition:opacity .35s var(--ease),transform .45s var(--ease),visibility 0s .45s}
+/* the stem from the card down to the ring */
+.lb-card::after{content:"";position:absolute;top:100%;left:calc(50% - var(--cx,0px)); /* qa-allow: physical, the stem follows the pin, which is placed in screen pixels */width:1px;height:40px;background:linear-gradient(rgba(48,247,123,.8),rgba(48,247,123,.15))}
+.lb-card > *{grid-column:2}
+/* no room above (a place near the top of the screen): the card opens under the ring, the stem goes up to it */
+.lb-pin.is-below .lb-card{bottom:auto;top:calc(100% + var(--gap))}
+.lb-pin.is-below .lb-card::after{top:auto;bottom:100%;background:linear-gradient(rgba(48,247,123,.15),rgba(48,247,123,.8))}
+.lb-card svg{grid-column:1;grid-row:1 / span 3;width:24px;height:24px;margin-top:2px;fill:none;stroke:var(--accent);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 6px rgba(48,247,123,.6))}
+.lb-card em{font-style:normal;font-size:12px;letter-spacing:.06em;color:var(--accent)}
+.lb-card b{font-weight:500;font-size:17px;line-height:1.3}
+.lb-card span{font-size:13.5px;line-height:1.5;color:var(--ink-soft)}
+.lb-pin.is-on .lb-card{opacity:1;visibility:visible;transform:translate(calc(-50% + var(--cx,0px)),0) scale(1);transition:opacity .35s var(--ease),transform .45s var(--ease),visibility 0s}
+.lb-pin:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:50%}
+
+.lb-cue{position:absolute;z-index:4;bottom:28px;left:50%;margin:0;transform:translateX(-50%);font-size:13px;letter-spacing:.14em;color:var(--muted);opacity:var(--co,1)} /* qa-allow: physical, centred or placed in screen pixels, the same in both directions */
+.lb-cue::after{content:"";display:block;width:1px;height:34px;margin:10px auto 0;background:linear-gradient(var(--accent),transparent);animation:lb-cue 2.2s var(--ease) infinite;transform-origin:top}
+@keyframes lb-cue{0%{transform:scaleY(0)}50%{transform:scaleY(1)}100%{transform:scaleY(1);opacity:0}}
+
+.lb-end{min-height:70vh;display:grid;place-content:center;gap:14px;text-align:center;color:var(--muted)}
+.lb-end p{margin:0}
+.lb-end .lb-also{font-size:14px}
+.lb-end a{color:var(--ink);text-decoration:none;border-bottom:1px solid rgba(48,247,123,.45);justify-self:center;padding-block:10px 2px}
+
+/* the comparison switch (sketch only) */
+.lb-switch{position:fixed;z-index:30;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:4px;padding:4px;border-radius:999px; /* qa-allow: physical, centred or placed in screen pixels, the same in both directions */
+  background:rgba(0,14,46,.7);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:inset 0 0 0 1px rgba(243,246,252,.14)}
+.lb-switch a{display:inline-grid;place-items:center;min-height:40px;padding:0 16px;border-radius:999px;font-size:14px;color:var(--ink-soft);text-decoration:none;white-space:nowrap}
+.lb-switch{transition:opacity .3s var(--ease),visibility 0s}
+/* at the end of the page the switch steps aside; the same two links sit in the words there */
+.lb-switch.is-away{opacity:0;visibility:hidden;transition:opacity .3s var(--ease),visibility 0s .3s}
+html[data-v="dive"] .lb-switch [data-for="dive"],html[data-v="scene"] .lb-switch [data-for="scene"]{background:var(--accent);color:#00143F}
+@media (max-width:767px){
+  .lb-h{top:clamp(92px,13vh,120px);font-size:clamp(36px,10.4vw,52px)}
+  .lb-cue{display:none}
+  /* a phone's card stays small and close to its ring so the scene is not covered */
+  .lb-card{max-width:min(212px,60vw);padding:10px 12px 12px;gap:2px 8px;border-radius:13px;--gap:32px}
+  .lb-card::after{height:22px}
+  .lb-card svg{width:19px;height:19px}
+  .lb-card b{font-size:15px}
+  .lb-card span{font-size:12.5px;line-height:1.45}
+}
+@media (prefers-reduced-motion:reduce){.lb-pin > i::after,.lb-cue::after{animation:none}}
