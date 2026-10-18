@@ -17,6 +17,8 @@ const doc = document.documentElement;
 /* ---------- the living night ---------- */
 let sky = null;
 try { sky = mountSky($("#sky")); } catch (e) { console.warn("sky", e); }
+// the night compared (round 5, sketch only, ?bg=): the client chooses the background
+if (doc.hasAttribute("data-bg-cmp")) import("./bg-compare.js").then((m) => m.mount(sky));
 
 /* ---------- header: the power line ---------- */
 // The wire's nodes are the stations of this page. The fill reaches node i exactly when the page reaches station i,
@@ -49,33 +51,37 @@ function headerTick() {
   hdCta.classList.toggle("is-lit", f > 0.985);
 }
 
-/* ---------- the menu: a night room with the page's places on a ball ---------- */
-// The night fades over the page; the ball comes in turning and settles on the place the visitor is at, its name beside
-// it. The list stays beside the ball (and is the whole menu where the ball can't be drawn or motion is stopped); the
-// item for where the visitor is keeps its number lit, and pointing at an item turns the ball to it.
+/* ---------- the menu: the list, and the Earth of the opening beside it ---------- */
+// Round 5 (Idan and Liav 18.10: the list on the right, the Earth on the left as on the home page, simpler on phones).
+// The night fades over the page; the list rises on the start side and the opening's Earth comes up on the end side
+// with the sites on it, turned to the place the visitor is at. Pointing at (or focusing) an item turns the Earth to
+// its site and lights it; the hand can turn it too. Where WebGL can't run, the list is the whole menu.
 const mn = $("#mn"), mnBtn = $(".mn-btn", hd), mnClose = $(".mn-close", mn), mnIn = $(".mn-in", mn);
 const mnLinks = $$(".mn-list a", mn);
 let mnOpen = false, mnLast = null;
-const mnBall = $(".mn-ball", mn), mnNow = $(".mn-now", mn), mnGo = $(".mn-go", mn);
-const mnItems = mnLinks.map((a) => ({ n: $(".mn-n", a).textContent.trim(), t: $(".mn-t", a).textContent.trim(), href: a.getAttribute("href") }));
-const ballOk = !reduce && "WebGL2RenderingContext" in window;
-let ball = null, ballLoad = null;
+const mnBall = $(".mn-ball", mn);
+const ballOk = "WebGL2RenderingContext" in window;
+let ball = null, ballLoad = null, ballLL = null;
 if (ballOk) mn.classList.add("has-ball");
-function showNow(k) {
-  const it = mnItems[k];
-  $(".mn-now-n", mnNow).textContent = it.n; $(".mn-now-t", mnNow).textContent = it.t;
-  mnGo.setAttribute("href", it.href);
-  mnNow.classList.remove("swap"); void mnNow.offsetWidth; mnNow.classList.add("swap");
+// each item's site on the Earth; the places that are not a domain look at the whole network, Israel at its heart
+const MN_SITE = { "#dom-solar": "sol", "#dom-storage": "sto", "#dom-charge": "chg", "#contact": "chg" };
+function aimAt(k) {
+  if (!ball || !ballLL) return;
+  const key = k >= 0 ? MN_SITE[mnLinks[k].getAttribute("href")] : null;
+  if (key) ball.aim(ballLL[key][0] + 4, ballLL[key][1], key); else ball.aim(26, 26, null);
 }
 function openBall(k) {
-  ballLoad ||= import("./menu-ball.js")
-    .then(({ mountBall }) => mountBall(mnBall, { items: mnItems, onActive: showNow, onMove: (m) => mnNow.classList.toggle("is-moving", m), onPick: () => mnGo.click() }))
-    .catch(() => { mn.classList.remove("has-ball"); return null; });
-  ballLoad.then((b) => { ball = b; if (b && mnOpen) b.open(k); });
+  // the frame: the Earth centred in its box, its air inside it
+  const frameM = (W, H) => { const R = Math.min(W, H) * 0.37; return { tall: false, S: 0.2, a: { R, cx: W / 2, cy: H / 2, lat: 26, lon: 26 }, b: { R, cx: W / 2, cy: H / 2, lat: 26, lon: 26 } }; };
+  ballLoad ||= import("./globe.js")
+    .then(({ mountGlobe, LL }) => { ballLL = LL; return mountGlobe(mnBall, { frame: frameM, drag: wide() ? true : "x", pointer: false, sharp: false, pace: 1.5, lean: 1.14 }); })
+    .catch(() => null)
+    .then((b) => { if (!b) mn.classList.remove("has-ball"); return b; });
+  ballLoad.then((b) => { ball = b; if (!b) return; if (mnOpen) { b.hold(false); b.replay(); aimAt(k); } else b.hold(true); });
 }
 mnLinks.forEach((a, k) => {
-  a.addEventListener("pointerenter", () => ball && ball.turnTo(k));
-  a.addEventListener("focus", () => ball && ball.turnTo(k));
+  a.addEventListener("pointerenter", () => aimAt(k));
+  a.addEventListener("focus", () => aimAt(k));
 });
 $$(".mn-it", mn).forEach((li, i) => li.style.setProperty("--i", i));
 mnIn.inert = true;
@@ -83,6 +89,8 @@ mnIn.inert = true;
 const markHere = (a) => mnLinks.forEach((l) => l.classList.toggle("is-on", l === a));
 // the item for where the visitor is on the page
 const restLink = () => (here >= 0 ? mnLinks.find((l) => l.getAttribute("href") === hdNodes[here].getAttribute("href")) : null) || null;
+// the pointer leaves the list: the Earth goes back to where the visitor is
+$(".mn-list", mn).addEventListener("pointerleave", () => aimAt(mnLinks.indexOf(restLink())));
 
 function setMenu(open) {
   if (open === mnOpen) return; mnOpen = open;
@@ -90,8 +98,10 @@ function setMenu(open) {
     mnLast = document.activeElement;
     const a = restLink();
     markHere(a);
-    if (ballOk) openBall(Math.max(0, mnLinks.indexOf(a)));
-  } else if (ball) ball.close();
+    if (ballOk) openBall(mnLinks.indexOf(a));
+  } else if (ball) ball.hold(true);
+  // the opening's Earth rests while the menu has the screen
+  if (globe) globe.hold(open);
   mn.classList.toggle("open", open);
   mnIn.inert = !open;
   $("#main").inert = open; hd.inert = open;
@@ -125,15 +135,16 @@ const glideEase = (k) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) 
 document.addEventListener("click", (e) => {
   const a = e.target.closest('a[href^="#"]'); if (!a) return;
   const id = a.getAttribute("href"), t = id.length > 1 ? $(id) : null; if (!t) return;
-  if (lenis) {
-    e.preventDefault();
-    const tr = t.getBoundingClientRect();
-    // a place shorter than the screen (a domain scene) lands centred, so its number and title are not under the header
-    const y = id === "#top" || id === "#main" ? 0 : tr.top + scrollY - (tr.height < innerHeight ? (innerHeight - tr.height) / 2 : 0);
-    const d = Math.abs(y - scrollY);
-    lenis.scrollTo(y, { duration: Math.min(1.6, 0.7 + d / 8000), easing: glideEase, force: true });
-    try { history.replaceState(null, "", id); } catch (err) {}
-  }
+  e.preventDefault();
+  // a domain link asks about that domain: the form opens with it already ticked
+  if (a.dataset.topic) { const box = $(`input[name="topic"][value="${a.dataset.topic}"]`); if (box) box.checked = true; }
+  const tr = t.getBoundingClientRect(), hh = hd.getBoundingClientRect().height;
+  // a place shorter than the screen (a domain scene, the form) lands centred; a taller one lands under the header, not behind it
+  const y = id === "#top" || id === "#main" ? 0 : tr.top + scrollY - (tr.height < innerHeight - hh ? (innerHeight - tr.height) / 2 : hh);
+  // with motion it glides; stopped (reduced motion, or the visitor's own choice) it is there at once, at the same place
+  if (lenis) lenis.scrollTo(y, { duration: Math.min(1.6, 0.7 + Math.abs(y - scrollY) / 8000), easing: glideEase, force: true });
+  else scrollTo({ top: y, behavior: "instant" });
+  try { history.replaceState(null, "", id); } catch (err) {}
   if (!t.matches("a[href],button,input,select,textarea,[tabindex]")) t.setAttribute("tabindex", "-1");
   setTimeout(() => t.focus({ preventScroll: true }), 0);
 });
@@ -163,9 +174,6 @@ function setAx(open, focusTo) {
   else axBtn.focus({ preventScroll: true });
 }
 axBtn.addEventListener("click", () => setAx(!axOpen));
-// the disc lives in the header, beside the logo, at every width: floating in the corner it sat on the hero's way-on
-// chips (1280 to 1440) and on the calculator's text (1024)
-$(".hd-end").insertBefore(axBtn, $(".hd-logo", $(".hd-end")));
 axX.addEventListener("click", () => setAx(false));
 axScrim.addEventListener("pointerdown", () => setAx(false));
 $$("[data-text]", ax).forEach((b) => b.addEventListener("click", () => { axSaved.text = +b.dataset.text; axSave(true); }));
@@ -227,34 +235,44 @@ if (hasGsap && !reduce && window.Lenis) {
 /* ---------- the journey: globe + trail + the opening leaving ---------- */
 const journey = $(".journey"), stage = $("#globe"), heroEl = $(".hero");
 const dom = $("#domains"), shots = $$(".shot", dom), nums = $$(".sc-n", dom);
-// every drawing is there twice: a pale copy that waits in the night, and a coloured copy that a scan uncovers from the
-// top down. The scan rides the trail's head line, so the drawing is coloured exactly as far as the energy has come
-// (a clip in the drawing's own units, and the scan line at its edge, across the drawing's ground)
+// every machine is there twice: dimmed in the night, and lit, uncovered from the top down by the trail's head line, so
+// it is lit exactly as far as the energy has come. A ring of three fibres wraps it, drawn as the head passes: the back
+// halves (behind the machine) first, then the front ones over it
 const NS = "http://www.w3.org/2000/svg";
-const wipes = shots.map((f, i) => {
-  const svg = $("svg.emb", f), art = $(".ic-art", f);
-  const base = art.cloneNode(true); base.setAttribute("class", "ic-base"); art.parentNode.insertBefore(base, art);
-  art.setAttribute("class", "ic-lit");
-  const defs = document.createElementNS(NS, "defs"), cp = document.createElementNS(NS, "clipPath"), rect = document.createElementNS(NS, "rect");
-  cp.id = "wipe-" + i; rect.setAttribute("x", "-24"); rect.setAttribute("y", "-24"); rect.setAttribute("width", "528"); rect.setAttribute("height", "0");
-  cp.appendChild(rect); defs.appendChild(cp); svg.insertBefore(defs, svg.firstChild);
-  art.setAttribute("clip-path", `url(#${cp.id})`);
-  const scan = document.createElementNS(NS, "path"); scan.setAttribute("class", "scan"); svg.appendChild(scan);
-  // the drawing's own extent (the ground line spans it): the scan runs from its top to its foot
-  const gr = $(".gr", base), bb = (() => { try { return base.getBBox(); } catch (e) { return null; } })();
-  const g = gr && gr.getAttribute("d").match(/M([\d.]+) ([\d.]+)H([\d.]+)/);
-  return { f, rect, scan, vy: -1, top: bb && bb.height ? bb.y - 4 : 40, foot: g ? +g[2] + 14 : 320, x0: g ? +g[1] : 24, x1: g ? +g[3] : 456 };
-});
-// vy: the head's height in the drawing's units. pw (0..1, the CSS reads it): the scan done at 0.77, then the battery's
-// modules charge and the numeral fills to the top
-function setScan(i, vy) {
-  const w = wipes[i]; vy = Math.max(-24, Math.min(384, vy)); if (Math.abs(w.vy - vy) < 0.05) return; w.vy = vy;
-  const pw = clamp01((vy - w.top) / ((w.foot - w.top) * 1.3));
-  w.rect.setAttribute("height", (vy + 24).toFixed(1));
-  w.scan.setAttribute("d", `M${w.x0} ${vy.toFixed(1)}H${w.x1}`);
-  w.f.classList.toggle("is-scan", vy > w.top && vy < w.foot);
-  w.f.classList.toggle("is-lit", pw >= 0.98);
+const RINGS = [[1, 1, -7, 0, 1.6, 0.95], [0.95, 0.78, -4.5, 0.035, 1, 0.5], [1.06, 1.22, -9.5, -0.03, 0.8, 0.32]];
+const wipes = shots.map((f) => ({ f, o: $(".obj", f), pw: -1 }));
+function ringPaths(w) {
+  const o = w.o, W = o.offsetWidth, H = o.offsetHeight;
+  if (!W || (w.W === W && w.H === H)) return;
+  w.W = W; w.H = H;
+  const rx0 = W * 0.5 + Math.max(22, W * 0.07), ry0 = Math.max(16, Math.min(rx0 * 0.2, H * 0.16));
+  const pt = (cx, cy, rx, ry, c, sn, t) => [cx + rx * Math.cos(t) * c - ry * Math.sin(t) * sn, cy + rx * Math.cos(t) * sn + ry * Math.sin(t) * c];
+  [["orb-back", Math.PI], ["orb-front", 0]].forEach(([cls, t0]) => {
+    const svg = $("." + cls, o);
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    svg.innerHTML = "";
+    RINGS.forEach(([kx, ky, rot, dy, sw, op], i) => {
+      const rx = rx0 * kx, ry = ry0 * ky, a = (rot * Math.PI) / 180, c = Math.cos(a), sn = Math.sin(a), cx = W / 2, cy = H * (0.56 + dy);
+      const p0 = pt(cx, cy, rx, ry, c, sn, t0), p1 = pt(cx, cy, rx, ry, c, sn, t0 + Math.PI);
+      const d = `M${p0[0].toFixed(1)} ${p0[1].toFixed(1)}A${rx.toFixed(1)} ${ry.toFixed(1)} ${rot} 0 1 ${p1[0].toFixed(1)} ${p1[1].toFixed(1)}`;
+      for (const sp of i ? [0] : [0, 1]) {
+        const p = document.createElementNS(NS, "path");
+        p.setAttribute("d", d); p.setAttribute("pathLength", "1");
+        if (sp) p.setAttribute("class", "sp"); else p.setAttribute("style", `--w:${sw};--o:${op}`);
+        svg.appendChild(p);
+      }
+    });
+  });
+}
+// pw (0..1): how far down the machine the head has come; the ring follows from a fifth of the way
+function setScan(i, pw) {
+  const w = wipes[i]; pw = clamp01(pw); if (Math.abs(w.pw - pw) < 0.0005) return; w.pw = pw;
+  const r = clamp01((pw - 0.18) / 0.62);
   w.f.style.setProperty("--pw", pw.toFixed(4));
+  w.f.style.setProperty("--rb", clamp01(r * 2).toFixed(4));
+  w.f.style.setProperty("--rf", clamp01(r * 2 - 1).toFixed(4));
+  w.f.classList.toggle("is-scan", pw > 0.004 && pw < 0.98);
+  w.f.classList.toggle("is-lit", pw >= 0.98);
   nums[i].style.setProperty("--pw", pw.toFixed(4));
 }
 
@@ -346,9 +364,17 @@ function measureSeam() {
 
 // the opening: both lines flush to the start edge; on wide screens the two ways on stand in the room the shorter
 // second line leaves, centred on it. Where that room is too small they stay under the line (the CSS default)
-const heroSide = $(".hero-side", heroEl), heroL2 = $(".h-line.l2", heroEl);
+const heroSide = $(".hero-side", heroEl), heroL2 = $(".h-line.l2", heroEl), heroH1 = $("h1", heroEl);
+// round 5: on wide landscape screens the line stands high on the end side, in the open night beside the globe, in three
+// lines and the two ways on under it (?title=low keeps the round 4 layout for comparison)
+const titleLow = new URLSearchParams(location.search).get("title") === "low";
+const topTitle = () => !titleLow && wide() && innerWidth / innerHeight >= 1.05;
 function layoutHero() {
   heroEl.classList.remove("is-beside");
+  const top = topTitle();
+  heroEl.classList.toggle("is-top", top); stage.classList.toggle("has-top", top);
+  heroEl.style.removeProperty("--fs-top");
+  if (top) { fitTop(); return; }
   if (!wide()) return;
   const sd = heroSide.getBoundingClientRect();
   // out of the flow first: the lines settle lower once the ways on no longer stand under them
@@ -364,6 +390,37 @@ function layoutHero() {
   const cy = l.top - h.top + l.height * 0.5;
   heroEl.style.setProperty("--side-x", x.toFixed(1) + "px");
   heroEl.style.setProperty("--side-t", (cy - sd.height / 2).toFixed(1) + "px");
+}
+
+// the line's size: as large as the CSS allows while every line (and the ways on under it) keeps clear of the globe's rim.
+// Lines are flush to the end of the screen's start side, so a smaller size moves each line's far end away from the rim
+function fitTop() {
+  if (!globe || !globe.limb) return;
+  heroEl.style.removeProperty("--fs-top");
+  const spans = [...heroEl.querySelectorAll(".h-line > span")];
+  const keep = spans.map((e) => [e.style.transition, e.style.transform]);
+  spans.forEach((e) => { e.style.transition = "none"; e.style.transform = "none"; });
+  const st = stage.getBoundingClientRect(), h = heroH1.getBoundingClientRect(), sd = heroSide.getBoundingClientRect();
+  const rows = [];
+  const walk = document.createTreeWalker(heroH1, NodeFilter.SHOW_TEXT);
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+    const g = document.createRange(); g.selectNodeContents(n);
+    for (const r of g.getClientRects()) {
+      if (!r.width) continue;
+      const row = rows.find((q) => Math.abs(q.cy - (r.top + r.bottom) / 2) < r.height * 0.4);
+      if (row) { row.l = Math.min(row.l, r.left); row.r = Math.max(row.r, r.right); }
+      else rows.push({ l: r.left, r: r.right, cy: (r.top + r.bottom) / 2 });
+    }
+  }
+  spans.forEach((e, i) => { e.style.transform = keep[i][1]; void e.offsetWidth; e.style.transition = keep[i][0]; });
+  // the ways on, as one more row under the line (they do not scale; they rise with it)
+  const gapS = sd.top - h.bottom;
+  const fits = (k) => rows.every((q) => st.left + globe.limb(h.top + (q.cy - h.top) * k - st.top) <= h.right - (h.right - q.l) * k)
+    && st.left + globe.limb(h.top + (h.bottom - h.top) * k + gapS + sd.height / 2 - st.top) <= sd.left;
+  let lo = 0.45, hi = 1;
+  if (!fits(hi)) { for (let i = 0; i < 18; i++) { const m = (lo + hi) / 2; if (fits(m)) lo = m; else hi = m; } hi = lo; }
+  const fs = parseFloat(getComputedStyle(heroH1).fontSize);
+  if (hi < 0.999) heroEl.style.setProperty("--fs-top", (fs * hi).toFixed(1) + "px");
 }
 
 function setJourney(p) {
@@ -398,8 +455,8 @@ if (webglOK()) {
   // where the intro comes to rest in the stage: when the journey ends, the intro's foot is the stage's foot
   const intro = $(".intro");
   const rest = () => { const i = intro.getBoundingClientRect(), r = introIn.getBoundingClientRect(), s = stage.getBoundingClientRect(); return { left: r.left - s.left, right: r.right - s.left, top: s.height - (i.bottom - r.top), bottom: s.height - (i.bottom - r.bottom) }; };
-  import("./globe.js").then(({ mountGlobe }) => mountGlobe(stage, { railX, wide, amp: trailAmp, band: BAND, floor, words, rest, seam: () => seam, joint: () => join.y, joinDir: () => [join.dx, join.dy] })).then((g) => {
-    globe = g; if (g) g.setProgress(jp);
+  import("./globe.js").then(({ mountGlobe }) => mountGlobe(stage, { railX, wide, amp: trailAmp, band: BAND, floor, words, rest, low: () => !topTitle(), seam: () => seam, joint: () => join.y, joinDir: () => [join.dx, join.dy] })).then((g) => {
+    globe = g; if (g) { g.setProgress(jp); layoutHero(); if (document.fonts) document.fonts.ready.then(layoutHero); }
   }).catch((e) => console.warn("globe", e));
 }
 
@@ -429,7 +486,8 @@ function layoutDom() {
   measureSeam();
   const r = dom.getBoundingClientRect(), W = r.width, H = r.height, x0 = railX(), J = jointY();
   domSvg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-  boxes = shots.map((s) => { const b = $("svg", s).getBoundingClientRect(); return { top: b.top - r.top, h: b.height, cx: b.left - r.left + b.width / 2, w: b.width }; });
+  wipes.forEach(ringPaths);
+  boxes = wipes.map((w) => { const b = w.o.getBoundingClientRect(); return { top: b.top - r.top, h: b.height, cx: b.left - r.left + b.width / 2, w: b.width }; });
   const last = boxes.length - 1, amp = trailAmp();
   // the energy goes into each machine (behind its planes) a little above its middle, and comes out the other side
   const cy = (b) => b.top + b.h * 0.56;
@@ -478,11 +536,11 @@ function domTick() {
   // the head rides the HEAD line of the screen; it took over from the globe's trail on that line
   const headY = innerHeight * HEAD - r.top;
   domRibbon.draw(domRibbon.fracAtY(headY));
-  boxes.forEach((b, i) => setScan(i, (headY - b.top) / b.h * 360));
+  boxes.forEach((b, i) => setScan(i, (headY - b.top) / (b.h * 0.92)));
 }
 if (reduce) {
   // the trail is simply there and every drawing is coloured in
-  shots.forEach((s, i) => setScan(i, 384));
+  shots.forEach((s, i) => setScan(i, 1));
 }
 
 /* ---------- why: the readout rolls in, the battery charges ---------- */
@@ -624,51 +682,7 @@ function procTick() {
   steps.forEach((s, i) => s.classList.toggle("on", f >= stepF[i] - 0.004));
 }
 
-/* ---------- the calculator: drag the power line ---------- */
-// ASSUMPTIONS FOR THE CLIENT TO CONFIRM: square metres of space per kilowatt by kind of site, a yearly yield of
-// 1,650 kWh per kilowatt (Israel), and a value of 0.38 to 0.48 shekel per kWh.
-const calcSec = $("#calc"), calcForm = $("#calc-form"), area = $("#calc-area");
-const lineEl = $(".line", calcSec), lineSvg = $(".line-trail", calcSec);
-const lineRibbon = new Ribbon(lineSvg, { strands: Math.round(BAND.strands * 0.8), loose: BAND.loose - 1, amp: () => Math.round(trailAmp() * 0.9), wave: 440, taperStart: 0, taperEnd: 0, sparks: 3, seed: 7 });
-const M2_PER_KW = { roof: 6.5, parking: 7, land: 12, water: 10, greenhouse: 9 };
-const YIELD = 1650, PRICE = [0.38, 0.48], A_MIN = 45, A_MAX = 100000, THUMB = 44;
-const outLo = $("[data-calc-lo]"), outHi = $("[data-calc-hi]"), outKw = $("[data-calc-kw]"), outKwh = $("[data-calc-kwh]"), outArea = $("[data-calc-area]");
-const nf = new Intl.NumberFormat("he-IL");
-const areaOf = (v) => { const a = A_MIN * Math.pow(A_MAX / A_MIN, v / 1000); return a < 1000 ? Math.round(a / 5) * 5 : a < 10000 ? Math.round(a / 50) * 50 : Math.round(a / 500) * 500; };
-const areaText = (a) => (a < 10000 ? nf.format(a) + ' מ"ר' : nf.format(Math.round(a / 100) / 10) + " דונם");
-const money = (n) => (n >= 1e6 ? (Math.round(n / 1e5) / 10).toLocaleString("he-IL") + " מיליון" : nf.format(n < 1e5 ? Math.round(n / 100) * 100 : Math.round(n / 1000) * 1000));
-const shown = { lo: 0, hi: 0 };
-let calc = {};
-function calcState() { return calc; }
-function computeCalc(first) {
-  const where = ($("input[name=where]:checked", calcForm) || {}).value || "roof", a = areaOf(+area.value);
-  const kw = a / M2_PER_KW[where], kwh = kw * YIELD;
-  calc = { where, area: a, kw: Math.round(kw * 10) / 10, kwh: Math.round(kwh), lo: kwh * PRICE[0], hi: kwh * PRICE[1] };
-  outArea.textContent = areaText(a);
-  area.setAttribute("aria-valuetext", areaText(a).replace('מ"ר', "מטר רבוע"));
-  outKw.textContent = nf.format(kw < 10 ? Math.round(kw * 10) / 10 : Math.round(kw));
-  outKwh.textContent = nf.format(kwh < 1e5 ? Math.round(kwh / 100) * 100 : Math.round(kwh / 1000) * 1000);
-  const paint = () => { outLo.textContent = money(shown.lo); outHi.textContent = money(shown.hi); };
-  if (reduce || first || !hasGsap) { shown.lo = calc.lo; shown.hi = calc.hi; paint(); }
-  else gsap.to(shown, { lo: calc.lo, hi: calc.hi, duration: 0.6, ease: "power3.out", overwrite: true, onUpdate: paint });
-  paintLine();
-}
-// the knob sits where the range's own thumb is, so a tap anywhere on the line lands on the value under the finger
-function paintLine() {
-  const W = lineEl.clientWidth, p = +area.value / 1000, x = W - THUMB / 2 - p * (W - THUMB);
-  lineEl.style.setProperty("--kx", x.toFixed(1) + "px");
-  lineRibbon.draw((W - x) / W);
-}
-function layoutLine() {
-  const W = lineEl.clientWidth, H = lineEl.clientHeight;
-  lineSvg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-  lineRibbon.setPath([["L", W, H / 2, 0, H / 2]]);
-  paintLine();
-}
-area.addEventListener("input", () => computeCalc());
-calcForm.addEventListener("change", () => computeCalc());
-
-/* ---------- leads: both forms, to Monday ---------- */
+/* ---------- leads: the contact form, to Monday ---------- */
 // The Monday board's API details are still to come from the client. Until they do, a lead is kept in the page only
 // (window.__leads) and the visitor sees the thank-you state; sendLead is the one place to wire the real call.
 function sendLead(data) {
@@ -692,8 +706,7 @@ $$("form[data-lead]").forEach((f) => {
       return;
     }
     const data = { source: f.dataset.lead, name: name.value.trim(), phone: phone.value.trim(), at: new Date().toISOString() };
-    if (f.dataset.lead === "calc") data.calc = calcState();
-    else data.topics = $$('input[name="topic"]:checked', f).map((i) => i.value);
+    data.topics = $$('input[name="topic"]:checked', f).map((i) => i.value);
     btn.disabled = true; msg.textContent = "שולחים...";
     sendLead(data).then(
       // the lead lands on the thank-you page (where the conversion is counted once the site is live)
@@ -750,7 +763,7 @@ function saysTick() {
 // middle to the last one's; the article under it comes up a size and out of the night, and the counter and the line
 // follow it. Nothing moves unless the visitor scrolls. Without motion the strip is left to scroll sideways by hand.
 const kn = $("#knowledge"), knView = $(".kn-view", kn), knTrack = $(".kn-track", kn), knArts = $$(".art", knTrack), knCount = $(".kn-count b", kn);
-const KN_K = 1.15;
+const KN_K = 0.92;  // scroll per pixel of strip: under 1 so the pinned stretches stay under 30% of the page (round 5, without the calculator the page got shorter)
 let knOn = false, knRun = 0, knRtl = true, knC = [], knStep = 1, knI = -1;
 function layoutKn() {
   knOn = !reduce;
@@ -810,13 +823,7 @@ function closeTick() {
 }
 
 /* ---------- the footer and the phone bar ---------- */
-const ft = $("#ft"), ftBig = $(".ft-big", ft), ftWord = $("span", ftBig);
-// the closing word fills the width exactly, whatever the font's real width turns out to be
-function fitBig() {
-  ftBig.style.fontSize = "";
-  const w = ftWord.getBoundingClientRect().width, room = ftBig.clientWidth;
-  if (w > 0 && room > 0) ftBig.style.fontSize = (parseFloat(getComputedStyle(ftBig).fontSize) * (room / w) * 0.985).toFixed(1) + "px";
-}
+const ft = $("#ft");
 $$("[data-year]").forEach((e) => (e.textContent = new Date().getFullYear()));
 inView(ft, () => ft.classList.add("is-in"), 0.95);
 // the footer is built by the scroll: --fp runs from 0 as it comes up the screen to 1 at the end of the page
@@ -840,15 +847,15 @@ function driftTick() {
   }
 }
 // the bar comes in once the opening's own button has left the screen, and steps aside where the same action is on
-// screen (the calculator, the close), over the footer, and while a field has focus (the keyboard is up)
+// screen (the close), over the footer, and while a field has focus (the keyboard is up)
 const mbar = $("[data-mbar]"), ctaOrigin = $("[data-cta-origin]"), ctaEnds = $$("[data-cta-end]");
 let typing = false;
 function mbarTick() {
-  if (wide()) { if (mbar.classList.contains("is-on")) { mbar.classList.remove("is-on"); mbar.inert = true; } return; }
+  if (wide()) { if (mbar.classList.contains("is-on")) { mbar.classList.remove("is-on"); mbar.inert = true; doc.classList.remove("mbar-on"); } return; }
   const ih = innerHeight, past = ctaOrigin.getBoundingClientRect().bottom < 8;
   const atEnd = ctaEnds.some((el) => { const r = el.getBoundingClientRect(); return r.top < ih * 0.7 && r.bottom > ih * 0.1; }) || ft.getBoundingClientRect().top < ih;
   const on = past && !atEnd && !typing && !mnOpen;
-  if (on !== mbar.classList.contains("is-on")) { mbar.classList.toggle("is-on", on); mbar.inert = !on; }
+  if (on !== mbar.classList.contains("is-on")) { mbar.classList.toggle("is-on", on); mbar.inert = !on; doc.classList.toggle("mbar-on", on); }
 }
 addEventListener("focusin", (e) => { if (e.target.matches("input:not([type=radio]):not([type=checkbox]):not([type=range]),textarea,select")) { typing = true; mbarTick(); } });
 addEventListener("focusout", (e) => { if (e.target.matches("input,textarea,select")) { typing = false; setTimeout(mbarTick, 160); } });
@@ -865,19 +872,16 @@ function relayout() {
   layoutDom();
   layoutWhy();
   layoutProc();
-  layoutLine();
   layoutClose();
   layoutWorks();
-  fitBig();
   if (reduce) { domRibbon.draw(1); whyRibbon.draw(1); procRibbon.draw(1); closeRibbon.draw(1); steps.forEach((s) => s.classList.add("on")); plug.classList.add("is-lit"); }
-  if (globe) globe.resize();
+  if (globe) { globe.resize(); if (topTitle()) fitTop(); }
   tick();
   if (lenis) requestAnimationFrame(() => lenis.resize());
 }
 let rz = 0;
 addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(relayout, 120); });
 if (hasGsap) ST.addEventListener("refresh", relayout);
-computeCalc(true);
 relayout();
 
 // the split and the measures need the real fonts; wait for them (at most 1.5s)

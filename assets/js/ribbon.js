@@ -3,7 +3,7 @@
 // hairlines around them, a soft bloom of green light under all of it, and a dust of sparkles drifting along. The lines
 // part and gather in long slow waves and a flicker of light runs along them towards the head, where they meet in one
 // point; the trail is never still, even when the page is (light-pillar and soft-aurora gave the bloom and the drift).
-// One instance per stretch of the page (the globe, the domains, the reasons, the process, the calculator, the close).
+// One instance per stretch of the page (the globe, the domains, the reasons, the process, the close).
 // An instance keeps its geometry in the frame of its own <svg> (left empty, it only gives the frame), and every
 // instance is painted by one fixed canvas under the page's words: one canvas, one frame loop, only the part on screen.
 // Geometry is computed from cubic segments in JS (no layout reads), so it can be rebuilt every frame on the globe.
@@ -147,6 +147,7 @@ export class Ribbon {
     this.du = [];
     for (let i = 0; i < 160; i++) { const g = (rnd() + rnd() + rnd() - 1.5) / 1.5; this.du.push({ u: rnd(), off: g * 2.6, z: 0.6 + rnd() * rnd() * 2.2, tw: 1 + rnd() * 3, tp: rnd() * 6.28 }); }
     this.pts = null; this.L = 1; this.p = -1; this.gaps = []; this.env = null; this.amp = 0;
+    this.headK = 1;                              // the head's flare size (the globe makes it small while it rests on Israel)
     this.bx0 = this.by0 = 0; this.bx1 = this.by1 = 0;
     painter(); P.set.add(this);
   }
@@ -238,7 +239,7 @@ export class Ribbon {
       }
     }
     if (this.p > 0.002 && this.p < 0.998 && !(this.gaps.length && this.inGap(g.h.s))) {
-      const r = 110; l.drawImage(P.glow, g.h.x + ox - r, g.h.y + oy - r, r * 2, r * 2);
+      const r = 110 * this.headK; l.drawImage(P.glow, g.h.x + ox - r, g.h.y + oy - r, r * 2, r * 2);
     }
   }
 
@@ -287,7 +288,7 @@ export class Ribbon {
 
   paintHead(ctx, ox, oy, h, t) {
     if (this.p >= 0.998 || this.p <= 0.002 || (this.gaps.length && this.inGap(h.s))) return;
-    const r = 34 * (1 + 0.12 * Math.sin(t * 2.4));
+    const r = 34 * this.headK * (1 + 0.12 * Math.sin(t * 2.4));
     ctx.drawImage(P.glow, h.x + ox - r, h.y + oy - r, r * 2, r * 2);
   }
 

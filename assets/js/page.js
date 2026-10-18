@@ -72,8 +72,6 @@ function setAx(open, focusTo) {
   else axBtn.focus({ preventScroll: true });
 }
 axBtn.addEventListener("click", () => setAx(!axOpen));
-// the disc sits in the header beside the logo at every width (floating, it sat on the footer links)
-const hdEnd = $(".hd-end", hd); hdEnd.insertBefore(axBtn, $(".hd-logo", hdEnd));
 axX.addEventListener("click", () => setAx(false));
 axScrim.addEventListener("pointerdown", () => setAx(false));
 $$("[data-text]", ax).forEach((b) => b.addEventListener("click", () => { axSaved.text = +b.dataset.text; axSave(); }));
@@ -103,15 +101,7 @@ addEventListener("load", () => {
 });
 
 /* ---------- the footer ---------- */
-const ft = $("#ft"), ftBig = $(".ft-big", ft), ftWord = $("span", ftBig);
-function fitBig() {
-  ftBig.style.fontSize = "";
-  const w = ftWord.getBoundingClientRect().width, room = ftBig.clientWidth;
-  if (w > 0 && room > 0) ftBig.style.fontSize = (parseFloat(getComputedStyle(ftBig).fontSize) * (room / w) * 0.985).toFixed(1) + "px";
-}
-(document.fonts ? document.fonts.ready : Promise.resolve()).then(fitBig);
-let rzT = 0;
-addEventListener("resize", () => { clearTimeout(rzT); rzT = setTimeout(fitBig, 120); });
+const ft = $("#ft");
 $$("[data-year]").forEach((e) => (e.textContent = new Date().getFullYear()));
 function onSeen(el, f, margin) {
   if (typeof IntersectionObserver !== "function") { f(); return; }

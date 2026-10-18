@@ -1,22 +1,42 @@
-// Treenergy · the night Earth behind the opening of the page, the way the owner drew it.
-// A big, cropped dot-matrix Earth (land baked from Natural Earth into assets/data, coasts a little brighter) that rolls
-// slowly. The company's work stands on it as small lit models: in Israel the campus of the old hero picture (a building
-// under a solar roof, battery containers, chargers under a solar canopy), in Europe a solar field with wind turbines.
-// The green trail crosses the globe through both sites, powering each one as its head passes, and when the first screen
-// is left it flows on down, in one S, onto the domains rail. Scroll drives one value (0..1 over the journey): the
-// camera dives toward the Israeli campus while the intro is read.
+// Treenergy · the night Earth behind the opening of the page.
+// Round 5 (18.10): a real Earth at night, halfway between the owner's sketch and the client's picture: the day colours
+// of the planet under moonlight (water, deserts, forests), the cities' own lights, thin clouds, the blue rim on the end
+// side and the first light of a sun behind it. The company's work stands on it as small lit models, spread over the
+// globe: the charging station in Israel, a solar farm in the Sahara, battery storage in Arabia, a server farm in northern
+// Europe and the European site with its turbines. A green grid of glowing lines joins them. No labels: a hovered (or
+// focused) model opens its domain's card; on touch the cards take turns by themselves until the visitor touches one.
+// The green trail crosses the globe to Israel and rests there; when the first screen is left it flows on down, in one S,
+// onto the domains rail. Scroll drives one value (0..1 over the journey): the camera dives toward Israel.
 import * as THREE from "three";
 import { Ribbon } from "./ribbon.js";
 
 const DEG = Math.PI / 180;
 const GREEN = new THREE.Color("#30F77B");
-const ISR = { lat: 31.5, lon: 34.85 };
-const EUR = { lat: 44.6, lon: 10.8 };
-// the trail's way over the globe: in from the Atlantic over Iberia, through the European site, across the sea to the
-// campus, and out to the south, where it leaves the surface
-const ROUTE = [[40, -21], [42.6, -5], [EUR.lat, EUR.lon], [39.2, 20.5], [34.6, 28.4], [ISR.lat, ISR.lon], [27.4, 33.2]];
+const ISR = { lat: 31.7, lon: 34.9 };
+// the models, spread over the globe (Liav 18.10, from the client: "not in one spot", and a server farm must be there)
+export const LL = {
+  chg: [32.45, 35.35],   // Israel: the station the energy arrives at
+  sol: [26.0, 20.0],     // the Sahara
+  sto: [25.5, 46.0],     // Arabia
+  srv: [54.4, 23.2],     // northern Europe
+  eur: [44.6, 10.8],     // the European site, unchanged (Liav decides on it)
+};
+// the trail's way over the globe: in from the Atlantic over Iberia, through the European site, over Greece and the sea,
+// and it ends on Israel, where its head rests (the client: "the dot should sit on Israel")
+const ROUTE = [[40, -21], [42.6, -5], LL.eur, [39.2, 20.5], [34.4, 28.2], [ISR.lat, ISR.lon]];
 const SUB = 10;                                   // samples per span: every site falls on a known sample
 const SITE_K = { eur: 2, isr: 5 };
+// the grid: lines of light from Israel and from the European site to the others, through real cities on the way
+const NET = [
+  { from: "chg", to: "sol", way: [[31.25, 32.3], [30.05, 31.25], [28.6, 25.4]] },
+  { from: "chg", to: "sto", way: [[31.0, 37.6], [28.9, 41.6]] },
+  { from: "chg", to: "srv", way: [[35.0, 33.4], [37.98, 23.73], [44.8, 20.5], [52.2, 21.0]] },
+  { from: "eur", to: "srv", way: [[48.1, 11.6], [52.5, 13.4]] },
+  { from: "eur", to: "sol", way: [[36.8, 10.2], [32.9, 13.2]] },
+  { from: "eur", to: null, way: [[40.85, 14.27], [37.98, 23.73]], faint: true },
+  { from: "chg", to: null, way: [[30.05, 31.25], [24.1, 32.9]], faint: true },
+  { from: "chg", to: null, way: [[33.3, 44.4], [35.7, 51.4]], faint: true, short: 0.45 },
+];
 
 export function ll2v(lat, lon, r = 1, out = new THREE.Vector3()) {
   const la = lat * DEG, lo = lon * DEG;
@@ -29,178 +49,219 @@ const easeOut = (t) => 1 - Math.pow(1 - t, 3);
 const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
 // ---- shaders ----
-const LAND_VS = /* glsl */`
-attribute float aRnd; attribute float aCoast;
-uniform float uTime, uSize, uPx, uRef, uDim, uReveal;
-uniform vec3 uHub, uLight;
-varying vec3 vCol; varying float vA;
-void main(){
-  vec4 mv = modelViewMatrix * vec4(position, 1.0);
-  vec3 n = normalize(normalMatrix * position);
-  float facing = dot(n, normalize(-mv.xyz));
-  float limb = smoothstep(0.02, 0.45, facing);
-  float d = acos(clamp(dot(normalize(position), uHub), -1.0, 1.0));
-  float halo = exp(-d * d / 0.012);
-  // entrance: the matrix lights up from Israel outwards, its front edge flashes green
-  float shown = smoothstep(uReveal, uReveal - 0.05, d);
-  float front = exp(-pow((d - uReveal) / 0.05, 2.0)) * step(0.001, uReveal) * (1.0 - step(3.0, uReveal));
-  float tw = 0.86 + 0.14 * sin(uTime * (0.5 + aRnd * 1.3) + aRnd * 40.0);
-  float lit = clamp(dot(n, uLight), 0.0, 1.0);
-  vec3 base = mix(vec3(0.55, 0.66, 0.96), vec3(0.80, 0.87, 1.0), aCoast);
-  vec3 col = mix(base, vec3(0.19, 0.97, 0.48), clamp(halo * 0.7 + front, 0.0, 1.0));
-  float a = (0.24 + 0.2 * aRnd + 0.24 * aCoast) * tw * (0.7 + 0.5 * lit);
-  a = a * mix(uDim, 1.0, halo) + halo * 0.16 + front * 0.7;
-  vA = a * limb * shown;
-  vCol = col;
-  gl_PointSize = uSize * uPx * (1.0 + 0.16 * aCoast + front * 0.8) * (uRef / -mv.z);
-  gl_Position = projectionMatrix * mv;
+const NOISE = /* glsl */`
+vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}
+vec4 mod289(vec4 x){return x-floor(x*(1.0/289.0))*289.0;}
+vec4 permute(vec4 x){return mod289(((x*34.0)+1.0)*x);}
+vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-0.85373472095314*r;}
+float snoise(vec3 v){
+  const vec2 C=vec2(1.0/6.0,1.0/3.0); const vec4 D=vec4(0.0,0.5,1.0,2.0);
+  vec3 i=floor(v+dot(v,C.yyy)); vec3 x0=v-i+dot(i,C.xxx);
+  vec3 g=step(x0.yzx,x0.xyz); vec3 l=1.0-g; vec3 i1=min(g.xyz,l.zxy); vec3 i2=max(g.xyz,l.zxy);
+  vec3 x1=x0-i1+C.xxx; vec3 x2=x0-i2+C.yyy; vec3 x3=x0-D.yyy;
+  i=mod289(i);
+  vec4 p=permute(permute(permute(i.z+vec4(0.0,i1.z,i2.z,1.0))+i.y+vec4(0.0,i1.y,i2.y,1.0))+i.x+vec4(0.0,i1.x,i2.x,1.0));
+  float n_=0.142857142857; vec3 ns=n_*D.wyz-D.xzx;
+  vec4 j=p-49.0*floor(p*ns.z*ns.z);
+  vec4 x_=floor(j*ns.z); vec4 y_=floor(j-7.0*x_);
+  vec4 x=x_*ns.x+ns.yyyy; vec4 y=y_*ns.x+ns.yyyy; vec4 h=1.0-abs(x)-abs(y);
+  vec4 b0=vec4(x.xy,y.xy); vec4 b1=vec4(x.zw,y.zw);
+  vec4 s0=floor(b0)*2.0+1.0; vec4 s1=floor(b1)*2.0+1.0; vec4 sh=-step(h,vec4(0.0));
+  vec4 a0=b0.xzyw+s0.xzyw*sh.xxyy; vec4 a1=b1.xzyw+s1.xzyw*sh.zzww;
+  vec3 p0=vec3(a0.xy,h.x); vec3 p1=vec3(a0.zw,h.y); vec3 p2=vec3(a1.xy,h.z); vec3 p3=vec3(a1.zw,h.w);
+  vec4 norm=taylorInvSqrt(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));
+  p0*=norm.x;p1*=norm.y;p2*=norm.z;p3*=norm.w;
+  vec4 m=max(0.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.0); m=m*m;
+  return 42.0*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));
 }`;
-const DOT_FS = /* glsl */`
-varying vec3 vCol; varying float vA;
-void main(){
-  float r = length(gl_PointCoord - 0.5);
-  float m = smoothstep(0.5, 0.36, r);
-  if (m * vA < 0.004) discard;
-  gl_FragColor = vec4(vCol, vA * m);
-}`;
-const ISR_VS = /* glsl */`
-attribute float aRnd;
-uniform float uTime, uSize, uPx, uRef, uOn;
-varying vec3 vCol; varying float vA;
-void main(){
-  vec4 mv = modelViewMatrix * vec4(position, 1.0);
-  float tw = 0.7 + 0.3 * sin(uTime * (1.1 + aRnd * 2.0) + aRnd * 30.0);
-  vCol = mix(vec3(0.19, 0.97, 0.48), vec3(0.85, 1.0, 0.9), aRnd * 0.35);
-  vA = 0.4 * tw * uOn;
-  gl_PointSize = uSize * uPx * 0.9 * (uRef / -mv.z);
-  gl_Position = projectionMatrix * mv;
-}`;
-// the graticule: a faint grid that shows the roll
-const GRID_VS = /* glsl */`
-uniform float uDim, uOn;
-varying float vA;
-void main(){
-  vec4 mv = modelViewMatrix * vec4(position, 1.0);
-  vec3 n = normalize(normalMatrix * position);
-  vA = smoothstep(0.05, 0.6, dot(n, normalize(-mv.xyz))) * 0.075 * mix(0.6, 1.0, uDim) * uOn;
-  gl_Position = projectionMatrix * mv;
-}`;
-const GRID_FS = /* glsl */`
-varying float vA;
-void main(){ gl_FragColor = vec4(0.6, 0.72, 1.0, vA); }`;
 const SPHERE_VS = /* glsl */`
-varying vec3 vN; varying vec3 vV;
+varying vec3 vN; varying vec3 vV; varying vec3 vObj;
 void main(){
   vec4 mv = modelViewMatrix * vec4(position, 1.0);
   vN = normalize(normalMatrix * normal);
   vV = normalize(-mv.xyz);
+  vObj = position;
   gl_Position = projectionMatrix * mv;
 }`;
-const OCEAN_FS = /* glsl */`
-uniform vec3 uLight; uniform float uDim;
-varying vec3 vN; varying vec3 vV;
+// The Earth. The textures are sRGB; the light is mixed in linear and the result is graded back.
+// Moon: a cool light from the front and above, so land and sea read. Sun: just behind the end-side limb (the dawn the
+// client's picture has), it lights a thin crescent and glints on the water there. Cities: warm, with their glow.
+const EARTH_FS = /* glsl */`
+uniform sampler2D uColor, uLights, uMask;
+uniform vec3 uMoon, uSun, uHub;
+uniform vec3 uSites[5];
+uniform float uTime, uDim, uOn, uReveal, uSunAmt;
+varying vec3 vN; varying vec3 vV; varying vec3 vObj;
+${NOISE}
+float fbm(vec3 p){ float a = 0.5, s = 0.0; for (int i = 0; i < 4; i++){ s += a * snoise(p); p = p * 2.07 + vec3(3.1, 1.7, 5.3); a *= 0.5; } return s; }
+vec3 lin(vec3 c){ return c * c * (c * 0.32 + 0.68); }   // close to sRGB -> linear, cheap
 void main(){
-  float f = clamp(dot(vN, vV), 0.0, 1.0);
-  vec3 col = mix(vec3(0.0, 0.03, 0.12), vec3(0.0, 0.115, 0.33), pow(f, 1.35));
-  float lit = clamp(dot(vN, uLight), 0.0, 1.0);
-  col += vec3(0.0, 0.045, 0.11) * lit * lit;
-  float rim = pow(1.0 - f, 4.0);
-  col += mix(vec3(0.16, 0.42, 1.0), vec3(0.19, 0.97, 0.55), 0.4 * lit) * rim * (0.3 + 0.85 * lit);
-  col *= mix(0.55, 1.0, uDim);
-  gl_FragColor = vec4(col, 1.0);
+  vec3 p = normalize(vObj);
+  vec2 uv = vec2(atan(p.x, p.z) * 0.15915494 + 0.5, asin(clamp(p.y, -1.0, 1.0)) * 0.31830989 + 0.5);
+  // the seam of the map (the date line) must not pick a tiny mip level
+  vec2 dx = dFdx(uv), dy = dFdy(uv); dx.x -= floor(dx.x + 0.5); dy.x -= floor(dy.x + 0.5);
+  vec3 alb = lin(textureGrad(uColor, uv, dx, dy).rgb);
+  float land = textureGrad(uMask, uv, dx, dy).r;
+  float city = textureGrad(uLights, uv, dx, dy).r;
+  float cityGlow = textureGrad(uLights, uv, dx * 9.0, dy * 9.0).r;
+  vec3 N = normalize(vN), V = normalize(vV);
+  float facing = clamp(dot(N, V), 0.0, 1.0);
+  float lm = max(dot(N, uMoon), 0.0), ls = max(dot(N, uSun), 0.0);
+  float sunK = pow(ls, 1.6) * uSunAmt;                // the dawn: a thin crescent on the limb toward the sun
+  float dawn = smoothstep(0.0, 0.3, dot(N, uSun)) * uSunAmt;
+  vec3 moonC = vec3(0.58, 0.72, 1.0), skyC = vec3(0.42, 0.56, 1.0), sunC = vec3(1.0, 0.8, 0.58);
+  float wet = 1.0 - land;
+
+  // the night grade (halfway between the sketch's deep blue and a real night photograph): the ground keeps its relief
+  // and a little of its colour, the deserts are pressed down, the forests keep their green (the client asked for trees)
+  float lum = dot(alb, vec3(0.2126, 0.7152, 0.0722));
+  float veg = smoothstep(0.0, 0.03, alb.g - max(alb.r * 0.9, alb.b));
+  vec3 g = mix(vec3(lum) * vec3(0.9, 0.9, 1.0), alb, 0.4);
+  g = mix(g, alb * vec3(0.55, 1.35, 0.75) * 1.9, veg * 0.9);
+  g = pow(g, vec3(0.8));
+  vec3 landC = g * 0.11 * (vec3(0.5, 0.62, 0.9) * 0.34 + vec3(0.68, 0.78, 1.0) * lm * 0.95);
+  // the sea: a deep brand blue, lighter over the shallow shelves
+  float shelf = smoothstep(0.02, 0.11, alb.g + alb.b * 0.5);
+  vec3 seaC = mix(vec3(0.0016, 0.011, 0.066), vec3(0.005, 0.04, 0.115), shelf) * (0.48 + 0.72 * lm);
+  vec3 col = mix(seaC, landC, land);
+  col += mix(vec3(0.02, 0.05, 0.12), g * 0.5, land) * sunC * sunK * 1.6;
+
+  // water: the moon's sheen and the dawn's glint
+  vec3 hm = normalize(uMoon + V), hs = normalize(uSun + V);
+  float fres = 0.04 + 0.96 * pow(1.0 - facing, 5.0);
+  col += wet * vec3(0.45, 0.62, 1.0) * (pow(max(dot(N, hm), 0.0), 160.0) * 0.16 + pow(max(dot(N, hm), 0.0), 18.0) * 0.012);
+  col += wet * sunC * pow(max(dot(N, hs), 0.0), 50.0) * 1.4 * uSunAmt;
+  col += wet * vec3(0.03, 0.1, 0.32) * fres * 0.5;
+
+  // clouds: a few thin ones, mostly over the mid latitudes and the sea, never over the models
+  float t = uTime * 0.0035;
+  vec3 q = vec3(p.x * cos(t) - p.z * sin(t), p.y, p.x * sin(t) + p.z * cos(t)) * 2.4;
+  float warp = snoise(q * 0.9 + vec3(7.2, 1.3, 4.1));
+  float n = fbm(q + vec3(warp * 0.6, warp * 0.3, 0.0));
+  float band = smoothstep(0.35, 0.7, abs(p.y)) * 0.4 + wet * 0.1;
+  float keep = 1.0;
+  for (int i = 0; i < 5; i++) keep *= smoothstep(0.05, 0.14, distance(p, uSites[i]));
+  float cl = smoothstep(0.22, 0.72, n + band - 0.26) * 0.55 * keep;
+  vec3 cloudC = skyC * 0.022 + moonC * lm * 0.05 + sunC * sunK * 0.5;
+  col = mix(col, cloudC, cl);
+
+  // the cities, lit outward from Israel as the page opens; the dawn puts them out
+  float d = acos(clamp(dot(p, uHub), -1.0, 1.0));
+  float lit = 1.0 - smoothstep(uReveal - 0.18, uReveal, d);
+  float front = exp(-pow((d - uReveal) / 0.06, 2.0)) * step(0.001, uReveal) * (1.0 - step(3.0, uReveal));
+  vec3 lc = mix(vec3(1.0, 0.46, 0.13), vec3(1.0, 0.84, 0.55), city);
+  col += lc * (city * city * 2.2 + cityGlow * cityGlow * 0.9) * lit * (1.0 - cl * 0.8) * (1.0 - dawn * 0.8);
+  col += vec3(0.19, 0.97, 0.48) * front * 0.1 * (0.4 + land);
+
+  // the air at the limb: a blue haze, and the dawn's cyan where the sun is
+  float rim = pow(1.0 - facing, 3.2);
+  col += vec3(0.02, 0.09, 0.36) * rim * (0.45 + 0.8 * lm) + vec3(0.2, 0.62, 1.0) * rim * dawn * 0.9;
+
+  col *= mix(0.45, 1.0, uDim);
+  col = 1.0 - exp(-col * 1.25);                     // soft shoulder
+  gl_FragColor = vec4(pow(col, vec3(0.4545)) * uOn, 1.0);
 }`;
+// the outer air: the blue and cyan rim on the end side of the globe (the client asked to keep it), and the sun's first
+// light where the dawn is
 const ATMO_FS = /* glsl */`
-uniform vec3 uLight; uniform float uDim, uOn;
-varying vec3 vN; varying vec3 vV;
+uniform vec3 uRimL, uSun; uniform float uDim, uOn, uSunAmt;
+varying vec3 vN; varying vec3 vV; varying vec3 vObj;
 void main(){
   float t = clamp(-dot(vN, vV), 0.0, 1.0);
   float i = pow(clamp(t / 0.553, 0.0, 1.0), 3.2);
-  float lit = clamp(dot(vN, uLight) * 0.5 + 0.5, 0.0, 1.0);
+  float lit = clamp(dot(vN, uRimL) * 0.5 + 0.5, 0.0, 1.0);
   vec3 col = mix(vec3(0.10, 0.33, 1.0), vec3(0.19, 0.97, 0.62), 0.45 * pow(lit, 3.0));
-  gl_FragColor = vec4(col * i * (0.3 + 0.9 * lit) * mix(0.45, 1.0, uDim) * uOn, 1.0);
+  vec2 sd = normalize(uSun.xy), nd = normalize(vN.xy + 1e-5);
+  float hot = pow(max(dot(nd, sd), 0.0), 18.0) * uSunAmt;
+  col = col * (0.3 + 0.9 * lit) + vec3(0.75, 0.92, 1.0) * hot * 1.1;
+  gl_FragColor = vec4(col * i * mix(0.45, 1.0, uDim) * uOn, 1.0);
 }`;
+// the grid: flat ribbons on the ground, a bright core and a soft halo, growing out from their source, light running
+// along them
+const NET_VS = /* glsl */`
+attribute vec3 aSide; attribute float aV, aS;
+uniform float uHW;
+varying float vV, vS, vF;
+void main(){
+  vec3 p = position + aSide * aV * uHW;
+  vec4 mv = modelViewMatrix * vec4(p, 1.0);
+  vec3 n = normalize(normalMatrix * normalize(position));
+  vF = smoothstep(0.02, 0.3, dot(n, normalize(-mv.xyz)));
+  vV = aV; vS = aS;
+  gl_Position = projectionMatrix * mv;
+}`;
+const NET_FS = /* glsl */`
+uniform float uTime, uGrow, uOn, uDim, uK;
+varying float vV, vS, vF;
+void main(){
+  float shown = 1.0 - smoothstep(uGrow - 0.025, uGrow, vS);
+  if (shown <= 0.0) discard;
+  float core = exp(-vV * vV * 26.0), halo = exp(-vV * vV * 3.2) * 0.3;
+  float ph = fract(vS * 3.2 - uTime * 0.32);
+  float pulse = smoothstep(0.0, 0.04, ph) * smoothstep(0.14, 0.04, ph);
+  float tip = exp(-pow((uGrow - vS) / 0.035, 2.0));
+  float a = (core * (0.5 + 1.1 * pulse) + halo * (0.55 + 0.8 * pulse) + tip * 1.4 * core) * shown * vF * uOn * mix(0.55, 1.0, uDim) * uK;
+  vec3 col = mix(vec3(0.19, 0.97, 0.48), vec3(0.82, 1.0, 0.88), clamp(core * 0.3 + tip * 0.6 + pulse * core * 0.4, 0.0, 1.0));
+  gl_FragColor = vec4(col * a, 1.0);
+}`;
+// the grid's junctions: small points of light, on once the line has reached them
+const NODE_VS = /* glsl */`
+attribute float aS;
+uniform float uGrow, uPx, uOn;
+varying float vA;
+void main(){
+  vec4 mv = modelViewMatrix * vec4(position, 1.0);
+  vec3 n = normalize(normalMatrix * normalize(position));
+  vA = (1.0 - smoothstep(uGrow - 0.06, uGrow - 0.001, aS)) * smoothstep(0.05, 0.3, dot(n, normalize(-mv.xyz))) * uOn;
+  gl_PointSize = uPx;
+  gl_Position = projectionMatrix * mv;
+}`;
+const NODE_FS = /* glsl */`
+varying float vA;
+void main(){
+  float r = length(gl_PointCoord - 0.5);
+  float a = (smoothstep(0.5, 0.0, r) * 0.55 + smoothstep(0.16, 0.05, r)) * vA;
+  if (a < 0.003) discard;
+  gl_FragColor = vec4(mix(vec3(0.19, 0.97, 0.48), vec3(0.9, 1.0, 0.94), smoothstep(0.2, 0.0, r)) * a, 1.0);
+}`;
+// additive light that leaves the canvas alpha alone (the night behind the globe stays the page's)
+const ADD = { transparent: true, depthWrite: false, blending: THREE.CustomBlending,
+  blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor, blendSrcAlpha: THREE.ZeroFactor, blendDstAlpha: THREE.OneFactor };
 
-function glowTexture() {
-  const c = document.createElement("canvas"); c.width = c.height = 128;
-  const g = c.getContext("2d"), gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
-  gr.addColorStop(0, "rgba(235,255,240,1)");
-  gr.addColorStop(0.12, "rgba(120,255,170,.85)");
-  gr.addColorStop(0.35, "rgba(48,247,123,.32)");
-  gr.addColorStop(1, "rgba(48,247,123,0)");
-  g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+function canvasTex(size, draw) {
+  const c = document.createElement("canvas"); c.width = c.height = size;
+  draw(c.getContext("2d"), size);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
-// a wide, soft pool of light for the ground under a site
-function poolTexture() {
-  const c = document.createElement("canvas"); c.width = c.height = 128;
-  const g = c.getContext("2d"), gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
-  gr.addColorStop(0, "rgba(48,247,123,.55)");
-  gr.addColorStop(0.4, "rgba(48,247,123,.16)");
-  gr.addColorStop(1, "rgba(48,247,123,0)");
-  g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
-}
-
-async function loadLand(url) {
-  const buf = await (await fetch(url)).arrayBuffer();
-  const dv = new DataView(buf), n = dv.getUint32(0, true);
-  const lat = new Float32Array(n), lon = new Float32Array(n);
-  for (let i = 0; i < n; i++) { lat[i] = dv.getInt16(4 + i * 4, true) / 100; lon[i] = dv.getInt16(6 + i * 4, true) / 100; }
-  // the matrix is rows of latitude, each sorted by longitude: a dot that misses one of its six neighbours is on a coast
-  const rows = new Map();
-  for (let i = 0; i < n; i++) { const k = Math.round(lat[i] * 100); let r = rows.get(k); if (!r) rows.set(k, (r = [])); r.push(lon[i]); }
-  const keys = [...rows.keys()].sort((a, b) => a - b);
-  let step = Infinity;
-  for (let i = 1; i < keys.length; i++) step = Math.min(step, keys[i] - keys[i - 1]);
-  step /= 100;
-  const near = (arr, x, tol) => {
-    let lo = 0, hi = arr.length - 1;
-    while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m] < x) lo = m + 1; else hi = m; }
-    return (lo < arr.length && Math.abs(arr[lo] - x) <= tol) || (lo > 0 && Math.abs(arr[lo - 1] - x) <= tol);
-  };
-  const idx = new Map(keys.map((k, i) => [k, i]));
-  const pos = [], rnd = [], coast = [], v = new THREE.Vector3();
-  for (let i = 0; i < n; i++) {
-    if (dv.getUint8(4 + n * 4 + i)) continue;          // Israel's own dots come from the dense set
-    const k = Math.round(lat[i] * 100), row = rows.get(k), ki = idx.get(k);
-    const dl = 360 / Math.max(1, Math.round((360 * Math.cos(lat[i] * DEG)) / step));
-    let c = 0;
-    if (!near(row, lon[i] - dl, dl * 0.3) || !near(row, lon[i] + dl, dl * 0.3)) c = 1;
-    for (const kk of [keys[ki - 1], keys[ki + 1]]) {
-      if (c) break;
-      if (kk === undefined || Math.abs(kk - k) > step * 150) { c = 1; break; }
-      const r2 = rows.get(kk), d2 = 360 / Math.max(1, Math.round((360 * Math.cos((kk / 100) * DEG)) / step));
-      if (!near(r2, lon[i], d2 * 0.75)) c = 1;
-    }
-    ll2v(lat[i], lon[i], 1.003, v);
-    pos.push(v.x, v.y, v.z); rnd.push(Math.random()); coast.push(c);
-  }
-  return { pos: new Float32Array(pos), rnd: new Float32Array(rnd), coast: new Float32Array(coast) };
-}
-async function loadIsrael(url) {
-  const f = new Float32Array(await (await fetch(url)).arrayBuffer()), n = f.length / 2;
-  const pos = new Float32Array(n * 3), rnd = new Float32Array(n), v = new THREE.Vector3();
-  for (let i = 0; i < n; i++) {
-    ll2v(f[i * 2], f[i * 2 + 1], 1.004, v);
-    pos[i * 3] = v.x; pos[i * 3 + 1] = v.y; pos[i * 3 + 2] = v.z; rnd[i] = Math.random();
-  }
-  return { pos, rnd };
-}
-function graticule() {
-  const a = [], v = new THREE.Vector3(), w = new THREE.Vector3(), r = 1.0015;
-  for (let la = -45; la <= 75; la += 15) for (let lo = -180; lo < 180; lo += 3) {
-    ll2v(la, lo, r, v); ll2v(la, lo + 3, r, w); a.push(v.x, v.y, v.z, w.x, w.y, w.z);
-  }
-  for (let lo = -180; lo < 180; lo += 15) for (let la = -60; la < 80; la += 3) {
-    ll2v(la, lo, r, v); ll2v(la + 3, lo, r, w); a.push(v.x, v.y, v.z, w.x, w.y, w.z);
-  }
-  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(a, 3)); return g;
-}
+const radial = (stops) => canvasTex(128, (g, s) => {
+  const gr = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+  stops.forEach(([o, c]) => gr.addColorStop(o, c)); g.fillStyle = gr; g.fillRect(0, 0, s, s);
+});
+const glowTexture = () => radial([[0, "rgba(235,255,240,1)"], [0.12, "rgba(120,255,170,.85)"], [0.35, "rgba(48,247,123,.32)"], [1, "rgba(48,247,123,0)"]]);
+const poolTexture = () => radial([[0, "rgba(48,247,123,.55)"], [0.4, "rgba(48,247,123,.16)"], [1, "rgba(48,247,123,0)"]]);
+// the glowing green frame round a site's footprint (the client's picture has one round its solar farm)
+const frameTexture = () => canvasTex(256, (g, s) => {
+  const r = (x, y, w, h, k) => { g.beginPath(); g.moveTo(x + k, y); g.arcTo(x + w, y, x + w, y + h, k); g.arcTo(x + w, y + h, x, y + h, k); g.arcTo(x, y + h, x, y, k); g.arcTo(x, y, x + w, y, k); g.closePath(); };
+  g.shadowColor = "rgba(48,247,123,1)"; g.shadowBlur = 22; g.strokeStyle = "rgba(48,247,123,.9)"; g.lineWidth = 7;
+  r(s * 0.17, s * 0.17, s * 0.66, s * 0.66, 10); g.stroke();
+  g.shadowBlur = 0; g.strokeStyle = "rgba(225,255,236,.95)"; g.lineWidth = 2.2; r(s * 0.17, s * 0.17, s * 0.66, s * 0.66, 10); g.stroke();
+});
+// the sun's first light over the limb: a white core, a cool halo and a long thin streak along the horizon
+const sunTexture = () => canvasTex(256, (g, s) => {
+  let gr = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+  gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(0.05, "rgba(240,250,255,.9)"); gr.addColorStop(0.2, "rgba(150,215,255,.32)");
+  gr.addColorStop(0.5, "rgba(70,150,255,.08)"); gr.addColorStop(1, "rgba(40,120,255,0)");
+  g.fillStyle = gr; g.fillRect(0, 0, s, s);
+  g.save(); g.translate(s / 2, s / 2); g.scale(1, 0.035);
+  gr = g.createRadialGradient(0, 0, 0, 0, 0, s / 2);
+  gr.addColorStop(0, "rgba(235,248,255,.9)"); gr.addColorStop(0.4, "rgba(150,210,255,.25)"); gr.addColorStop(1, "rgba(120,190,255,0)");
+  g.fillStyle = gr; g.beginPath(); g.arc(0, 0, s / 2, 0, Math.PI * 2); g.fill(); g.restore();
+});
 
 // ---- the sites: small lit models of the company's work ----
 // Model units: x east, y up, z south; one unit is S of the globe's radius. Faces are shaded by a fixed sky light
 // baked into vertex colours (no scene lights: the models stay crisp and cheap), edges are fine pale lines, and
-// everything green is light that the trail switches on.
+// everything green is light that the energy switches on.
 const SKY = new THREE.Vector3(-0.42, 1, 0.62).normalize();
 function shade(g, hex, amb = 0.4, dif = 0.66) {
   const c = new THREE.Color(hex), nr = g.attributes.normal, col = new Float32Array(nr.count * 3);
@@ -213,16 +274,14 @@ function shade(g, hex, amb = 0.4, dif = 0.66) {
 }
 function lineGeo(a) { const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(a, 3)); return g; }
 
-function buildSites(tex, pool) {
+function buildSites(tex, pool, frameTex) {
   const fill = new THREE.MeshBasicMaterial({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
-  const edge = new THREE.LineBasicMaterial({ color: 0xd6e4ff, transparent: true, opacity: 0.7 });
-  const fine = new THREE.LineBasicMaterial({ color: 0xa9c2ff, transparent: true, opacity: 0.36 });
-  const mull = new THREE.LineBasicMaterial({ color: 0x9db8ff, transparent: true, opacity: 0.12 });
-  const cell = new THREE.LineBasicMaterial({ color: 0x6d8fe0, transparent: true, opacity: 0.34 });
+  const edge = new THREE.LineBasicMaterial({ color: 0xd6e4ff, transparent: true, opacity: 0.6 });
+  const fine = new THREE.LineBasicMaterial({ color: 0xa9c2ff, transparent: true, opacity: 0.32 });
+  const cell = new THREE.LineBasicMaterial({ color: 0x6d8fe0, transparent: true, opacity: 0.36 });
   const ground = new THREE.LineBasicMaterial({ color: 0xcfe0ff, transparent: true, opacity: 0.2 });
-  const NAVY = "#24478f", PANEL = "#0f2d6e", STEEL = "#6a82b6", WHITE = "#eef3ff";
+  const NAVY = "#24478f", PANEL = "#0f2d6e", STEEL = "#6a82b6", WHITE = "#eef3ff", ROOF = "#b9c8e6";
 
-  // a block standing on its foot
   const block = (w, h, d, hex, withEdge = true) => {
     const g = shade(new THREE.BoxGeometry(w, h, d).translate(0, h / 2, 0), hex);
     const m = new THREE.Mesh(g, fill);
@@ -239,92 +298,128 @@ function buildSites(tex, pool) {
     p.rotation.x = tilt * DEG;
     return p;
   };
-  // the green parts: one material per site, its colour follows the site's power
   const greenMat = () => new THREE.MeshBasicMaterial({ color: new THREE.Color("#0c3b2a") });
   const spark = (parent, x, y, z, s, list) => {
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0 }));
     sp.position.set(x, y, z); sp.scale.setScalar(s); parent.add(sp); list.push(sp); return sp;
   };
-  const hubLight = (model, list, r) => {
+  // the light on the ground under a site: a soft pool, and a ring that breathes out (brighter while the site is pointed at)
+  const hubLight = (s, r) => {
     const pad = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2),
       new THREE.MeshBasicMaterial({ map: pool, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0 }));
-    pad.position.y = 0.002; pad.scale.setScalar(r * 2); model.add(pad);
+    pad.position.y = 0.002; pad.scale.setScalar(r * 2); s.model.add(pad);
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.95, 1, 72).rotateX(-Math.PI / 2),
       new THREE.MeshBasicMaterial({ color: GREEN, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0, side: THREE.DoubleSide }));
-    ring.position.y = 0.003; model.add(ring);
-    const core = spark(model, 0, 0.015, 0, r * 0.5, list);
-    return { pad, ring, core };
+    ring.position.y = 0.003; s.model.add(ring);
+    s.pad = pad; s.ring = ring; s.ringR = r;
   };
   // a part stands on the ground at (x, z) and leans toward the viewer as one piece (see lean() in mountGlobe);
-  // ex, ez: the half size of its footprint, so it can lean on the edge of its foot
-  const part = (site, x, z, ex, ez, t) => {
+  // ex, ez: the half size of its footprint; k: how much of the lean it takes (a field lies lower than a building)
+  const part = (s, x, z, ex, ez, t, k = 1) => {
     const o = new THREE.Group(); o.position.set(x, 0, z);
-    site.model.add(o); site.parts.push({ o, base: new THREE.Vector3(x, 0, z), ex, ez, t });
+    s.model.add(o); s.parts.push({ o, base: new THREE.Vector3(x, 0, z), ex, ez, t, k });
     return o;
   };
+  // the glowing frame round a footprint, on the part's own ground
+  const frame = (s, o, w, d) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w * 1.515, d * 1.515).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({ map: frameTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0 }));
+    m.position.y = 0.003; o.add(m); s.glows.push(m);
+  };
+  const site = () => ({ model: new THREE.Group(), parts: [], lights: [], bars: [], rotors: [], glows: [], cool: [], green: greenMat() });
 
-  // --- Israel: the campus of the old hero picture, around an open square where the trail passes ---
-  const isr = { model: new THREE.Group(), parts: [], lights: [], bars: [], rotors: [], green: greenMat() };
+  // --- Israel: a charging station under a solar canopy, its screens lit ---
+  const chg = site();
   {
-    const BH = 0.36, BW = 0.34, BD = 0.22, FL = 6;
-    // the building: a glass office block, its floors and mullions drawn on the faces, a few windows lit
-    const b = part(isr, 0.04, -0.3, BW / 2 + 0.025, BD / 2, 0.9);
-    b.add(block(BW, BH, BD, NAVY));
-    const a = [], o = 0.0016, hw = BW / 2 + o, hd = BD / 2 + o;
-    for (let i = 1; i < FL; i++) {
-      const y = (BH * i) / FL;
-      a.push(-hw, y, hd, hw, y, hd, -hw, y, -hd, hw, y, -hd, hw, y, -hd, hw, y, hd, -hw, y, -hd, -hw, y, hd);
-    }
-    b.add(new THREE.LineSegments(lineGeo(a), fine));
-    // the mullions are fainter than the floors: a glass block reads by its floors
-    const mx = BW / 8, mz = BD / 5, m2 = [];
-    for (let x = -BW / 2 + mx; x < BW / 2 - 0.01; x += mx) m2.push(x, 0, hd, x, BH, hd, x, 0, -hd, x, BH, -hd);
-    for (let z = -BD / 2 + mz; z < BD / 2 - 0.01; z += mz) m2.push(hw, 0, z, hw, BH, z, -hw, 0, z, -hw, BH, z);
-    b.add(new THREE.LineSegments(lineGeo(m2), mull));
-    const win = new THREE.MeshBasicMaterial({ color: 0xc4d6ff, transparent: true, opacity: 0.62 });
-    const wS = new THREE.PlaneGeometry(mx * 0.8, (BH / FL) * 0.62), wE = new THREE.PlaneGeometry(mz * 0.8, (BH / FL) * 0.62);
-    [[0, 0], [1, 2], [3, 1], [4, 3], [6, 0], [7, 2], [2, 4], [5, 4], [1, 5], [6, 5], [3, 5]].forEach(([c, f]) => {
-      const m = new THREE.Mesh(wS, win); m.position.set(-BW / 2 + mx * (c + 0.5), (BH * (f + 0.5)) / FL, hd + 0.0006); b.add(m);
-    });
-    [[0, 1], [2, 3], [4, 0], [1, 4]].forEach(([c, f]) => {
-      const m = new THREE.Mesh(wE, win); m.rotation.y = -Math.PI / 2; m.position.set(-hw - 0.0006, (BH * (f + 0.5)) / FL, -BD / 2 + mz * (c + 0.5)); b.add(m);
-    });
-    // the solar roof: rows of panels on a light frame over the roof
+    const c = part(chg, 0, 0, 0.17, 0.09, 1.5);
     for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
-      const post = block(0.006, 0.04, 0.006, WHITE, false); post.position.set(x * (BW / 2 - 0.012), BH, z * (BD / 2 - 0.012)); b.add(post);
+      const post = block(0.008, 0.13, 0.008, WHITE, false); post.position.set(x * 0.15, 0, z * 0.07); c.add(post);
     }
-    for (let r = 0; r < 3; r++) { const p = panel(BW + 0.05, 0.082, 10, 2, 16); p.position.set(0, BH + 0.036, -0.088 + r * 0.088); b.add(p); }
-    // battery containers on the east, a charge gauge glowing on each south face
-    const bt = part(isr, 0.3, 0.03, 0.17, 0.065, 1.3);
-    const barGeo = new THREE.BoxGeometry(0.046, 0.07, 0.004).translate(0, 0.035, 0);
-    const track = new THREE.MeshBasicMaterial({ color: 0x0a1a3a });
+    const roof = block(0.34, 0.012, 0.18, ROOF); roof.position.y = 0.13; c.add(roof);
+    for (let r = 0; r < 2; r++) { const p = panel(0.32, 0.075, 10, 2, 8); p.position.set(0, 0.146, -0.04 + r * 0.08); c.add(p); }
     for (let i = 0; i < 4; i++) {
-      const c = new THREE.Group(); c.position.set(-0.13 + i * 0.087, 0, 0);
-      c.add(block(0.074, 0.104, 0.13, STEEL));
-      const t = new THREE.Mesh(barGeo, track); t.position.set(0, 0.016, 0.0655); c.add(t);
-      const bar = new THREE.Mesh(barGeo, isr.green); bar.position.set(0, 0.016, 0.0675); c.add(bar);
-      isr.bars.push({ m: bar, ph: i * 1.7 });
-      spark(c, 0, 0.05, 0.075, 0.08, isr.lights);
-      bt.add(c);
-    }
-    // chargers on the south, each with its screen lit, parking bays in front
-    const ch = part(isr, 0.1, 0.27, 0.115, 0.012, 1.5);
-    for (let i = 0; i < 3; i++) {
-      const x = -0.1 + i * 0.1;
-      const p = block(0.03, 0.12, 0.024, WHITE, false); p.position.set(x, 0, 0); ch.add(p);
-      const scr = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.03, 0.003), isr.green); scr.position.set(x, 0.08, 0.0135); ch.add(scr);
-      spark(ch, x, 0.08, 0.02, 0.075, isr.lights);
+      const x = -0.12 + i * 0.08;
+      const pl = block(0.022, 0.075, 0.018, WHITE, false); pl.position.set(x, 0, -0.03); c.add(pl);
+      const scr = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.022, 0.003), chg.green); scr.position.set(x, 0.05, -0.0195); c.add(scr);
+      spark(c, x, 0.05, -0.015, 0.06, chg.lights);
     }
     const bays = [];
-    for (let x = -0.05; x < 0.3; x += 0.1) bays.push(x, 0.001, 0.3, x, 0.001, 0.44);
-    bays.push(-0.05, 0.001, 0.44, 0.25, 0.001, 0.44);
-    isr.model.add(new THREE.LineSegments(lineGeo(bays), ground));
-    Object.assign(isr, hubLight(isr.model, isr.lights, 0.22));
-    isr.anchors = { roof: [b, new THREE.Vector3(0, BH + 0.06, 0)], bat: [bt, new THREE.Vector3(0, 0.12, 0)], chg: [ch, new THREE.Vector3(0, 0.13, 0)], hub: [isr.model, new THREE.Vector3()] };
+    for (let x = -0.16; x <= 0.161; x += 0.08) bays.push(x, 0.001, 0.0, x, 0.001, 0.09);
+    c.add(new THREE.LineSegments(lineGeo(bays), ground));
+    frame(chg, c, 0.36, 0.2);
+    hubLight(chg, 0.2);
+    chg.anchor = [c, new THREE.Vector3(0, 0.08, 0)]; chg.hit = 0.36;
   }
 
-  // --- Europe: a solar field, and wind turbines behind it ---
-  const eur = { model: new THREE.Group(), parts: [], lights: [], bars: [], rotors: [], green: greenMat() };
+  // --- the Sahara: a solar farm, long rows of panels inside a glowing frame, an inverter house at its corner ---
+  const sol = site();
+  {
+    const f = part(sol, 0, 0, 0.29, 0.17, 1.15, 0.55);
+    const legs = [];
+    for (let r = 0; r < 6; r++) for (let c = 0; c < 2; c++) {
+      const x = -0.135 + c * 0.27, z = 0.125 - r * 0.05;
+      const p = panel(0.25, 0.034, 12, 2, 24); p.position.set(x, 0.016, z); f.add(p);
+      legs.push(x - 0.1, 0, z, x - 0.1, 0.016, z, x + 0.1, 0, z, x + 0.1, 0.016, z);
+    }
+    f.add(new THREE.LineSegments(lineGeo(legs), ground));
+    const inv = block(0.04, 0.03, 0.03, WHITE); inv.position.set(0.27, 0, 0.16); f.add(inv);
+    spark(f, 0.27, 0.035, 0.16, 0.05, sol.lights);
+    frame(sol, f, 0.6, 0.36);
+    hubLight(sol, 0.3);
+    sol.anchor = [f, new THREE.Vector3(0, 0.03, 0)]; sol.hit = 0.62;
+  }
+
+  // --- Arabia: battery storage, a row of containers with their charge glowing, a transformer beside them ---
+  const sto = site();
+  {
+    const b = part(sto, 0, 0, 0.22, 0.08, 1.35);
+    const barGeo = new THREE.BoxGeometry(0.046, 0.066, 0.004).translate(0, 0.033, 0);
+    const track = new THREE.MeshBasicMaterial({ color: 0x0a1a3a });
+    for (let i = 0; i < 5; i++) {
+      const c = new THREE.Group(); c.position.set(-0.17 + i * 0.085, 0, 0);
+      c.add(block(0.072, 0.1, 0.13, STEEL));
+      const tr = new THREE.Mesh(barGeo, track); tr.position.set(0, 0.016, 0.0655); c.add(tr);
+      const bar = new THREE.Mesh(barGeo, sto.green); bar.position.set(0, 0.016, 0.0675); c.add(bar);
+      sto.bars.push({ m: bar, ph: i * 1.7 });
+      spark(c, 0, 0.05, 0.075, 0.07, sto.lights);
+      b.add(c);
+    }
+    const tf = block(0.06, 0.07, 0.05, NAVY); tf.position.set(0.25, 0, 0.02); b.add(tf);
+    const fins = [];
+    for (let k = 0; k < 4; k++) { const z = 0.0 + k * 0.012; fins.push(0.22, 0.02, z, 0.22, 0.06, z); }
+    b.add(new THREE.LineSegments(lineGeo(fins), fine));
+    frame(sto, b, 0.56, 0.2);
+    hubLight(sto, 0.26);
+    sto.anchor = [b, new THREE.Vector3(0, 0.06, 0)]; sto.hit = 0.52;
+  }
+
+  // --- northern Europe: a server farm, two long white halls with their light strips, cooling on the roofs ---
+  const srv = site();
+  {
+    const cool = new THREE.MeshBasicMaterial({ color: 0x9cc4ff, transparent: true, opacity: 0.25 });
+    srv.cool.push(cool);
+    const hall = (o, w, d, x, z) => {
+      const h = 0.07;
+      const m = block(w, h, d, WHITE); m.position.set(x, 0, z); o.add(m);
+      // the strips: rows of light along the long faces
+      const sg = new THREE.PlaneGeometry(w * 0.9, 0.007);
+      for (const y of [0.022, 0.044]) {
+        const a = new THREE.Mesh(sg, cool); a.position.set(x, y, z + d / 2 + 0.0008); o.add(a);
+      }
+      // cooling units on the roof
+      for (let i = 0; i < 6; i++) { const u = block(0.026, 0.012, 0.026, ROOF, false); u.position.set(x - w / 2 + 0.04 + i * (w - 0.08) / 5, h, z); o.add(u); }
+    };
+    const s1 = part(srv, 0, 0, 0.22, 0.13, 1.25);
+    hall(s1, 0.38, 0.1, 0, -0.06);
+    hall(s1, 0.3, 0.09, -0.04, 0.075);
+    spark(s1, 0.17, 0.08, 0.06, 0.05, srv.lights);
+    frame(srv, s1, 0.46, 0.3);
+    hubLight(srv, 0.26);
+    srv.anchor = [s1, new THREE.Vector3(0, 0.05, 0)]; srv.hit = 0.5;
+  }
+
+  // --- the European site: a solar field, and wind turbines behind it (unchanged) ---
+  const eur = site();
   {
     const fd = part(eur, 0.16, -0.2, 0.245, 0.12, 1.0);
     const legs = [];
@@ -339,7 +434,7 @@ function buildSites(tex, pool) {
     const hubGeo = shade(new THREE.SphereGeometry(0.009, 10, 8), WHITE);
     const wind = [];
     for (let i = 0; i < 3; i++) {
-      const t = part(eur, -0.14 + i * 0.25, -0.48 + (i % 2) * 0.06, 0.012, 0.012, 1.15 + i * 0.12);
+      const t = part(eur, -0.5 + (i % 2) * 0.07, -0.26 + i * 0.16, 0.012, 0.012, 1.15 + i * 0.12);
       t.add(new THREE.Mesh(towerGeo, fill));
       const nac = block(0.02, 0.02, 0.05, WHITE, false); nac.position.set(0, 0.415, -0.008); t.add(nac);
       const rotor = new THREE.Group(); rotor.position.set(0, 0.425, 0.02);
@@ -349,35 +444,94 @@ function buildSites(tex, pool) {
       t.add(rotor); eur.rotors.push(rotor); wind.push(t);
       spark(t, 0, 0.43, 0.03, 0.05, eur.lights);
     }
-    Object.assign(eur, hubLight(eur.model, eur.lights, 0.18));
-    eur.anchors = { field: [fd, new THREE.Vector3(0, 0.05, 0)], wind: [wind[1], new THREE.Vector3(0, 0.5, 0)], hub: [eur.model, new THREE.Vector3()] };
+    hubLight(eur, 0.18);
+    eur.ringOff = 1.4;
+    eur.anchor = [fd, new THREE.Vector3(0, 0.05, 0)]; eur.hit = 0.5;
   }
-  return { isr, eur };
+  return { chg, sol, sto, srv, eur };
+}
+
+// the grid's lines as flat ribbons: samples along a smooth way through the cities, each with its side on the ground
+function buildNet(list, sites) {
+  const make = (lines) => {
+    const pos = [], side = [], av = [], as = [], idx = [], nodes = [], nodeS = [];
+    let base = 0;
+    for (const L of lines) {
+      const pts = [L.p0, ...L.way.map(([a, b]) => ll2v(a, b)), ...(L.p1 ? [L.p1] : [])];
+      const curve = new THREE.CatmullRomCurve3(pts, false, "centripetal", 0.5);
+      let ang = 0; for (let i = 1; i < pts.length; i++) ang += pts[i - 1].angleTo(pts[i]);
+      const N = Math.max(12, Math.ceil(ang / (0.35 * DEG)));
+      const sm = curve.getSpacedPoints(N).map((v) => v.normalize());
+      let s = 0;
+      const cut = L.short ? Math.floor(N * L.short) : N;
+      for (let i = 0; i <= cut; i++) {
+        if (i) s += sm[i - 1].angleTo(sm[i]);
+        const a = sm[Math.max(0, i - 1)], b = sm[Math.min(N, i + 1)];
+        const t = b.clone().sub(a).normalize(), sd = sm[i].clone().cross(t).normalize(), p = sm[i].clone().multiplyScalar(1.0016);
+        for (const v of [-1, 1]) { pos.push(p.x, p.y, p.z); side.push(sd.x, sd.y, sd.z); av.push(v); as.push(s); }
+        if (i < cut) { const k = base + i * 2; idx.push(k, k + 2, k + 1, k + 1, k + 2, k + 3); }   // facing out
+      }
+      // the junctions: the cities the line passes, and its end
+      const wayS = []; let acc = 0, j = 1;
+      for (let i = 1; i <= cut && j < pts.length; i++) {
+        acc += sm[i - 1].angleTo(sm[i]);
+        if (sm[i].angleTo(pts[j]) < 0.5 * DEG || i === cut) { wayS.push([sm[i], acc]); j++; }
+      }
+      for (const [v, sAt] of wayS) { const p = v.clone().multiplyScalar(1.002); nodes.push(p.x, p.y, p.z); nodeS.push(sAt); }
+      if (L.to) (sites[L.to].netAt ||= {})[L.from] = s;
+      base += (cut + 1) * 2;
+      L.len = s;
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute("aSide", new THREE.Float32BufferAttribute(side, 3));
+    g.setAttribute("aV", new THREE.Float32BufferAttribute(av, 1));
+    g.setAttribute("aS", new THREE.Float32BufferAttribute(as, 1));
+    g.setIndex(idx);
+    const ng = new THREE.BufferGeometry();
+    ng.setAttribute("position", new THREE.Float32BufferAttribute(nodes, 3));
+    ng.setAttribute("aS", new THREE.Float32BufferAttribute(nodeS, 1));
+    return { g, ng };
+  };
+  const out = {};
+  for (const src of ["chg", "eur"]) {
+    for (const faint of [false, true]) {
+      const lines = list.filter((l) => l.from === src && !!l.faint === faint).map((l) => ({ ...l, p0: ll2v(...LL[src]), p1: l.to ? ll2v(...LL[l.to]) : null }));
+      if (lines.length) out[src + (faint ? "f" : "")] = make(lines);
+    }
+  }
+  return out;
 }
 
 // Where the globe sits. The owner's drawing: a big Earth, cropped at the start edge of a phone, Europe and Africa in
-// view. Wide screens: the same Earth on the end side, Europe and the campus up in its open sky, the giant opening line
-// across its foot. The second state is the intro: the camera has dived toward the campus on the end side, so the trail
-// leaves it in one S onto the rail and the statement has the start side. A frame gives the globe's centre (cx, cy) or,
-// for the dive, where the campus must land on screen (hx, hy).
-function frame(W, H) {
+// view. Wide screens: the same Earth on the end side, the sites up in its open sky, the giant opening line across its
+// foot. The second state is the intro: the camera has dived toward Israel on the end side, so the trail leaves it in
+// one S onto the rail and the statement has the start side. A frame gives the globe's centre (cx, cy) or, for the dive,
+// where Israel must land on screen (hx, hy).
+// Round 5: on wide screens the opening line stands high on the end side, in the open night beside the globe (Idan:
+// "higher, not at the bottom"); the globe sits a little lower and further toward the start edge to give it the sky.
+// low: the round 4 frame, the line across the globe's foot (kept for comparison, ?title=low)
+function frame(W, H, low) {
   const tall = W / H < 1.05;
   if (tall) {
     const R = Math.min(0.8 * W, 0.42 * H);
-    return { tall, S: 0.3,
+    return { tall, S: 0.24,
       a: { R, cx: W - R - 14, cy: Math.max(0.355 * H, R * 0.96), lat: 26, lon: 2 },
       b: { R: Math.min(1.9 * W, 0.95 * H), hx: 0.52 * W, hy: 0.2 * H, lat: ISR.lat - 5, lon: ISR.lon - 7 } };
   }
-  const R = Math.min(0.8 * H, 0.48 * W);
-  return { tall, S: 0.2,
-    a: { R, cx: 0.23 * W, cy: 0.65 * H, lat: 22, lon: 18 },
-    b: { R: Math.min(0.95 * W, 1.7 * H), hx: 0.21 * W, hy: 0.37 * H, lat: ISR.lat - 10, lon: ISR.lon - 12 } };
+  const R = low ? Math.min(0.8 * H, 0.48 * W) : Math.min(0.78 * H, 0.46 * W);
+  const b = { R: Math.min(0.95 * W, 1.7 * H), hx: 0.21 * W, hy: 0.37 * H, lat: ISR.lat - 10, lon: ISR.lon - 12 };
+  if (low) return { tall, S: 0.2, a: { R, cx: 0.23 * W, cy: 0.65 * H, lat: 22, lon: 18 }, b };
+  // the line stands high on the start side: down to the middle of the screen its last 40% stays clear of the rim.
+  // On narrower screens the globe slides further out on the end side and turns east by as much, so the sites stay put
+  const cy = 0.74 * H, d = cy - 0.5 * H, hc = Math.sqrt(Math.max(0, R * R - d * d));
+  const cx = Math.min(0.2 * W, 0.6 * W - hc - 0.06 * R - 14), turn = Math.asin(Math.min(1, (0.2 * W - cx) / R)) * 180 / Math.PI;
+  return { tall, S: 0.2, a: { R, cx, cy, lat: 22, lon: 18 - turn }, b };
 }
 
 export async function mountGlobe(stage, opt = {}) {
   const canvas = stage.querySelector(".gl-canvas");
   const pinsRoot = stage.querySelector(".gl-pins");
-  const linesSvg = stage.querySelector(".gl-lines");
   const trailSvg = stage.querySelector(".gl-trail");
   const reduce = !!window.__still || matchMedia("(prefers-reduced-motion: reduce)").matches;
   const finePointer = matchMedia("(hover:hover) and (pointer:fine)").matches;
@@ -385,61 +539,60 @@ export async function mountGlobe(stage, opt = {}) {
   let renderer;
   try {
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
-  } catch (e) { return null; }                       // no WebGL: the poster image stays
+  } catch (e) { return null; }                       // no WebGL: the night stays without the globe
   renderer.setClearColor(0x000000, 0);
 
+  // the maps: the 2k set first, so the Earth is up quickly; once it stands, the sharper 4k maps take over (phones take
+  // only the 4k colour: the lights glow anyway, and the memory is theirs)
   const small = Math.min(innerWidth, innerHeight) < 700;
-  const [land, isrDots] = await Promise.all([
-    loadLand(opt.land || (small ? "assets/data/land-m.bin" : "assets/data/land.bin")),
-    loadIsrael(opt.israel || "assets/data/israel.bin"),
-  ]);
-  const STEP = (small ? 0.7 : 0.42) * DEG;
+  const loader = new THREE.TextureLoader(), aniso = renderer.capabilities.getMaxAnisotropy();
+  const load = (url) => loader.loadAsync(url).then((t) => {
+    t.colorSpace = THREE.NoColorSpace; t.wrapS = THREE.RepeatWrapping; t.anisotropy = Math.min(8, aniso);
+    t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; t.needsUpdate = true; return t;
+  });
+  const dir = opt.maps || "assets/img/globe/";
+  const [mapC, mapL, mapM] = await Promise.all([load(`${dir}earth-color-2k.webp`), load(`${dir}earth-lights-2k.webp`), load(`${dir}earth-mask-2k.png`)]);
+  let sharp = false;
+  const sharpen = () => {
+    if (sharp || opt.sharp === false) return; sharp = true;
+    const up = [["uColor", "earth-color-4k.webp"], ...(small ? [] : [["uLights", "earth-lights-4k.webp"], ["uMask", "earth-mask-4k.png"]])];
+    for (const [u, f] of up) load(dir + f).then((t) => { const old = U[u].value; U[u].value = t; old.dispose(); if (!running) render(); }).catch(() => {});
+  };
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(24, 1, 0.3, 50);
   const globe = new THREE.Group(); globe.rotation.order = "XYZ"; scene.add(globe);
   const hubV = ll2v(ISR.lat, ISR.lon);
-  const light = new THREE.Vector3(0.55, 0.5, 0.45).normalize();     // the rim catches light on the open, end side
+  // the rim's light (kept from the sketch the client liked), the moon over the visitor's shoulder, the sun behind the
+  // end-side limb
+  const rimL = new THREE.Vector3(0.55, 0.5, 0.45).normalize();
+  const moon = new THREE.Vector3(-0.2, 0.55, 0.81).normalize();
+  const sun = new THREE.Vector3(0.44, 0.42, -0.79).normalize();
+  const sunAmt = opt.sun ?? (new URLSearchParams(location.search).get("sun") === "0" ? 0 : 1);
 
   const U = {
-    uTime: { value: 0 }, uSize: { value: 2 }, uPx: { value: 1 }, uRef: { value: 4 }, uDim: { value: 1 },
-    uReveal: { value: reduce ? 9 : 0 }, uHub: { value: hubV }, uLight: { value: light }, uOn: { value: reduce ? 1 : 0 },
+    uTime: { value: 0 }, uDim: { value: 1 }, uOn: { value: reduce ? 1 : 0 }, uReveal: { value: reduce ? 9 : 0 },
+    uHub: { value: hubV }, uRimL: { value: rimL }, uMoon: { value: moon }, uSun: { value: sun }, uSunAmt: { value: sunAmt },
+    uColor: { value: mapC }, uLights: { value: mapL }, uMask: { value: mapM },
+    uSites: { value: Object.values(LL).map(([a, b]) => ll2v(a, b)) },
   };
 
-  globe.add(new THREE.Mesh(new THREE.SphereGeometry(1, 96, 64),
-    new THREE.ShaderMaterial({ vertexShader: SPHERE_VS, fragmentShader: OCEAN_FS, uniforms: U })));
-  globe.add(new THREE.LineSegments(graticule(), new THREE.ShaderMaterial({
-    vertexShader: GRID_VS, fragmentShader: GRID_FS, uniforms: U, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })));
-
-  const lg = new THREE.BufferGeometry();
-  lg.setAttribute("position", new THREE.BufferAttribute(land.pos, 3));
-  lg.setAttribute("aRnd", new THREE.BufferAttribute(land.rnd, 1));
-  lg.setAttribute("aCoast", new THREE.BufferAttribute(land.coast, 1));
-  globe.add(new THREE.Points(lg, new THREE.ShaderMaterial({
-    vertexShader: LAND_VS, fragmentShader: DOT_FS, uniforms: U, transparent: true, depthWrite: false })));
-
-  const ig = new THREE.BufferGeometry();
-  ig.setAttribute("position", new THREE.BufferAttribute(isrDots.pos, 3));
-  ig.setAttribute("aRnd", new THREE.BufferAttribute(isrDots.rnd, 1));
-  globe.add(new THREE.Points(ig, new THREE.ShaderMaterial({
-    vertexShader: ISR_VS, fragmentShader: DOT_FS, uniforms: U, transparent: true, depthWrite: false,
-    blending: THREE.AdditiveBlending })));
-
-  // pure light: the colour adds and the canvas alpha is left alone, so outside the ocean the shell never turns into an
-  // opaque dark disc over the night (that disc was the black halo around the globe)
+  globe.add(new THREE.Mesh(new THREE.SphereGeometry(1, 160, 112),
+    new THREE.ShaderMaterial({ vertexShader: SPHERE_VS, fragmentShader: EARTH_FS, uniforms: U })));
+  // the outer air never rotates, so it lives in the scene
   scene.add(new THREE.Mesh(new THREE.SphereGeometry(1.2, 96, 64), new THREE.ShaderMaterial({
-    vertexShader: SPHERE_VS, fragmentShader: ATMO_FS, uniforms: U, side: THREE.BackSide,
-    transparent: true, depthWrite: false, blending: THREE.CustomBlending,
-    blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor, blendSrcAlpha: THREE.ZeroFactor, blendDstAlpha: THREE.OneFactor })));   // never rotates, so it lives in the scene
+    vertexShader: SPHERE_VS, fragmentShader: ATMO_FS, uniforms: U, side: THREE.BackSide, ...ADD })));
+  // the sun's first light, on the limb toward the sun (placed in resize)
+  const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: sunTexture(), blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, transparent: true, opacity: 0 }));
+  sunSprite.renderOrder = 5; sunSprite.visible = sunAmt > 0; scene.add(sunSprite);
 
   // ---- the sites ----
   const tex = glowTexture();
-  const { isr, eur } = buildSites(tex, poolTexture());
-  const sites = { isr, eur };
-  for (const [k, s] of Object.entries(sites)) {
-    const ll = k === "isr" ? ISR : EUR;
-    const n = ll2v(ll.lat, ll.lon), east = new THREE.Vector3(0, 1, 0).cross(n).normalize(), south = n.clone().cross(east).negate();
-    s.n = n; s.f = 0; s.power = reduce ? 1 : 0;
+  const sites = buildSites(tex, poolTexture(), frameTexture());
+  const { chg, eur } = sites;
+  for (const [key, s] of Object.entries(sites)) {
+    const n = ll2v(...LL[key]), east = new THREE.Vector3(0, 1, 0).cross(n).normalize(), south = n.clone().cross(east).negate();
+    s.key = key; s.n = n; s.f = 0; s.power = reduce ? 1 : 0; s.hot = 0; s.hotT = 0;
     s.root = new THREE.Group();
     s.root.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(east, n, south));
     s.root.position.copy(n).multiplyScalar(1.0035);
@@ -451,24 +604,43 @@ export async function mountGlobe(stage, opt = {}) {
   }
   const dimGreen = new THREE.Color("#0c3b2a");
 
-  // ---- pins: HTML links that hang on the models ----
-  const pins = [...pinsRoot.querySelectorAll(".gl-pin")].map((el) => {
-    const dot = document.createElement("i"); dot.className = "gl-dot"; dot.setAttribute("aria-hidden", "true");
-    pinsRoot.appendChild(dot);
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "path"); linesSvg.appendChild(line);
-    if (el.classList.contains("is-soft")) line.classList.add("is-soft");
-    const set = (on) => () => { dot.classList.toggle("on", on); line.classList.toggle("on", on); };
-    el.addEventListener("mouseenter", set(true)); el.addEventListener("mouseleave", set(false));
-    el.addEventListener("focus", set(true)); el.addEventListener("blur", set(false));
-    const site = sites[el.dataset.site] || isr;
-    const [atO, atV] = site.anchors[el.dataset.part] || site.anchors.hub;
-    return { el, dot, line, w: {}, site, atO, atV,
-      dx: +el.dataset.dx, dy: +el.dataset.dy, tdx: +(el.dataset.tdx ?? el.dataset.dx), tdy: +(el.dataset.tdy ?? el.dataset.dy),
-      tallHide: el.hasAttribute("data-tall-hide") };
-  });
+  // ---- the grid ----
+  const net = buildNet(NET, sites);
+  const netU = {};
+  for (const [key, { g, ng }] of Object.entries(net)) {
+    const faint = key.endsWith("f");
+    const u = netU[key] = { uTime: U.uTime, uOn: U.uOn, uDim: U.uDim, uGrow: { value: reduce ? 9 : 0 }, uHW: { value: 0.01 }, uK: { value: faint ? 0.45 : 1 }, uPx: { value: 8 } };
+    globe.add(new THREE.Mesh(g, new THREE.ShaderMaterial({ vertexShader: NET_VS, fragmentShader: NET_FS, uniforms: u, ...ADD })));
+    if (!faint) globe.add(new THREE.Points(ng, new THREE.ShaderMaterial({ vertexShader: NODE_VS, fragmentShader: NODE_FS, uniforms: u, ...ADD })));
+  }
+  // where the grid starts: Israel once the trail has reached it, the European site once the trail passes there
+  const netT0 = { chg: -1, eur: -1 };
 
-  // ---- the trail: over the globe through both sites, then down in one S onto the domains rail; it ends exactly on
-  // the stage's bottom edge, the top of the domains, where the domains ribbon (same band) carries it on ----
+  // ---- the cards: each model is a link; pointing at it (or focusing it) opens its domain's card ----
+  const pins = [...(pinsRoot ? pinsRoot.querySelectorAll(".gl-pin") : [])].map((el) => {
+    const site = sites[el.dataset.site];
+    const pin = { el, site, card: el.querySelector(".gl-card"), cw: 0, ch: 0, w: {} };
+    const hot = (on) => () => { site.hot = on ? 1 : 0; wake(); };
+    el.addEventListener("mouseenter", hot(true)); el.addEventListener("mouseleave", hot(false));
+    el.addEventListener("focus", hot(true)); el.addEventListener("blur", hot(false));
+    // touch: the first tap opens the card, the second follows the link
+    el.addEventListener("click", (ev) => {
+      if (finePointer || el.classList.contains("is-on")) return;
+      ev.preventDefault(); touched = true; show(pin, 6);
+    });
+    return pin;
+  });
+  // on touch screens the cards take turns by themselves, gently, until the visitor touches one or scrolls on
+  let touched = false, shown = null, shownUntil = 0, cycleAt = 0, cycleI = 0;
+  const show = (pin, secs) => {
+    if (shown && shown !== pin) { shown.el.classList.remove("is-on"); shown.site.hot = 0; }
+    shown = pin; shownUntil = (performance.now() - t0) / 1000 + secs;
+    if (pin) { pin.el.classList.add("is-on"); pin.site.hot = 1; }
+  };
+  if (!finePointer) addEventListener("pointerdown", (ev) => { if (!ev.target.closest || !ev.target.closest(".gl-pin")) { touched = true; show(null, 0); } }, { passive: true });
+
+  // ---- the trail: over the globe to Israel, then down in one S onto the domains rail; it ends exactly on the
+  // stage's bottom edge, the top of the domains, where the domains ribbon (same band) carries it on ----
   const ribbon = trailSvg ? new Ribbon(trailSvg, { strands: 14, loose: 3, ...(opt.band || {}), amp: opt.amp || 26, wave: 520, taperStart: 120, sparks: 4, seed: 3, anchor: "end" }) : null;
   const route3 = [];
   {
@@ -484,18 +656,25 @@ export async function mountGlobe(stage, opt = {}) {
   const NR = route3.length, rx = new Float32Array(NR), ry = new Float32Array(NR), rf = new Float32Array(NR);
 
   // ---- state ----
-  let W = 1, H = 1, F = frame(1, 1), dpr = 1, progress = 0, running = false, raf = 0, baseD = 4, railX = 0;
+  let W = 1, H = 1, F = frame(1, 1), dpr = 1, progress = 0, running = false, raf = 0, railX = 0;
   let downS = 0, tTrail = 0, swingAt = -1, easing = false;
   let sig = "", fG = 0.75, ready = false, tReady = 0, pinsShown = null, lastT = 0;
   // the roll runs while the visitor is with the page (the entrance, a scroll, the pointer) and settles when they rest:
-  // the trail and the labels follow the globe in the page, so a globe that never stops would rewrite them every frame
+  // the trail and the cards follow the globe in the page, so a globe that never stops would rewrite them every frame
   let rollT = 0, roll = 1, woke = 0;
   const wake = () => { woke = (performance.now() - t0) / 1000; };
-  // the top of the opening words, in stage pixels: a label never lands on them (short phones, where the words climb the globe)
+  // the top of the opening words, in stage pixels: a model's link never lands on them (short phones)
   let floorY = Infinity;
-  const measureFloor = () => { floorY = opt.floor ? opt.floor() : Infinity; pins.forEach((pin) => (pin.h = pin.el.offsetHeight)); };
-  const t0 = performance.now();
+  const measureFloor = () => {
+    floorY = opt.floor ? opt.floor() : Infinity;
+    for (const pin of pins) if (pin.card) { pin.cw = pin.card.offsetWidth; pin.ch = pin.card.offsetHeight; }
+  };
+  let t0 = performance.now();
+  const pace = opt.pace || 1;
   const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
+  // the menu's globe: where it is aimed (a place, eased to) and how far the visitor's hand has turned it
+  const aim = { lat: 0, lon: 0, tlat: 0, tlon: 0, z: 1, tz: 1, set: false };
+  let held = false;
   const view = { R: 1, cx: 0, cy: 0, lat: 0, lon: 0 };
   const tmp = new THREE.Vector3(), tmpN = new THREE.Vector3(), tmpV = new THREE.Vector3(), tmpW = new THREE.Vector3();
   const pp = { x: 0, y: 0, facing: 1 }, sp = { x: 0, y: 0, facing: 1 };
@@ -516,8 +695,8 @@ export async function mountGlobe(stage, opt = {}) {
     out.x = (tmp.x + 1) / 2 * W; out.y = (1 - tmp.y) / 2 * H;
     return out;
   }
-  // a frame given by where the campus lands: find the centre that puts it there (the view offset moves every point
-  // on screen by the same amount, so one projection is enough)
+  // a frame given by where Israel lands: find the centre that puts it there (the view offset moves every point on
+  // screen by the same amount, so one projection is enough)
   function resolve(f) {
     if (f.hx == null) return;
     globe.rotation.set(f.lat * DEG, -f.lon * DEG, 0); globe.updateMatrixWorld(true);
@@ -529,9 +708,9 @@ export async function mountGlobe(stage, opt = {}) {
 
   // The camera sees the sites almost from above, where a building is only its roof. Each part leans as one piece on
   // the edge of its foot nearest the viewer, so it is seen from about 38° above the horizon and stands upright on
-  // screen (an illustrated map's view); the ground under it (pool, ring, bays) stays flat.
+  // screen (an illustrated map's view); the ground under it (pool, ring) stays flat. A field takes part of the lean.
   const TILT = 52 * DEG, MAXL = 75 * DEG;
-  const cW = new THREE.Vector3(), sW = new THREE.Vector3(), upL = new THREE.Vector3(), qL = new THREE.Quaternion(), qI = new THREE.Quaternion(), Q0 = new THREE.Quaternion(), Y = new THREE.Vector3(0, 1, 0);
+  const cW = new THREE.Vector3(), sW = new THREE.Vector3(), upL = new THREE.Vector3(), qL = new THREE.Quaternion(), qK = new THREE.Quaternion(), qI = new THREE.Quaternion(), Q0 = new THREE.Quaternion(), Y = new THREE.Vector3(0, 1, 0);
   function lean(s) {
     s.model.getWorldPosition(tmpV);
     cW.copy(camera.position).sub(tmpV).normalize();
@@ -545,10 +724,10 @@ export async function mountGlobe(stage, opt = {}) {
     qL.setFromUnitVectors(Y, upL);
     if (ang > MAXL) qL.slerpQuaternions(Q0, qL, MAXL / ang);
     let tx = upL.x, tz = upL.z; const tl = Math.hypot(tx, tz) || 1; tx /= tl; tz /= tl;
-    const c = 1 - Math.cos(th), sn = Math.sin(th);
     for (const p of s.parts) {
+      const thk = th * p.k, c = 1 - Math.cos(thk), sn = Math.sin(thk);
       const r = Math.abs(tx) * p.ex + Math.abs(tz) * p.ez;
-      p.o.quaternion.copy(qL);
+      if (p.k === 1) p.o.quaternion.copy(qL); else p.o.quaternion.copy(qK.slerpQuaternions(Q0, qL, p.k));
       p.o.position.set(p.base.x - tx * r * c, -r * sn, p.base.z - tz * r * c);
     }
   }
@@ -559,16 +738,12 @@ export async function mountGlobe(stage, opt = {}) {
     dpr = Math.min(devicePixelRatio || 1, small ? 1.5 : 2);
     renderer.setPixelRatio(dpr); renderer.setSize(W, H, false);
     camera.aspect = W / H;
-    F = frame(W, H);
+    F = opt.frame ? opt.frame(W, H) : frame(W, H, opt.low ? opt.low() : true);
     resolve(F.a); resolve(F.b);
     stage.classList.toggle("is-tall", F.tall);
-    U.uPx.value = dpr;
-    // dot size is set at the hero frame (about 60% of the spacing between dots); the dive grows it with perspective
-    baseD = distFor(F.a.R);
-    U.uRef.value = baseD;
-    U.uSize.value = Math.max(1.2, F.a.R * STEP * 0.6);
-    for (const s of Object.values(sites)) s.model.scale.setScalar(F.S);
-    linesSvg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    // phones: the station the energy arrives at is drawn a little larger than the rest
+    for (const s of Object.values(sites)) s.big = F.tall && s === chg ? 1.3 : 1;
+    for (const u of Object.values(netU)) u.uPx.value = (F.tall ? 7 : 9) * dpr;
     if (trailSvg) trailSvg.setAttribute("viewBox", `0 0 ${W} ${H}`);
     railX = opt.railX ? opt.railX() : W * 0.6;
     measureFloor();
@@ -577,7 +752,7 @@ export async function mountGlobe(stage, opt = {}) {
   }
 
   // the trail is rebuilt only when the globe moved it by more than half a pixel
-  function trail(time, e) {
+  function trail(time) {
     if (!ribbon) return;
     const dtT = Math.min(0.1, Math.max(0.016, time - tTrail)); tTrail = time;
     globe.updateMatrixWorld(true);
@@ -593,7 +768,7 @@ export async function mountGlobe(stage, opt = {}) {
     const fw = F.tall && !rail && opt.rest ? opt.rest() : null;
     // phones: the words' top edge (the hook has to reach the rail above it)
     const wTop = rail && opt.words ? opt.words().top : null;
-    const key = `${W}|${H}|${railX.toFixed(1)}|${opt.joint ? opt.joint().toFixed(0) : ""}|${opt.joinDir ? opt.joinDir().map((v) => v.toFixed(2)).join(",") : ""}|${i0}|${seam ? seam.key : ""}|${fw ? [fw.left, fw.right, fw.top, fw.bottom].map(Math.round).join(",") : ""}|${wTop === null ? "" : Math.round(wTop / 4)}|` +[0, SITE_K.eur * SUB, SITE_K.isr * SUB, M].map((i) => (rx[i] * 1.6).toFixed(0) + "," + (ry[i] * 1.6).toFixed(0)).join("|");
+    const key = `${W}|${H}|${railX.toFixed(1)}|${opt.joint ? opt.joint().toFixed(0) : ""}|${opt.joinDir ? opt.joinDir().map((v) => v.toFixed(2)).join(",") : ""}|${i0}|${seam ? seam.key : ""}|${fw ? [fw.left, fw.right, fw.top, fw.bottom].map(Math.round).join(",") : ""}|${wTop === null ? "" : Math.round(wTop / 4)}|` + [0, SITE_K.eur * SUB, M].map((i) => (rx[i] * 1.6).toFixed(0) + "," + (ry[i] * 1.6).toFixed(0)).join("|");
     if (key !== sig) {
       sig = key;
       const segs = [];
@@ -641,7 +816,7 @@ export async function mountGlobe(stage, opt = {}) {
           segs.push(["C", lane.x, lane.yS, lane.x, lane.yS + k2, bx - jd[0] * k2, by - jd[1] * k2, bx, by]);
         } else {
           // wide: the rail is out in the open night beside the first picture. The band first falls on the start side of
-          // the campus, clear of the intro's words, and swings over to the rail only in the stage's lower third, which it
+          // Israel, clear of the intro's words, and swings over to the rail only in the stage's lower third, which it
           // reaches after the words have scrolled up past it
           const side = bx > ex ? 1 : -1;
           const mx = ex + (bx - ex) * 0.25, my = ey + (by - ey) * 0.38;
@@ -652,12 +827,12 @@ export async function mountGlobe(stage, opt = {}) {
           segs.push(["C", mx, my, mx + mtx * d2 * 0.4, my + mty * d2 * 0.4, bx - jd[0] * k3, by - jd[1] * k3, bx, by]);
         }
       }
-      const ke = SITE_K.eur * SUB - i0, ki = SITE_K.isr * SUB - i0;
+      const ke = SITE_K.eur * SUB - i0, ki = M - i0;
       ribbon.setPath(segs, [ke, ki]);
       const mk = ribbon.marks, L = ribbon.L;
-      fG = mk[M - i0] / L;
+      fG = mk[ki] / L;
       eur.f = ke >= 0 ? mk[ke] / L : 0;
-      isr.f = mk[ki] / L;
+      chg.f = fG;
     }
     // the entrance draws the line over the globe; the scroll draws its way down. Reduced motion: the line over the globe,
     // and its way down once the opening words have gone (it would run behind them)
@@ -691,18 +866,22 @@ export async function mountGlobe(stage, opt = {}) {
       else downS = down;
     } else downS = down;
     const head = fG * ent + (1 - fG) * down;
+    // while the head rests on Israel its flare is smaller, so the station it powers stays in sight (most on phones,
+    // where the globe is half the size); it opens up again as the trail leaves the globe
+    ribbon.headK = lerp(F.tall ? 0.42 : 0.7, 1, smooth(fG, fG + 0.12 * (1 - fG), head));
     ribbon.draw(head);
     return head;
   }
 
   function render(now = performance.now()) {
-    const time = (now - t0) / 1000, dt = Math.min(0.1, Math.max(0, time - lastT)); lastT = time;
-    U.uTime.value = reduce ? 4 : time;
+    const time = ((now - t0) / 1000) * pace, dt = Math.min(0.1, Math.max(0, time - lastT)); lastT = time;
+    U.uTime.value = reduce ? 40 : time;
 
-    // entrance: the matrix lights up outwards from Israel while the models rise; then the trail runs through them
-    const e = reduce ? 1 : clamp01((time - 0.25) / 2.3);
+    // entrance: the Earth comes up out of the night and its cities light outward from Israel while the models rise;
+    // then the trail runs to Israel and the grid spreads from there
+    const e = reduce ? 1 : clamp01((time - 0.25) / 2.6);
     U.uReveal.value = reduce || e >= 1 ? 9 : easeOut(e) * 3.2;
-    U.uOn.value = reduce ? 1 : smooth(0.15, 0.6, e);
+    U.uOn.value = reduce ? 1 : smooth(0.0, 0.5, e);
 
     // scroll: from the hero frame to the dive
     const p = reduce ? 0 : smooth(0, 0.7, progress);
@@ -716,37 +895,68 @@ export async function mountGlobe(stage, opt = {}) {
     roll += (awake - roll) * Math.min(1, dt * 2.6); if (!awake && roll < 0.01) roll = 0;
     rollT += dt * roll;
     const rollLon = 4 * Math.sin((rollT * 2 * Math.PI) / 46 + 0.6), rollLat = 1.8 * Math.sin((rollT * 2 * Math.PI) / 61 + 2.1);
-    view.R = lerp(a.R, b.R, p); view.cx = lerp(a.cx, b.cx, p); view.cy = lerp(a.cy, b.cy, p);
-    view.lat = lerp(a.lat, b.lat, p) + calm * (rollLat + mouse.y * 1.4);
-    view.lon = lerp(a.lon, b.lon, p) + calm * (rollLon + spinIn + mouse.x * 2.2);
+    view.R = lerp(a.R, b.R, p) * aim.z; view.cx = lerp(a.cx, b.cx, p); view.cy = lerp(a.cy, b.cy, p);
+    // the models grow less than the Earth as the camera dives (they would turn into toys)
+    const ms = F.S * Math.pow(a.R / view.R, 0.45);
+    for (const s of Object.values(sites)) s.model.scale.setScalar(ms * s.big);
+    if (aim.set) {
+      const k = reduce ? 1 : Math.min(1, dt * 3.2);
+      aim.lat += (aim.tlat - aim.lat) * k; aim.lon += (aim.tlon - aim.lon) * k; aim.z += (aim.tz - aim.z) * k * 0.7;
+      if (Math.abs(aim.tlat - aim.lat) + Math.abs(aim.tlon - aim.lon) + Math.abs(aim.tz - aim.z) * 40 > 0.05) wake();
+    }
+    view.lat = lerp(a.lat, b.lat, p) + aim.lat + calm * (rollLat + mouse.y * 1.4);
+    view.lon = lerp(a.lon, b.lon, p) + aim.lon + calm * (rollLon + spinIn + mouse.x * 2.2);
     globe.rotation.set(view.lat * DEG, -view.lon * DEG, 0);
     place(view.R, view.cx, view.cy);
     U.uDim.value = lerp(1, 0.5, smooth(0.3, 0.75, progress));
+    // the grid keeps the same width on screen through the dive
+    for (const u of Object.values(netU)) u.uHW.value = (F.tall ? 4.6 : 5.6) / view.R;
 
-    // the trail first (it tells each site whether the energy has reached it)
-    const head = trail(time, e) ?? 1;
+    // the sun on the limb, toward the sun's side of the screen
+    if (sunSprite.visible) {
+      const d = camera.position.z, rr = Math.sqrt(1 - 1 / (d * d)), sl = Math.hypot(sun.x, sun.y);
+      sunSprite.position.set((sun.x / sl) * rr, (sun.y / sl) * rr, 1 / d);
+      sunSprite.material.rotation = Math.atan2(sun.y, sun.x) + Math.PI / 2;
+      sunSprite.scale.setScalar(F.tall ? 0.95 : 0.8);
+      sunSprite.material.opacity = 0.42 * U.uOn.value * U.uDim.value * sunAmt;
+    }
 
-    // the sites rise, then light up when the trail's head reaches them
+    // the trail first (it tells Israel and the European site when the energy has reached them)
+    const head = trail(time) ?? 1;
+
+    // the grid grows from each source once it has power, and each site lights when its line reaches it
+    for (const src of ["chg", "eur"]) {
+      const s = sites[src];
+      if (netT0[src] < 0 && (reduce || head >= s.f - 0.004)) netT0[src] = time;
+      const grow = reduce ? 9 : netT0[src] < 0 ? 0 : (time - netT0[src]) * 0.62;
+      for (const key of [src, src + "f"]) if (netU[key]) netU[key].uGrow.value = grow;
+      s.grow = grow;
+    }
+
+    // the sites rise, then light up when the energy reaches them
     for (const s of Object.values(sites)) {
       for (const part of s.parts) {
         const g = reduce ? 1 : easeOut(clamp01((time - part.t) / 0.9));
         part.o.scale.y = Math.max(0.001, g); part.o.visible = g > 0.002;
       }
-      const target = reduce || head >= s.f - 0.004 ? 1 : 0;
+      const on = s.netAt ? Object.entries(s.netAt).some(([src, at]) => sites[src].grow >= at - 0.01) : head >= s.f - 0.004;
+      const target = reduce || on ? 1 : 0;
       s.power = reduce ? 1 : s.power + (target - s.power) * Math.min(1, dt * 2.6);
-      const pw = s.power;
+      s.hotT += ((s.hot ? 1 : 0) - s.hotT) * Math.min(1, dt * 6);
+      const pw = s.power, ht = s.hotT;
       s.green.color.copy(dimGreen).lerp(GREEN, pw);
       for (const l of s.lights) l.material.opacity = pw * (0.75 + 0.25 * Math.sin(time * 2.1 + l.position.x * 40));
       for (const bar of s.bars) bar.m.scale.y = Math.max(0.04, pw * (0.62 + 0.3 * Math.sin(time * 0.45 + bar.ph)));
       for (const r of s.rotors) r.rotation.z -= reduce ? 0 : dt * (0.35 + 1.5 * pw);
-      s.pad.material.opacity = (0.18 + 0.5 * pw) * U.uOn.value * (0.85 + 0.15 * Math.sin(time * 1.7));
-      s.core.material.opacity = pw * (0.65 + 0.2 * Math.sin(time * 2.4));
-      const k = ((time + (s === eur ? 1.4 : 0)) % 3.4) / 3.4;
-      s.ring.scale.setScalar((s === isr ? 0.25 : 0.2) + k * (s === isr ? 0.35 : 0.28));
-      s.ring.material.opacity = reduce ? 0 : Math.pow(1 - k, 1.7) * 0.4 * pw;
-      if (s === isr && pw > 0.5 && !ready) { ready = true; tReady = time; stage.classList.add("gl-ready"); }
+      for (const g of s.glows) g.material.opacity = pw * (0.55 + 0.35 * ht + 0.1 * Math.sin(time * 1.3 + s.n.x * 9));
+      for (const c of s.cool) c.opacity = 0.18 + 0.62 * pw;
+      s.pad.material.opacity = (0.12 + 0.42 * pw + 0.35 * ht) * U.uOn.value * (0.85 + 0.15 * Math.sin(time * 1.7));
+      const kk = ((time + (s.ringOff || 0) + s.n.y * 3) % 3.4) / 3.4;
+      s.ring.scale.setScalar(s.ringR * (0.9 + kk * (1.2 + 0.6 * ht)));
+      s.ring.material.opacity = reduce ? 0.25 * ht : Math.pow(1 - kk, 1.7) * (0.35 + 0.5 * ht) * pw;
+      if (s === chg && pw > 0.5 && !ready) { ready = true; tReady = time; stage.classList.add("gl-ready"); (window.requestIdleCallback || setTimeout)(sharpen); }
     }
-    if (reduce && !ready) { ready = true; tReady = -9; stage.classList.add("gl-ready"); }
+    if (reduce && !ready) { ready = true; tReady = -9; stage.classList.add("gl-ready"); setTimeout(sharpen, 300); }
 
     globe.updateMatrixWorld(true);
     for (const s of Object.values(sites)) lean(s);
@@ -755,42 +965,81 @@ export async function mountGlobe(stage, opt = {}) {
     renderer.autoClear = false; renderer.clearDepth();
     camera.layers.set(1); renderer.render(scene, camera);
 
-    // pins follow their models; they come in once the campus has power and leave as soon as the camera starts to move
-    // (reduced motion: the camera stays, so do they)
+    // the links ride on their models; they come in once Israel has power and leave as soon as the camera starts to
+    // move (reduced motion: the camera stays, so do they)
     const pinA = (reduce ? 1 : smooth(0.1, 0.0, progress)) * (ready ? clamp01((time - tReady) / 0.8) : 0);
-    // the labels leave the reading order with the globe (a hidden label is not text on the page)
+    // the links leave the reading order with the globe (a hidden link is not on the page)
     const pinsOn = pinA > 0.02;
-    if (pinsOn !== pinsShown) { pinsShown = pinsOn; if (pinsOn) { pinsRoot.removeAttribute("aria-hidden"); measureFloor(); } else pinsRoot.setAttribute("aria-hidden", "true"); }
+    if (pinsRoot && pinsOn !== pinsShown) {
+      pinsShown = pinsOn;
+      if (pinsOn) { pinsRoot.removeAttribute("aria-hidden"); measureFloor(); } else { pinsRoot.setAttribute("aria-hidden", "true"); if (shown) show(null, 0); }
+    }
     for (const pin of pins) {
-      tmpW.copy(pin.atV).applyMatrix4(pin.atO.matrixWorld);
-      tmpN.copy(pin.site.n).applyQuaternion(globe.quaternion);
+      const s = pin.site, [atO, atV] = s.anchor;
+      tmpW.copy(atV).applyMatrix4(atO.matrixWorld);
+      tmpN.copy(s.n).applyQuaternion(globe.quaternion);
       projectW(tmpW, tmpN, pp);
-      const tx = pp.x + (F.tall ? pin.tdx : pin.dx) * view.R, ty = pp.y + (F.tall ? pin.tdy : pin.dy) * view.R;
-      const o = pp.facing > 0.15 && !(F.tall && pin.tallHide) && ty + (pin.h || 0) / 2 < floorY - 8 ? pinA : 0;
-      const left = tx < pp.x;
+      const size = Math.max(44, s.hit * s.model.scale.x * view.R);
+      const o = pp.facing > 0.18 && pp.y + size / 2 < floorY - 8 && pp.x > 0 && pp.x < W ? pinA : 0;
       // every value is written only when it changed (the loop runs every frame, the page should not)
-      const w = pin.w, op = o.toFixed(3), ex = left ? tx + 6 : tx - 6;
-      const dtr = `translate3d(${pp.x.toFixed(1)}px,${pp.y.toFixed(1)}px,0)`;
-      const pt = `translate3d(${tx.toFixed(1)}px,${ty.toFixed(1)}px,0) translate(${left ? "-100%" : "0"},-50%)`;
-      const ld = `M${pp.x.toFixed(1)} ${pp.y.toFixed(1)} L${ex.toFixed(1)} ${ty.toFixed(1)}`;
-      if (dtr !== w.dt) pin.dot.style.transform = w.dt = dtr;
-      if (pt !== w.pt) pin.el.style.transform = w.pt = pt;
-      if (ld !== w.ld) pin.line.setAttribute("d", w.ld = ld);
-      if (op !== w.op) { w.op = op; pin.dot.style.opacity = pin.el.style.opacity = pin.line.style.opacity = op; }
-      const vz = o > 0.02 ? "visible" : "hidden";
-      if (vz !== w.vz) { pin.el.style.visibility = w.vz = vz; pin.line.style.display = vz === "hidden" ? "none" : ""; }
+      const w = pin.w, vz = o > 0.02 ? "visible" : "hidden";
+      const tr = `translate3d(${pp.x.toFixed(1)}px,${pp.y.toFixed(1)}px,0) translate(-50%,-50%)`;
+      const sz = size.toFixed(0) + "px";
+      if (tr !== w.tr) pin.el.style.transform = w.tr = tr;
+      if (sz !== w.sz) { pin.el.style.width = pin.el.style.height = w.sz = sz; }
+      if (vz !== w.vz) pin.el.style.visibility = w.vz = vz;
+      // the card opens above the model, or under it when the top of the screen is too close; sideways it stays on
+      // the screen (12px from either edge)
+      const at = pp.y - size / 2 - pin.ch - 8 < 76 ? "b" : "t";
+      if (at !== w.at) pin.el.dataset.at = w.at = at;
+      const cl = (Math.min(Math.max(12, pp.x - pin.cw / 2), W - 12 - pin.cw) - (pp.x - size / 2)).toFixed(0) + "px";
+      if (pin.card && cl !== w.cl) pin.card.style.left = w.cl = cl;
+    }
+    // touch: one card at a time, every few seconds, while the opening rests on screen
+    if (!finePointer && ready && pinsOn && pins.length) {
+      if (shown && time > shownUntil) show(null, 0);
+      if (!touched && !reduce && progress < 0.02 && !shown && time > cycleAt) {
+        const vis = pins.filter((pn) => pn.w.vz === "visible");
+        if (vis.length) { show(vis[cycleI % vis.length], 2.8); cycleI++; }
+        cycleAt = time + 4.2;
+      }
     }
   }
 
   function loop(now) { raf = requestAnimationFrame(loop); render(now); }
-  function start() { if (running || reduce) return; running = true; raf = requestAnimationFrame(loop); }
+  function start() { if (running || reduce || held) return; running = true; raf = requestAnimationFrame(loop); }
   function stop() { running = false; cancelAnimationFrame(raf); }
 
-  if (finePointer && !reduce) {
+  if (finePointer && !reduce && opt.pointer !== false) {
     addEventListener("pointermove", (ev) => {
       mouse.tx = (ev.clientX / innerWidth) * 2 - 1; mouse.ty = (ev.clientY / innerHeight) * 2 - 1; wake();
     }, { passive: true });
   }
+  if (opt.drag) {
+    let dn = null;
+    canvas.addEventListener("pointerdown", (ev) => {
+      dn = { x: ev.clientX, y: ev.clientY, lat: aim.tlat, lon: aim.tlon, id: ev.pointerId, moved: false };
+      aim.set = true;
+    });
+    addEventListener("pointermove", (ev) => {
+      if (!dn || ev.pointerId !== dn.id) return;
+      const dx = ev.clientX - dn.x, dy = ev.clientY - dn.y;
+      if (!dn.moved) {
+        if (Math.hypot(dx, dy) < 6) return;
+        // a phone: an upright stroke is the page's scroll, not a turn
+        if (opt.drag === "x" && Math.abs(dy) > Math.abs(dx)) { dn = null; return; }
+        dn.moved = true; try { canvas.setPointerCapture(dn.id); } catch (e) {}
+        canvas.classList.add("is-grab");
+      }
+      const k = 57 / Math.max(80, F.a.R);
+      aim.tlon = dn.lon - dx * k;
+      if (opt.drag !== "x") aim.tlat = Math.max(-50, Math.min(50, dn.lat + dy * k));
+      wake(); if (!running) render();
+    });
+    const up = () => { if (dn) canvas.classList.remove("is-grab"); dn = null; };
+    addEventListener("pointerup", up); addEventListener("pointercancel", up);
+  }
+  cycleAt = 5.6;
   new ResizeObserver(resize).observe(stage);
   resize();
   // the opening words settle when the font arrives
@@ -806,5 +1055,26 @@ export async function mountGlobe(stage, opt = {}) {
     setProgress(v) { const pv = clamp01(v); if (pv !== progress) wake(); progress = pv; if (!running) render(); },
     hub() { tmpW.copy(hubV).applyMatrix4(globe.matrixWorld); projectW(tmpW, tmpN.copy(tmpW).normalize(), sp); return { x: sp.x, y: sp.y }; },
     resize,
+    // the menu: turn so a place faces the visitor (lat/lon of the place, relative to the frame's own view) and light
+    // its model; pause while the menu is shut; play the entrance again when it opens
+    aim(lat, lon, key) {
+      aim.set = true; aim.tlat = lat - F.a.lat; aim.tlon = lon - F.a.lon;
+      // the short way round
+      while (aim.tlon - aim.lon > 180) aim.tlon -= 360;
+      while (aim.tlon - aim.lon < -180) aim.tlon += 360;
+      for (const [k, s] of Object.entries(sites)) s.hot = k === key ? 1 : 0;
+      // and lean in a little toward a place (opt.lean: how much)
+      aim.tz = key ? opt.lean || 1 : 1;
+      wake(); if (!running) render();
+    },
+    hold(on) { held = on; if (on) stop(); else if (vis && !document.hidden) start(); },
+    replay() {
+      t0 = performance.now(); lastT = 0; rollT = 0; netT0.chg = netT0.eur = -1;
+      for (const s of Object.values(sites)) s.power = reduce ? 1 : 0;
+      if (!running) render();
+    },
+    // where the globe's end-side rim stands at a height of the opening frame (stage px, its air included): the opening
+    // line keeps clear of it
+    limb(y) { const a = F.a, d = y - a.cy; return Math.abs(d) >= a.R ? a.cx : a.cx + Math.sqrt(a.R * a.R - d * d) + a.R * 0.06 + 14; },
   };
 }

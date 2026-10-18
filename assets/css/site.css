@@ -6,6 +6,10 @@
 /* Hatzor carries Hebrew, digits and punctuation only: Latin in a display line falls back to Almoni */
 @font-face{font-family:"Hatzor";src:url(../fonts/hatzor-light.woff2) format("woff2");font-weight:300;font-style:normal;font-display:swap;
   unicode-range:U+0020-0040,U+005B-0060,U+007B-007E,U+00A0,U+00AD,U+0590-05FF,U+2018-201D,U+20AA}
+@font-face{font-family:"Hatzor";src:url(../fonts/hatzor-regular.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap;
+  unicode-range:U+0020-0040,U+005B-0060,U+007B-007E,U+00A0,U+00AD,U+0590-05FF,U+2018-201D,U+20AA}
+@font-face{font-family:"Hatzor";src:url(../fonts/hatzor-medium.woff2) format("woff2");font-weight:500;font-style:normal;font-display:swap;
+  unicode-range:U+0020-0040,U+005B-0060,U+007B-007E,U+00A0,U+00AD,U+0590-05FF,U+2018-201D,U+20AA}
 @font-face{font-family:"Almoni";src:url(../fonts/almoni-light-aaa.woff2) format("woff2");font-weight:300;font-style:normal;font-display:swap}
 @font-face{font-family:"Almoni";src:url(../fonts/almoni-regular-aaa.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
 @font-face{font-family:"Almoni";src:url(../fonts/almoni-medium-aaa.woff2) format("woff2");font-weight:500;font-style:normal;font-display:swap}
@@ -13,9 +17,11 @@
 :root{
   /* the night: brand navy and its depths (never #000) */
   --night-0:#000B26; --night-1:#001033; --night:#002060; --lift:#0A3A9A;
+  /* the same two depths as channels, for the shades that melt into the night */
+  --n0:0,11,38; --n1:0,16,51;
   --ink:#F3F6FC; --ink-soft:rgba(243,246,252,.78); --muted:rgba(243,246,252,.56);
   --line:rgba(243,246,252,.14); --line-strong:rgba(243,246,252,.32);
-  --glass:rgba(0,16,51,.46);
+  --glass:rgba(var(--n1),.46);
   /* the one light: actions, numbers, the trail */
   --accent:#30F77B; --accent-hover:#74FBA6; --accent-ink:#00143F; --tint:#8FB0FF;
   --ease:cubic-bezier(.2,.6,.2,1); --ease-out:cubic-bezier(.05,.7,.1,1); --ease-travel:cubic-bezier(.76,0,.24,1);
@@ -25,6 +31,8 @@
   --r:clamp(18px,2.2vw,44px);
   /* the two families: the display face for the lines that carry the page, the reading face for everything else */
   --display:"Hatzor","Almoni",system-ui,sans-serif;
+  /* round 5 (18.10, Daniel: "it lacks flesh"): the display lines a cut heavier than Light */
+  --dw:400;
   --text:"Almoni",system-ui,sans-serif;
   /* Almoni, calibrated (factor 1.25, line-height x0.77). Hatzor is drawn large on its body (Hebrew at .99em):
      the display sizes below are Hatzor's own, about .64 of the Almoni size that would look the same */
@@ -41,6 +49,20 @@
   --hd-h:clamp(76px,6.4vw,104px);
   --rail-pad:28px;
 }
+/* ---------- the night, compared (round 5, sketch only: ?bg=mid / ?bg=brand; the dark night stays the site's) ----------
+   Idan (18.10): "keep our Treenergy blue... a touch lighter". brand: the night itself in the brand navy. mid: the dark
+   night with more of the brand blue in its pools (sky.js) and in the one coloured word */
+html[data-bg="brand"]{--night-0:#001A50;--night-1:#002060;--n0:0,26,80;--n1:0,32,96;--glass:rgba(0,32,96,.5)}
+html[data-bg="mid"]{--tint:#4F86FF}
+.bg-cmp{position:fixed;z-index:46;inset-inline:0;bottom:calc(16px + env(safe-area-inset-bottom));margin-inline:auto;width:max-content;
+  display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--glass);box-shadow:inset 0 0 0 1px var(--line-strong);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);font-size:13px}
+.bg-cmp button{min-height:36px;padding:0 14px;border:0;border-radius:999px;background:none;color:var(--ink-soft);font:inherit;cursor:pointer}
+.bg-cmp button[aria-pressed="true"]{background:var(--ink);color:var(--night-0)}
+/* phones: at the top of the opening, under the logo, and it leaves with the opening (fixed, it sat on the titles) */
+@media (max-width:1023px){.bg-cmp{position:absolute;bottom:auto;top:calc(var(--hd-h) + env(safe-area-inset-top));font-size:12px}.bg-cmp button{min-height:32px;padding:0 12px}}
+.menu-open .bg-cmp{opacity:0;visibility:hidden}
+
 /* a tablet's band is twice a phone's (28 against 14): the words step further off the rail so its outer strands stay clear */
 @media (min-width:768px) and (max-width:1023px){:root{--rail-pad:48px}}
 
@@ -54,7 +76,7 @@ html{color:var(--ink);background:
   -webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{margin:0;font-family:var(--text);font-weight:400;font-size:var(--fs-body);line-height:1.55;
   -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
-#sky{position:fixed;inset:0;width:100%;height:100%;z-index:-1;opacity:0;transition:opacity 1.4s var(--ease)}
+#sky{position:fixed;inset:0;pointer-events:none;width:100%;height:100%;z-index:-1;opacity:0;transition:opacity 1.4s var(--ease)}
 #sky.on{opacity:1}
 /* film grain over the field only */
 body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:url(../img/grain.png);opacity:.26;mix-blend-mode:overlay}
@@ -63,7 +85,7 @@ a{color:inherit}
 h1,h2,h3,h4,p,figure{margin:0}
 h1,h2,h3{font-weight:500;text-wrap:balance}
 /* the display lines: Hatzor Light, a touch of air between the tall letters */
-h1,h2,.disp{font-family:var(--display);font-weight:300;letter-spacing:-.005em}
+h1,h2,.disp{font-family:var(--display);font-weight:var(--dw);letter-spacing:-.005em}
 p{text-wrap:pretty}
 :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
 .sr{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
@@ -102,7 +124,7 @@ html.lenis,html.lenis body{height:auto}
 .kick::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
 
 /* ---------- header: the power line ---------- */
-.hskip{position:absolute;inset-inline-start:16px;top:-64px;z-index:90;box-shadow:0 0 0 3px rgba(0,11,38,.85);display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:999px;
+.hskip{position:absolute;inset-inline-start:16px;top:-64px;z-index:90;box-shadow:0 0 0 3px rgba(var(--n0),.85);display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:999px;
   background:var(--accent);color:var(--accent-ink);font-weight:500;font-size:15px;text-decoration:none}
 .hskip:focus{top:16px}
 .hd{position:fixed;top:0;inset-inline:0;z-index:50;height:var(--hd-h);display:flex;align-items:center;gap:clamp(16px,2.4vw,48px);
@@ -110,7 +132,12 @@ html.lenis,html.lenis body{height:auto}
 .hd > *{pointer-events:auto}
 /* a soft dusk under the header so it reads over anything, no bar; the same at the top, so the station names hold over the globe's bright rim */
 .hd::before{content:"";position:absolute;inset:0 0 -40%;z-index:-1;pointer-events:none;
-  background:linear-gradient(to bottom,rgba(0,11,38,.72),rgba(0,11,38,0))}
+  background:linear-gradient(to bottom,rgba(var(--n0),.72),rgba(var(--n0),0))}
+/* once the page moves, a deeper dusk joins it: the words scrolling up melt under the header instead of crossing the phone and
+   the rail (the opening keeps the light one, so the globe's rim stays bright) */
+.hd::after{content:"";position:absolute;inset:0 0 -24%;z-index:-1;pointer-events:none;opacity:0;transition:opacity .6s var(--ease);
+  background:linear-gradient(to bottom,rgba(var(--n0),.9),rgba(var(--n0),.7) 58%,rgba(var(--n0),0))}
+.hd.is-scrolled::after{opacity:1}
 .hd-start,.hd-end{display:flex;align-items:center;gap:clamp(10px,1vw,18px);flex:none}
 .hd-end{gap:clamp(14px,1.6vw,28px)}
 /* the menu button: a dark disc with a live green core, it powers up on hover */
@@ -129,7 +156,7 @@ html.lenis,html.lenis body{height:auto}
 .hd-tel{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 6px;font-size:17px;font-weight:500;text-decoration:none;white-space:nowrap}
 .hd-tel svg{width:18px;height:18px;color:var(--accent)}
 .hd-cta{display:inline-flex;align-items:center;min-height:44px;padding:0 20px;border-radius:999px;font-size:16px;font-weight:500;text-decoration:none;white-space:nowrap;
-  color:var(--ink);box-shadow:inset 0 0 0 1px rgba(48,247,123,.32);background:rgba(0,16,51,.25);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  color:var(--ink);box-shadow:inset 0 0 0 1px rgba(48,247,123,.32);background:rgba(var(--n1),.25);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
   transition:background .4s var(--ease),color .4s var(--ease),box-shadow .4s var(--ease)}
 .hd-cta.is-lit,.hd-cta:hover{/* qa-allow: accent-state: the call button is the page's main action, and "lit" is the trail reaching it */background:var(--accent);color:var(--accent-ink);box-shadow:0 0 30px rgba(48,247,123,.35)}
 /* the star border (after Star Border on React Bits): on the outlined calls a point of light runs along the bottom edge
@@ -191,8 +218,8 @@ html.lenis,html.lenis body{height:auto}
 }
 
 /* ---------- the menu: a quiet room ---------- */
-/* The night closes over the page (a fade, no shape), the list rises line by line on hairlines, the contact waits on the
-   end side. Nothing in it moves on its own: the only light is the line under the item the pointer is on. */
+/* The night closes over the page (a fade, no shape), the list rises line by line on hairlines on the start side, and the
+   opening's Earth turns on the end side to the place the pointer is on. One way on besides the list: the call. */
 .mn{position:fixed;inset:0;z-index:70;visibility:hidden;transition:visibility 0s linear .55s;color:var(--ink)}
 .mn.open{visibility:visible;transition-delay:0s}
 .mn-bg{position:absolute;inset:0;background:var(--night-0);opacity:0;transition:opacity .45s var(--ease) .08s}
@@ -223,7 +250,7 @@ html.lenis,html.lenis body{height:auto}
 /* the light: a green line that runs along the hairline under the item */
 .mn-it a::after{content:"";position:absolute;inset-inline:0;bottom:-1px;height:1px;background:var(--accent);transform:scaleX(0);transform-origin:right;transition:transform .55s var(--ease-out)}
 .mn-n{font-size:var(--fs-small);font-weight:400;color:var(--muted);transition:color .3s var(--ease)}
-.mn-t{display:block;font-family:var(--display);font-weight:300;font-size:clamp(30px,min(3.2vw,6.2vh),84px);line-height:1.2;letter-spacing:0;
+.mn-t{display:block;font-family:var(--display);font-weight:var(--dw);font-size:clamp(30px,min(3.2vw,6.2vh),84px);line-height:1.2;letter-spacing:0;
   transition:transform .55s var(--ease-out)}
 .mn-it a.is-on .mn-n{color:var(--accent)}
 @media (hover:hover) and (pointer:fine){
@@ -236,81 +263,46 @@ html.lenis,html.lenis body{height:auto}
 .mn-it a:focus-visible::after{transform:none}
 
 .mn-side{display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:clamp(0px,1vh,12px)}
-.mn-contact{display:grid;justify-items:start;gap:4px;padding-top:clamp(18px,2.4vh,28px);border-top:1px solid var(--line);font-size:var(--fs-body);color:var(--ink-soft);
-  opacity:0;transition:opacity .2s}
+/* one way on besides the list (round 5: "simplify it"): the call */
+.mn-contact{display:flex;padding-top:clamp(18px,2.4vh,28px);opacity:0;transition:opacity .2s}
 .mn.open .mn-contact{opacity:1;transition:opacity .7s var(--ease) .5s}
-.mn-contact a{text-decoration:none;min-height:40px;display:inline-flex;align-items:center}
-.mn-contact .mn-tel{gap:.28em;font-size:clamp(22px,1.7vw,36px);font-weight:400;color:var(--ink)}
-.mn-contact .btn{margin-top:20px;color:var(--accent-ink)}
-@media (hover:hover) and (pointer:fine){.mn-contact a:not(.btn):hover{color:var(--accent)}}
+.mn-contact .mn-tel{display:inline-flex;align-items:center;gap:.4em;min-height:48px;font-size:clamp(20px,1.5vw,30px);font-weight:400;color:var(--ink);text-decoration:none;
+  transition:color .3s var(--ease)}
+.mn-tel svg{width:.9em;height:.9em;color:var(--accent)}
+@media (hover:hover) and (pointer:fine){.mn-contact .mn-tel:hover{color:var(--accent)}}
 @media (max-width:1023px){
   .mn-in{grid-template-columns:1fr;grid-template-rows:var(--hd-h) auto 1fr;row-gap:clamp(28px,5vh,48px)}
   .mn-nav{align-self:start;padding-top:1vh}
   .mn-t{font-size:clamp(26px,7.4vw,48px)}
   .mn-it a{padding:clamp(10px,1.7vh,18px) 0}
-  .mn-contact .btn{width:100%}
 }
 
-/* ---------- the ball (when the browser can draw it; otherwise the list above is the whole menu) ----------
-   Wide screens: the name of the place on the start side, the ball in the middle, the list (small now) and the contact
-   on the end side. Phones: the ball on top, the name and the way there under it, the list in two columns. */
-.mn-ball,.mn-now{display:none}
-.mn.has-ball .mn-ball{grid-area:ball;display:block;position:relative;justify-self:center;align-self:center;
-  width:min(100%,calc(100svh - var(--hd-h) - clamp(56px,11vh,140px)));aspect-ratio:1;
-  opacity:0;transform:scale(.9);transition:opacity .3s var(--ease),transform .3s var(--ease)}
-.mn.open.has-ball .mn-ball{opacity:1;transform:none;transition:opacity 1s var(--ease) .1s,transform 1.4s var(--ease-out) .1s}
-/* the navy of the brand around the ball, as round the globe of the opening (never a dark ring) */
-.mn-ball::before{content:"";position:absolute;inset:-16%;border-radius:50%;pointer-events:none;
-  background:radial-gradient(closest-side,rgba(10,58,154,.36),rgba(0,32,96,.16) 60%,rgba(0,32,96,0))}
-.mn-ball canvas{position:relative;display:block;width:100%;height:100%;touch-action:none;cursor:grab;-webkit-tap-highlight-color:transparent}
-.mn-ball canvas.is-grab{cursor:grabbing}
-.mn.has-ball .mn-now{grid-area:now;display:grid;justify-items:start;align-content:center;gap:clamp(8px,1.4vh,16px);
-  opacity:0;transition:opacity .2s var(--ease)}
-.mn.open.has-ball .mn-now{opacity:1;transition:opacity .35s var(--ease),transform .5s var(--ease-out)}
-.mn.open.has-ball .mn-now.is-moving{opacity:.16;transform:translateY(6px)}
-.mn-now-n{font-family:var(--display);font-weight:300;font-size:clamp(22px,1.7vw,34px);line-height:1;color:var(--accent)}
-.mn-now-t{font-family:var(--display);font-weight:300;font-size:clamp(40px,3.5vw,96px);line-height:1.04;max-width:8ch;text-wrap:balance}
-.mn-now.swap .mn-now-n,.mn-now.swap .mn-now-t{animation:now-in .7s var(--ease-out) both}
-.mn-now.swap .mn-now-t{animation-delay:.06s}
-@keyframes now-in{from{opacity:0;transform:translateY(14px)}}
-.mn-now-go{display:flex;align-items:center;gap:16px;margin-top:clamp(10px,2vh,24px)}
-.mn-go{position:relative;display:grid;place-items:center;width:60px;height:60px;flex:none;border-radius:50%;background:var(--accent);color:var(--accent-ink);
-  box-shadow:0 0 0 0 rgba(48,247,123,.4),0 0 34px rgba(48,247,123,.3);transition:transform .4s var(--ease-out),box-shadow .4s var(--ease)}
-.mn-go svg{width:22px;height:22px;transition:transform .4s var(--ease-out)}
-.mn-hint{font-size:var(--fs-small);color:var(--muted)}
-@media (hover:hover) and (pointer:fine){
-  .mn-go:hover{transform:scale(1.06);box-shadow:0 0 0 8px rgba(48,247,123,.12),0 0 44px rgba(48,247,123,.45)}
-  .mn-go:hover svg{transform:translateX(-4px)}
-}
+/* ---------- the Earth (when the browser can draw it; otherwise the list above is the whole menu) ----------
+   Round 5: the list on the start side, the opening's Earth on the end side with the sites on it, turned to the item
+   pointed at. Phones: the list, and the Earth small under it. */
+.mn-ball{display:none}
+.mn.has-ball .mn-ball{grid-area:ball;display:block;position:relative;justify-self:center;align-self:center;aspect-ratio:1;
+  width:min(100%,calc(100svh - var(--hd-h) - clamp(32px,6vh,80px)));
+  opacity:0;transform:scale(.94);transition:opacity .3s var(--ease),transform .3s var(--ease)}
+.mn.open.has-ball .mn-ball{opacity:1;transform:none;transition:opacity 1.1s var(--ease) .12s,transform 1.6s var(--ease-out) .12s}
+.mn-ball .gl-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:pan-y;cursor:grab;-webkit-tap-highlight-color:transparent;
+  -webkit-mask-image:none;mask-image:none}
+.mn-ball .gl-canvas.is-grab{cursor:grabbing}
 @media (min-width:1024px){
-  .mn.has-ball .mn-in{grid-template-columns:minmax(0,.95fr) minmax(0,1.5fr) minmax(0,.8fr);grid-template-rows:var(--hd-h) minmax(0,1fr) auto;
-    grid-template-areas:"top top top" "now ball nav" "now ball side";column-gap:clamp(24px,3vw,72px)}
+  .mn.has-ball .mn-in{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);grid-template-rows:var(--hd-h) minmax(0,1fr) auto;
+    grid-template-areas:"top top" "nav ball" "side ball";column-gap:clamp(24px,4vw,112px)}
   .mn.has-ball .mn-top{grid-area:top}
   .mn.has-ball .mn-nav{grid-area:nav;align-self:center}
   .mn.has-ball .mn-side{grid-area:side}
-  .mn.has-ball .mn-it a{grid-template-columns:3.2ch minmax(0,1fr);padding:clamp(8px,1.3vh,14px) 0}
-  .mn.has-ball .mn-t{font-family:var(--text);font-weight:400;font-size:clamp(17px,1.2vw,24px);line-height:1.3}
-  .mn.has-ball .mn-it a:hover .mn-t{transform:translateX(-6px)}
+  .mn.has-ball .mn-ball .gl-canvas{touch-action:none}
 }
 @media (max-width:1023px){
-  .mn.has-ball .mn-in{grid-template-rows:var(--hd-h) auto auto auto auto;grid-template-areas:"top" "ball" "now" "nav" "side";row-gap:clamp(14px,2.4vh,28px)}
+  .mn.has-ball .mn-in{grid-template-rows:var(--hd-h) auto auto auto;grid-template-areas:"top" "nav" "ball" "side";row-gap:clamp(12px,2.4vh,28px)}
   .mn.has-ball .mn-top{grid-area:top}
-  .mn.has-ball .mn-ball{width:min(100%,44svh,560px);margin-top:-1vh}
-  .mn.has-ball .mn-now{grid-template-columns:auto minmax(0,auto) auto;justify-content:center;align-items:center;column-gap:14px;gap:0 14px;margin-top:-8px}
-  .mn.has-ball .mn-now-t{font-size:clamp(28px,7.6vw,52px);max-width:none;white-space:nowrap}
-  .mn.has-ball .mn-now-go{margin:0}
-  .mn.has-ball .mn-go{width:52px;height:52px}
-  .mn-hint{display:none}
-  .mn.has-ball .mn-nav{grid-area:nav;padding-top:0}
-  .mn.has-ball .mn-side{grid-area:side}
-  .mn.has-ball .mn-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:clamp(16px,4vw,40px)}
-  .mn.has-ball .mn-it a{grid-template-columns:3ch minmax(0,1fr);padding:clamp(8px,1.2vh,12px) 0;min-height:44px}
-  .mn.has-ball .mn-t{font-family:var(--text);font-weight:400;font-size:clamp(16px,4.2vw,22px);line-height:1.3}
-  .mn.has-ball .mn-contact{grid-template-columns:auto 1fr;align-items:center;column-gap:16px}
-  .mn.has-ball .mn-contact > :not(.mn-tel):not(.btn){display:none}
-  .mn.has-ball .mn-contact .btn{margin-top:0;width:auto;justify-self:end}
+  .mn.has-ball .mn-nav{grid-area:nav}
+  .mn.has-ball .mn-ball{width:min(64vw,34svh,380px)}
+  .mn.has-ball .mn-side{grid-area:side;align-items:center}
 }
-@media (max-width:379px){.mn.has-ball .mn-contact .btn{padding:0 18px;font-size:15px}}
 @media (prefers-reduced-motion:reduce){
   .mn *,.mn{transition-duration:.01ms!important;transition-delay:0s!important}
   .mn-dot i{animation:none}
@@ -348,28 +340,34 @@ html.lenis,html.lenis body{height:auto}
 /* the globe melts into the living night at the stage foot, so when the stage leaves there is no edge, only the trail */
 /* readability: the words sit over the far side of the scene, never over the bright source */
 .gl-stage::after{content:"";position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(to top,rgba(0,11,38,.82) 0%,rgba(0,11,38,.35) 26%,rgba(0,11,38,0) 46%);opacity:var(--scrim,1)}
-.gl-lines,.gl-trail{overflow:visible}
-/* the trail and the pins ride above the shade, so the trail meets the domains at full brightness */
-.gl-lines,.gl-trail,.gl-pins{z-index:1}
-.gl-lines path{fill:none;stroke:rgba(243,246,252,.34);stroke-width:1;transition:stroke .2s var(--ease)}
-.gl-lines path.is-soft{stroke-dasharray:3 4}
-.gl-lines path.on{stroke:var(--accent)}
+  background:linear-gradient(to top,rgba(var(--n0),.82) 0%,rgba(var(--n0),.35) 26%,rgba(var(--n0),0) 46%);opacity:var(--scrim,1)}
+.gl-trail{overflow:visible}
+/* the trail and the links ride above the shade, so the trail meets the domains at full brightness */
+.gl-trail,.gl-pins{z-index:1}
 .gl-pins{pointer-events:none}
-.gl-dot{/* qa-allow: physical: the script places it in px from the canvas's left edge (projected globe point) */position:absolute;left:0;top:0;width:4px;height:4px;translate:-50% -50%;border-radius:50%;background:rgba(243,246,252,.8);opacity:0}
-.gl-dot.on{background:var(--accent)}
-.gl-pin{/* qa-allow: physical: placed by the script in px from the canvas's left edge, next to its globe point */position:absolute;left:0;top:0;pointer-events:auto;visibility:hidden;opacity:0;display:inline-flex;align-items:center;gap:8px;min-height:38px;padding:0 16px;
-  border-radius:999px;background:rgba(0,16,51,.42);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px var(--line);
-  font-size:15px;font-weight:400;color:var(--ink);text-decoration:none;white-space:nowrap;transition:background .3s var(--ease),box-shadow .3s var(--ease)}
-.gl-pin b{font-weight:400;font-size:12px;letter-spacing:.1em;color:var(--accent)}
-.gl-pin.is-soft{background:rgba(0,16,51,.28);color:var(--muted)}
-.gl-pin.is-soft b{color:var(--muted)}
-@media (hover:hover) and (pointer:fine){.gl-pin:hover{background:rgba(0,32,96,.7);box-shadow:inset 0 0 0 1px rgba(48,247,123,.6)}}
-.is-tall .gl-pin{/* on phones the pill stays small and the finger still gets 44px: the pill is drawn inside a taller clear target */min-height:44px;padding:0 12px;font-size:13px;
-  background:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;isolation:isolate}
-.is-tall .gl-pin::before{content:"";position:absolute;inset:6px 0;z-index:-1;border-radius:999px;background:rgba(0,16,51,.42);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px var(--line)}
-.is-tall .gl-pin.is-soft::before{background:rgba(0,16,51,.28)}
-.gl-stage.is-tall::after{background:linear-gradient(to top,rgba(0,11,38,.94) 0%,rgba(0,11,38,.62) 34%,rgba(0,11,38,0) 58%)}
+/* round 5: no labels on the Earth. Each model is its own link, a clear round target over it (44px at least, the script
+   sizes it to the model); pointing at it or focusing it lights the model's ring and opens its domain's card */
+.gl-pin{/* qa-allow: physical: placed by the script in px from the canvas's left edge, centred on its model */position:absolute;left:0;top:0;width:44px;height:44px;pointer-events:auto;visibility:hidden;
+  border-radius:50%;color:var(--ink);text-decoration:none;-webkit-tap-highlight-color:transparent;outline-offset:4px}
+.gl-pin:focus-visible{outline:1px solid var(--accent)}
+.gl-card{position:absolute;display:grid;grid-template-columns:auto 1fr;align-items:start;gap:3px 12px;width:max-content;max-width:min(300px,74vw);padding:14px 18px 16px;
+  border-radius:16px;background:rgba(0,14,46,.66);-webkit-backdrop-filter:blur(16px) saturate(1.2);backdrop-filter:blur(16px) saturate(1.2);
+  box-shadow:inset 0 0 0 1px rgba(48,247,123,.26),0 24px 48px -12px rgba(0,5,22,.7);text-align:start;
+  opacity:0;visibility:hidden;transform:translateY(8px) scale(.97);transition:opacity .35s var(--ease),transform .45s var(--ease),visibility 0s .45s;pointer-events:none}
+.gl-card > *{grid-column:2}
+.gl-card .gc-i{grid-column:1;grid-row:1 / span 3;width:22px;height:22px;margin-top:2px;fill:none;stroke:var(--accent);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 6px rgba(48,247,123,.55))}
+.gl-card em{font-style:normal;font-size:12px;letter-spacing:.06em;color:var(--accent)}
+.gl-card b{font-weight:500;font-size:16px;line-height:1.3;color:var(--ink)}
+.gl-card span{font-size:13.5px;line-height:1.5;color:var(--ink-soft)}
+.gl-pin.is-soft .gl-card .gc-i{stroke:var(--muted);filter:none}
+/* the card opens above its model, or under it near the top of the screen; the script sets its left edge (in px from the
+   link's left edge) so it stays on the screen */
+.gl-pin[data-at="t"] .gl-card{bottom:calc(100% + 8px)}
+.gl-pin[data-at="b"] .gl-card{top:calc(100% + 8px)}
+.gl-pin.is-on .gl-card,.gl-pin:focus-visible .gl-card{opacity:1;visibility:inherit;transform:none;transition:opacity .35s var(--ease),transform .45s var(--ease),visibility 0s}
+@media (hover:hover) and (pointer:fine){.gl-pin:hover .gl-card{opacity:1;visibility:inherit;transform:none;transition:opacity .35s var(--ease),transform .45s var(--ease),visibility 0s}}
+@media (prefers-reduced-motion:reduce){.gl-card{transform:none;transition:opacity .01ms,visibility 0s}}
+.gl-stage.is-tall::after{background:linear-gradient(to top,rgba(var(--n0),.94) 0%,rgba(var(--n0),.62) 34%,rgba(var(--n0),0) 58%)}
 
 /* the opening: a giant, staggered line at the foot of the globe; the way on sits beside its second line */
 .hero{position:relative;z-index:2;margin-top:-100vh;margin-top:-100svh;min-height:100vh;min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end;
@@ -382,6 +380,14 @@ html.lenis,html.lenis body{height:auto}
    measures where that line ends; without it they stand under the line) */
 .hero-side{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;max-width:100%;width:fit-content;margin-top:clamp(20px,3vh,32px);pointer-events:auto}
 .hero.is-beside .hero-side{position:absolute;margin:0;inset-inline-start:var(--side-x);top:var(--side-t);flex-wrap:nowrap}
+/* round 5 (Idan: "the title higher, not at the bottom"): on wide landscape screens the line stands high on the start
+   side in the open night beside the globe, in three lines, the ways on under it. The script sizes it so no line reaches
+   the globe's rim (?title=low keeps the round 4 layout) */
+.hero.is-top{justify-content:flex-start;padding-top:calc(var(--hd-h) + clamp(12px,3.5vh,48px)) /* qa-allow: sec: the opening's words start under the header, this is not a section's rhythm */}
+.hero.is-top h1{font-size:var(--fs-top,var(--fs-hero));max-width:6.4em}
+.hero.is-top .hero-side{margin-top:clamp(24px,4vh,48px);max-width:36vw}
+.gl-stage.has-top::after{background:linear-gradient(to top,rgba(var(--n0),.6) 0%,rgba(var(--n0),.2) 22%,rgba(var(--n0),0) 38%)}
+.has-top .gl-canvas{-webkit-mask-image:linear-gradient(to bottom,#000 72%,rgba(0,0,0,.6) 88%,transparent);mask-image:linear-gradient(to bottom,#000 72%,rgba(0,0,0,.6) 88%,transparent)}
 .route{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:0 6px;font-size:16px;font-weight:400;color:var(--ink);text-decoration:none;
   transition:color .3s var(--ease)}
 .route i{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);flex:none}
@@ -393,7 +399,7 @@ html.lenis,html.lenis body{height:auto}
 .intro-kick{font-family:var(--text);letter-spacing:0;font-size:var(--fs-small);font-weight:400;color:var(--muted);display:flex;align-items:center;gap:12px}
 .intro-kick::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
 .intro-tag{font-size:var(--fs-body);color:var(--ink-soft);max-width:42ch}
-.intro-say{font-family:var(--display);font-size:var(--fs-say);line-height:1.34;font-weight:300;letter-spacing:0;color:var(--ink)}
+.intro-say{font-family:var(--display);font-size:var(--fs-say);line-height:1.34;font-weight:var(--dw);letter-spacing:0;color:var(--ink)}
 .intro-say .w{opacity:var(--wo,.16);transition:opacity .2s linear}
 
 
@@ -416,7 +422,7 @@ html.lenis,html.lenis body{height:auto}
 /* ---------- domains: the trail runs through three pictures and powers each one on ---------- */
 /* the band's loose outer strands may run past the screen edge on the rail: cut there (the y side stays open, the band runs on into the next section) */
 .dom{position:relative;z-index:1;overflow-x:clip;padding:var(--sec) var(--gutter) clamp(64px,9vh,128px)}
-.dom-trail{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}
+.dom-trail{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
 .dom-head{position:relative;z-index:2;display:grid;gap:clamp(14px,2vh,24px);justify-items:start;width:min(100%,clamp(520px,52vw,1400px));margin-bottom:clamp(64px,14vh,192px)}
 .dom-head h2{font-size:var(--fs-h2);line-height:1.06}
 .dom-lead{max-width:52ch;font-size:var(--fs-body);line-height:1.6;color:var(--ink-soft)}
@@ -427,59 +433,64 @@ html.lenis,html.lenis body{height:auto}
 .sc-copy{position:relative;display:grid;justify-items:start;gap:clamp(12px,1.8vh,24px);flex:1;min-width:0;max-width:clamp(380px,34vw,900px)}
 /* the numeral is a battery: outlined at rest, it fills with green as the trail powers its picture */
 /* the leading is tighter than the font's own box, so the space under it carries that box's foot (.14em): the title never sits in it */
-.sc-n{display:block;font-family:var(--display);font-size:var(--fs-num);line-height:1;font-weight:300;letter-spacing:-.01em;padding-top:.14em;margin:-.14em 0 clamp(8px,1.2vh,14px);
+.sc-n{display:block;font-family:var(--display);font-size:var(--fs-num);line-height:1;font-weight:var(--dw);letter-spacing:-.01em;padding-top:.14em;margin:-.14em 0 clamp(8px,1.2vh,14px);
   color:transparent;
   background:linear-gradient(to top,var(--accent) calc(var(--pw,0) * 100%),rgba(243,246,252,.13) calc(var(--pw,0) * 100%));-webkit-background-clip:text;background-clip:text;
   filter:drop-shadow(0 0 calc(var(--pw,0) * 24px) rgba(48,247,123,.35))}
 .sc-copy h3{font-size:var(--fs-h3);line-height:1.02;letter-spacing:-.018em}
 .sc-copy p{font-size:var(--fs-lead);line-height:1.45;color:var(--ink-soft);max-width:30ch}
 
-/* the drawing of each domain (round 4, after Liav's crane page): a technical elevation, planes in a lifted night with
-   fine light lines, a hatched ground, numbered callouts and one dimension in green. It waits pale; as the trail passes
-   through it (behind its planes: the energy goes into the machine) a scan runs down it and colours it in, and the
-   battery's modules then charge from the bottom row up. Self-made, on a 480 by 360 grid */
-.shot{position:relative;flex:none;width:clamp(320px,42vw,1080px);margin:0;display:grid;gap:clamp(12px,1.6vh,20px)}
-.shot::before{content:"";position:absolute;inset:4% 8% 16%;border-radius:50%;background:radial-gradient(closest-side,rgba(48,247,123,.1),rgba(48,247,123,0));
-  opacity:var(--pw,0);pointer-events:none}
-.emb{position:relative;display:block;width:100%;height:auto;aspect-ratio:4/3;overflow:visible;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.emb *{vector-effect:non-scaling-stroke}
-.ic-base{stroke:rgba(243,246,252,.46);stroke-width:1.25}
-.ic-base .pl,.ic-base .mod{fill:#071B4C}
-.ic-base .face,.ic-base .bay{fill:#0A2560}
-.ic-base .cell,.ic-base .ht,.ic-base .ext{stroke:rgba(243,246,252,.2)}
-.ic-base .gr{stroke:rgba(243,246,252,.34)}
-.ic-base .ray{stroke:rgba(243,246,252,.2)}
-.ic-base .dim{stroke:rgba(48,247,123,.42)}
-.ray{stroke-dasharray:3 6}
-.ext{stroke-dasharray:2 4}
-.cl circle{stroke:none}
-.cl text{stroke:none;font-family:var(--text);font-size:11px;font-weight:500;text-anchor:middle}
-.ic-base .cl circle{fill:rgba(243,246,252,.86)}
-.ic-base .cl text{fill:var(--night-0)}
-.ic-lit{stroke:var(--accent);stroke-width:1.5;filter:drop-shadow(0 0 4px rgba(48,247,123,.5))}
-.ic-lit .pl{fill:#0C3550}
-.ic-lit .face,.ic-lit .bay{fill:#0E4658}
-.ic-lit .sun{fill:#1B7A56}
-.ic-lit .scr{fill:#14604F}
-.ic-lit .glass{fill:#0D3D63}
-.ic-lit .cell{stroke:rgba(48,247,123,.62)}
-.ic-lit .gr,.ic-lit .ray{stroke:rgba(48,247,123,.55)}
-.ic-lit .ht,.ic-lit .ext{stroke:rgba(48,247,123,.32)}
-.ic-lit .dim{stroke-width:2}
-/* the battery charges once the scan has passed: a module after another, the bottom row first */
-.ic-lit .mod{fill:rgb(calc(12 + 36 * var(--q)) calc(53 + 194 * var(--q)) calc(80 + 43 * var(--q)));--q:clamp(0, (var(--pw,0) - .5 - var(--m,0) * .034) / .07, 1)}
-.ic-lit .cl circle{fill:var(--accent)}
-.ic-lit .cl text{fill:var(--accent-ink)}
-.scan{stroke:var(--accent);stroke-width:1.5;opacity:0;filter:drop-shadow(0 0 6px rgba(48,247,123,.9));transition:opacity .3s var(--ease)}
-.shot.is-scan .scan{opacity:.7}
-/* the key under the drawing, as on the crane page */
-.key{font-size:var(--fs-small);line-height:2;color:var(--muted)}
+/* each domain is one machine (round 5, the meeting of 18.10): a realistic studio render with no backdrop, floating in
+   the night: Idan's charging station, and a row of panels and a battery container made in its image. It waits dimmed;
+   the trail goes in behind it, a ring of the same fibres wraps it (the back half behind the machine, the front half over
+   it) and a scan runs down it as the head passes, lighting it. Two numbered points and a one-line key, nothing more.
+   The machine never crops: its box keeps the render's own shape, at most .78 of the column's width tall */
+.shot{position:relative;flex:none;width:clamp(320px,40vw,1040px);margin:0;display:grid;justify-items:center;gap:clamp(18px,2.6vh,32px);container-type:inline-size}
+.obj{position:relative;display:block;aspect-ratio:var(--ar);width:min(calc(100cqw * var(--k,1)),calc(78cqw * var(--ar)));
+  animation:obj-float 7s ease-in-out infinite}
+.shot[data-obj="storage"] .obj{--k:.88}
+@keyframes obj-float{50%{transform:translateY(-6px)}}
+.obj::before{content:"";position:absolute;inset:-16% -12% -8%;border-radius:50%;pointer-events:none;
+  background:radial-gradient(closest-side,rgba(48,247,123,.15),rgba(32,120,255,.06) 55%,rgba(48,247,123,0));opacity:calc(.2 + var(--pw,0) * .8)}
+/* the ground it floats over: a soft pool of light, no floor */
+.obj::after{content:"";position:absolute;inset-inline:12%;bottom:-6%;height:7%;border-radius:50%;pointer-events:none;
+  background:radial-gradient(closest-side,rgba(48,247,123,.32),rgba(48,247,123,0));filter:blur(4px);opacity:calc(.15 + var(--pw,0) * .85)}
+.obj img{position:absolute;inset:0;display:block;width:100%;height:100%}
+.o-dim{filter:brightness(.34) saturate(.5)}
+.o-lit{clip-path:inset(0 0 calc(100% - var(--pw,0) * 100%) 0)}
+.shot.is-lit .o-lit{clip-path:none;filter:drop-shadow(0 0 26px rgba(48,247,123,.16))}
+/* the scan: a band of light on the machine itself (masked by its own shape), at the edge of the lit part */
+.o-scan{position:absolute;inset:0;opacity:0;pointer-events:none;mix-blend-mode:screen;transition:opacity .3s var(--ease);
+  background:linear-gradient(to bottom,rgba(48,247,123,0) calc(var(--pw,0) * 100% - 12%),rgba(48,247,123,.32) calc(var(--pw,0) * 100% - 1.2%),rgba(214,255,230,.9) calc(var(--pw,0) * 100% - .25%),rgba(48,247,123,0) calc(var(--pw,0) * 100% + .25%));
+  -webkit-mask:var(--m) center/100% 100% no-repeat;mask:var(--m) center/100% 100% no-repeat}
+.shot[data-obj="solar"] .o-scan{--m:url(../img/dom/solar-s.webp)}
+.shot[data-obj="storage"] .o-scan{--m:url(../img/dom/storage-s.webp)}
+.shot[data-obj="charger"] .o-scan{--m:url(../img/dom/charger-s.webp)}
+.shot.is-scan .o-scan{opacity:1}
+/* the ring: three fibres of the braid (drawn by the script in the box's own pixels), the back halves first, then the
+   front ones; once the machine is lit a spark keeps running round it */
+.orb{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;filter:drop-shadow(0 0 5px rgba(48,247,123,.75))}
+.orb path{fill:none;stroke:var(--accent);stroke-linecap:round;stroke-width:var(--w);opacity:var(--o);stroke-dasharray:1 2}
+.orb-back path{stroke-dashoffset:calc(1 - var(--rb,0))}
+.orb-front path{stroke-dashoffset:calc(1 - var(--rf,0))}
+.orb .sp{stroke:#E6FFF0;stroke-width:2.6;opacity:0;stroke-dasharray:.07 2;stroke-dashoffset:.07}
+.shot.is-lit .orb .sp{opacity:1}
+.shot.is-lit .orb-back .sp{animation:orb-b 4.2s linear infinite}
+.shot.is-lit .orb-front .sp{animation:orb-f 4.2s linear infinite}
+@keyframes orb-b{0%{stroke-dashoffset:.07}50%,100%{stroke-dashoffset:-1}}
+@keyframes orb-f{0%,50%{stroke-dashoffset:.07}100%{stroke-dashoffset:-1}}
+.pin{/* qa-allow: physical: a point on the render, which is never mirrored */position:absolute;left:var(--x);top:var(--y);display:grid;place-items:center;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;
+  background:rgba(243,246,252,.86);color:var(--night-0);font-size:11px;font-weight:500;line-height:1;box-shadow:0 0 0 5px rgba(243,246,252,.1);transition:background .5s var(--ease),box-shadow .5s var(--ease)}
+.shot.is-lit .pin{background:var(--accent);color:var(--accent-ink);box-shadow:0 0 0 5px rgba(48,247,123,.18),0 0 18px rgba(48,247,123,.5)}
+/* the key under the machine */
+.key{font-size:var(--fs-small);line-height:2;color:var(--muted);text-align:center}
 .key span{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;margin-inline:20px 8px;vertical-align:-4px;
   background:rgba(243,246,252,.86);color:var(--night-0);font-size:11px;font-weight:500;line-height:1;transition:background .5s var(--ease)}
 .key span:first-child{margin-inline-start:0}
 .shot.is-lit .key span{background:var(--accent);color:var(--accent-ink)}
 .s1 .shot,.s3 .shot{margin-inline-end:clamp(0px,2vw,48px)}
 .s2 .shot{margin-inline-start:clamp(0px,2vw,48px)}
+@media (prefers-reduced-motion:reduce){.obj,.shot.is-lit .orb .sp{animation:none}}
 
 /* what is coming and what is growing */
 .dom-more{position:relative;z-index:2;display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px 40px;margin-top:clamp(72px,12vh,160px);
@@ -498,7 +509,7 @@ html.lenis,html.lenis body{height:auto}
   .scene{display:grid;grid-template-columns:minmax(0,1fr);row-gap:14px}
   .sc-n{order:-3;font-size:clamp(68px,21vw,124px);margin-bottom:6px}
   .sc-copy h3{order:-2;margin-bottom:8px}
-  .shot,.s1 .shot,.s2 .shot,.s3 .shot{order:-1;width:auto;max-width:560px;margin:4px 0 12px;margin-inline-start:var(--rail-pad)}
+  .shot,.s1 .shot,.s2 .shot,.s3 .shot{order:-1;width:auto;max-width:560px;margin:28px 0 40px;margin-inline-start:var(--rail-pad)}
   .sc-copy p{max-width:34ch}
   .dom-more{flex-direction:column;align-items:flex-start;margin-top:clamp(112px,16vh,160px);margin-inline-start:var(--rail-pad)}
 }
@@ -524,7 +535,7 @@ html.lenis,html.lenis body{height:auto}
 .figs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:clamp(20px,3vw,88px);margin:clamp(40px,8vh,112px) 0 0}
 .js .figs{--q:0}
 .fig{position:relative;display:grid;align-content:start;gap:clamp(10px,1.4vh,18px)}
-.fig-v{display:flex;align-items:flex-start;justify-content:flex-end;direction:ltr;font-family:var(--display);font-size:var(--fs-num);line-height:1;font-weight:300;letter-spacing:-.01em;color:var(--ink)}
+.fig-v{display:flex;align-items:flex-start;justify-content:flex-end;direction:ltr;font-family:var(--display);font-size:var(--fs-num);line-height:1;font-weight:var(--dw);letter-spacing:-.01em;color:var(--ink)}
 .fig-v small{order:9;align-self:flex-start;margin:.3em 0 0 .6em;font-family:var(--text);font-size:var(--fs-small);font-weight:400;letter-spacing:0;color:var(--muted)}
 .fig-v em{font-style:normal;color:var(--accent);font-size:.56em;margin-top:.1em;letter-spacing:0}
 .fig dd{margin:0;max-width:24ch;font-size:var(--fs-body);line-height:1.45;color:var(--ink-soft)}
@@ -557,7 +568,7 @@ html.lenis,html.lenis body{height:auto}
 .cell > :not(.cell-fill){position:relative}
 .cell-n{grid-row:1;font-size:var(--fs-small);color:var(--muted);transition:color .5s var(--ease)}
 .cell.is-full .cell-n{color:var(--accent)}
-.cell h3{grid-row:3;font-family:var(--display);font-weight:300;font-size:clamp(25px,2vw,58px);line-height:1.1;letter-spacing:0;color:var(--ink);
+.cell h3{grid-row:3;font-family:var(--display);font-weight:var(--dw);font-size:clamp(25px,2vw,58px);line-height:1.1;letter-spacing:0;color:var(--ink);
   opacity:calc(.5 + .5 * var(--c))}
 .cell p{grid-row:4;margin-top:clamp(12px,1.6vh,24px);max-width:40ch;font-size:var(--fs-body);line-height:1.6;color:var(--ink-soft)}
 @supports not (grid-template-rows:subgrid){
@@ -589,7 +600,7 @@ html.lenis,html.lenis body{height:auto}
 .proc-head{display:grid;gap:clamp(14px,2vh,24px);justify-items:start;margin-bottom:clamp(56px,9vh,128px)}
 /* wide screens: room for the trail to run between the heading and the steps */
 @media (min-width:1024px){.proc-head{margin-bottom:clamp(112px,16vh,192px)}}
-.proc-head h2,.calc-head h2{font-size:var(--fs-h2);line-height:1.06}
+.proc-head h2{font-size:var(--fs-h2);line-height:1.06}
 .proc-run{position:relative}
 .proc-trail{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
 /* five steps on two rows: odd ones above the current, even ones below, each a little further along it */
@@ -610,7 +621,7 @@ html.lenis,html.lenis body{height:auto}
 .step::before{content:"";position:absolute;inset-inline-start:0;width:1px;background:linear-gradient(var(--line-strong),transparent)}
 .step:nth-child(odd)::before{top:100%;height:calc(var(--band) * .22);background:linear-gradient(transparent,var(--line-strong))}
 .step:nth-child(even)::before{top:calc(var(--band) * -.22);height:calc(var(--band) * .22)}
-.step-n{font-family:var(--display);font-size:clamp(40px,3.7vw,104px);line-height:1;font-weight:300;letter-spacing:0;color:rgba(243,246,252,.2);
+.step-n{font-family:var(--display);font-size:clamp(40px,3.7vw,104px);line-height:1;font-weight:var(--dw);letter-spacing:0;color:rgba(243,246,252,.2);
   transition:color .7s var(--ease),text-shadow .7s var(--ease)}
 .step h3{font-size:clamp(22px,1.65vw,46px);line-height:1.14;letter-spacing:-.01em;font-weight:500;color:var(--ink);opacity:.62;transition:opacity .7s var(--ease)}
 .step p{font-size:var(--fs-small);line-height:1.6;color:var(--muted);max-width:36ch;transition:color .7s var(--ease)}
@@ -619,49 +630,14 @@ html.lenis,html.lenis body{height:auto}
 .step.on p{color:var(--ink-soft)}
 .step.on .step-node{background:#EFFFF5;box-shadow:0 0 0 5px rgba(48,247,123,.22),0 0 22px var(--accent);transform:scale(1.15)}
 
-/* ---------- the calculator ---------- */
-.calc{position:relative;z-index:1;padding:var(--sec) 0 clamp(64px,10vh,144px)}
-.calc-top,.calc-in > :not(.line),.lf{padding-inline:var(--gutter)}
-.calc-top{display:flex;align-items:flex-end;justify-content:space-between;gap:clamp(24px,4vw,128px)}
-.calc-head{display:grid;gap:clamp(14px,2vh,24px);justify-items:start}
-.calc-out{display:grid;justify-items:end;gap:clamp(6px,1vh,12px);text-align:end;min-width:0}
-.calc-lbl{font-size:var(--fs-small);color:var(--muted)}
-.calc-v{display:flex;align-items:baseline;gap:.22em;font-family:var(--display);font-size:clamp(34px,4.1vw,120px);line-height:1.04;font-weight:300;letter-spacing:-.005em;color:var(--ink);white-space:nowrap}
-.calc-v i{font-family:var(--text);font-style:normal;font-size:.4em;letter-spacing:0;color:var(--muted);align-self:center}
-.calc-cur{color:var(--accent);font-size:.6em}
-.calc-meta{font-size:var(--fs-small);color:var(--ink-soft)}
-.calc-meta b{font-weight:500;color:var(--ink)}
-.calc-in{margin-top:clamp(40px,7vh,96px)}
-.where{display:flex;flex-wrap:wrap;gap:8px 10px;margin:0;padding:0;border:0;min-width:0}
-.where legend{float:inline-start;width:100%;margin-bottom:14px;font-size:var(--fs-small);color:var(--muted)}
-.where label,.topic label{position:relative;display:inline-flex;cursor:pointer}
-.where input,.topic input{position:absolute;opacity:0;width:1px;height:1px}
-.where span,.topic span{display:inline-flex;align-items:center;min-height:46px;padding:0 20px;border-radius:999px;font-size:16px;font-weight:400;color:var(--ink);
-  box-shadow:inset 0 0 0 1px var(--line-strong);background:rgba(0,16,51,.25);transition:background .3s var(--ease),color .3s var(--ease),box-shadow .3s var(--ease)}
-.where input:checked + span,.topic input:checked + span{background:var(--accent);color:var(--accent-ink);box-shadow:none}
-.where input:focus-visible + span,.topic input:focus-visible + span{outline:2px solid var(--accent);outline-offset:3px}
-@media (hover:hover) and (pointer:fine){.where label:hover span,.topic label:hover span{box-shadow:inset 0 0 0 1px rgba(48,247,123,.7)}}
-.size{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-top:clamp(28px,5vh,56px)}
-.size-lbl{font-size:var(--fs-small);color:var(--muted)}
-.size-v{font-family:var(--display);font-size:clamp(22px,1.9vw,54px);line-height:1.1;font-weight:300;letter-spacing:0;color:var(--ink)}
-/* the line: edge to edge, the braid lights up to the knob */
-.line{position:relative;height:clamp(96px,13vh,150px);margin-top:4px}
-.line-trail{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
-.line::before{content:"";position:absolute;inset-inline:0;top:50%;height:1px;background:var(--line);pointer-events:none}
-.line::after{/* qa-allow: physical: --kx is the knob's x in px from the left, the same frame the range input reports in */content:"";position:absolute;left:var(--kx,50%);top:50%;width:42px;height:42px;translate:-50% -50%;border-radius:50%;pointer-events:none;
-  background:radial-gradient(circle,#F2FFF7 0 5px,rgba(48,247,123,.25) 6px 100%);box-shadow:0 0 0 1px rgba(48,247,123,.7),0 0 30px rgba(48,247,123,.45);
-  transition:transform .3s var(--ease-out)}
-.line:has(.line-in:active)::after{transform:scale(1.18)}
-.line:has(.line-in:focus-visible)::after{outline:2px solid var(--accent);outline-offset:6px}
-.line-in{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:grab;touch-action:pan-y;-webkit-appearance:none;appearance:none;background:transparent}
-/* the real thumb is 44px wide and as tall as the line, so the drawn knob (placed by the script) always sits on it */
-.line-in::-webkit-slider-runnable-track{height:100%;background:transparent;border:0}
-.line-in::-webkit-slider-thumb{-webkit-appearance:none;width:44px;height:100%;border:0;background:transparent}
-.line-in::-moz-range-track{height:100%;background:transparent;border:0}
-.line-in::-moz-range-thumb{width:44px;height:100%;border:0;border-radius:0;background:transparent}
-.line-in:active{cursor:grabbing}
-.line-ends{position:absolute;inset-inline:var(--gutter);bottom:0;display:flex;justify-content:space-between;font-size:13px;color:var(--muted);pointer-events:none}
-.calc-note{margin-top:clamp(14px,2vh,24px);font-size:var(--fs-small);color:var(--muted);max-width:70ch}
+/* ---------- the close form's topic chips ---------- */
+.topic label{position:relative;display:inline-flex;cursor:pointer}
+.topic input{position:absolute;opacity:0;width:1px;height:1px}
+.topic span{display:inline-flex;align-items:center;min-height:46px;padding:0 20px;border-radius:999px;font-size:16px;font-weight:400;color:var(--ink);
+  box-shadow:inset 0 0 0 1px var(--line-strong);background:rgba(var(--n1),.25);transition:background .3s var(--ease),color .3s var(--ease),box-shadow .3s var(--ease)}
+.topic input:checked + span{background:var(--accent);color:var(--accent-ink);box-shadow:none}
+.topic input:focus-visible + span{outline:2px solid var(--accent);outline-offset:3px}
+@media (hover:hover) and (pointer:fine){.topic label:hover span{box-shadow:inset 0 0 0 1px rgba(48,247,123,.7)}}
 
 /* the lead: the fields are lines, like everything else that carries something */
 .lf{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr) auto;align-items:end;column-gap:clamp(16px,2.4vw,56px);row-gap:18px;
@@ -699,7 +675,7 @@ html.lenis,html.lenis body{height:auto}
 .work-img::before,.work-img::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none}
 .work-img::before{background:linear-gradient(160deg,#0A3A9A,#000B26);mix-blend-mode:multiply;opacity:.55}
 /* a floor of night under the words; the one being covered sinks into the night */
-.work-img::after{background:linear-gradient(to top,rgba(0,11,38,.92),rgba(0,11,38,.4) 40%,rgba(0,11,38,0) 68%);box-shadow:inset 0 0 0 100vmax rgba(0,11,38,calc(var(--d) * .62))}
+.work-img::after{background:linear-gradient(to top,rgba(var(--n0),.92),rgba(var(--n0),.4) 40%,rgba(var(--n0),0) 68%);box-shadow:inset 0 0 0 100vmax rgba(var(--n0),calc(var(--d) * .62))}
 /* the last project has nothing sliding over it: its picture dissolves into the night at the foot, so the voices below
    come up out of the same night with no edge between them */
 .work:last-child .work-img{-webkit-mask-image:linear-gradient(to bottom,#000 58%,transparent);mask-image:linear-gradient(to bottom,#000 58%,transparent)}
@@ -707,7 +683,7 @@ html.lenis,html.lenis body{height:auto}
 /* the next project slides over this one: its words go out before they would sit under the next one's */
 .work-t,.work-n{opacity:calc(1 - var(--d) * 1.6)}
 .work-t{position:relative;display:grid;justify-items:start;gap:clamp(8px,1.4vh,16px);padding:0 calc(var(--edge) + var(--gutter)) clamp(28px,6vh,88px)}
-.work-t h3{font-family:var(--display);font-weight:300;font-size:clamp(40px,6.2vw,176px);line-height:1.02;letter-spacing:-.005em;max-width:16ch}
+.work-t h3{font-family:var(--display);font-weight:var(--dw);font-size:clamp(40px,6.2vw,176px);line-height:1.02;letter-spacing:-.005em;max-width:16ch}
 .work-n{position:absolute;top:clamp(20px,3vh,36px);inset-inline-end:calc(var(--edge) + var(--gutter));font-size:var(--fs-small);color:var(--ink-soft)}
 
 /* ---------- what clients say: two rows the scroll moves past each other ---------- */
@@ -771,8 +747,9 @@ html.lenis,html.lenis body{height:auto}
 .kn.is-run .kn-view{overflow:visible;scroll-snap-type:none;display:flex;align-items:center;min-height:0}
 .kn.is-run .kn-track{transform:translate3d(var(--kx,0px),0,0);will-change:transform}
 .kn.is-run .kn-track .art{transform:scale(var(--ks,.92));transform-origin:50% 50%}
-.kn.is-run .art-img img{filter:saturate(calc(.55 + var(--kl,0) * .35)) brightness(calc(.62 + var(--kl,0) * .26))}
-.kn.is-run .art-img::after{opacity:calc(.72 - var(--kl,0) * .3)}
+/* round 5 (Idan: "a bit darkened"): lighter all along, and the article in focus comes nearly to daylight */
+.kn.is-run .art-img img{filter:saturate(calc(.78 + var(--kl,0) * .22)) brightness(calc(.84 + var(--kl,0) * .2))}
+.kn.is-run .art-img::after{opacity:calc(.48 - var(--kl,0) * .34)}
 .kn.is-run .art .art-t-wrap{opacity:calc(.5 + var(--kl,0) * .5)}
 .art{position:relative;overflow:hidden;isolation:isolate;display:grid;grid-template-rows:auto 1fr;gap:clamp(14px,2vh,24px);padding:clamp(12px,1.2vw,24px);
   border-radius:var(--r);background:rgba(243,246,252,.022);box-shadow:inset 0 0 0 1px var(--line);text-decoration:none;color:var(--ink)}
@@ -781,25 +758,28 @@ html.lenis,html.lenis body{height:auto}
   background:linear-gradient(to top,rgba(48,247,123,.12),rgba(48,247,123,.04) 46%,rgba(48,247,123,.02));
   border-inline-end:1px solid rgba(48,247,123,.7);transform:translateX(101%);transition:transform .9s var(--ease-out)}
 .art-img{position:relative;margin:0;overflow:hidden;border-radius:calc(var(--r) * .7);aspect-ratio:4/3;background:var(--night-1,#001033)}
-.art-img img{width:100%;height:100%;object-fit:cover;filter:saturate(.75) brightness(.8);transition:transform 1.2s var(--ease-out)}
+.art-img img{width:100%;height:100%;object-fit:cover;filter:saturate(.9) brightness(.96);transition:transform 1.2s var(--ease-out),filter .6s var(--ease)}
 /* the night grade of the projects: the brand navy laid over the daylight, lifted while the article is charged */
 .art-img::after,.say-pic::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(160deg,#0A3A9A,#000B26);mix-blend-mode:multiply;opacity:.62;
   transition:opacity .8s var(--ease)}
+.art-img::after{opacity:.38}
 /* every card in the strip is as tall as the tallest, and "לקריאה" sits on one line along the bottom of all of them */
 .art-t-wrap{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
 .art-go{margin-top:auto}
-.art-t{font-family:var(--display);font-weight:300;font-size:clamp(22px,1.7vw,44px);line-height:1.14;text-wrap:balance;min-height:2.28em;transition:color .4s var(--ease)}
+.art-t{font-family:var(--display);font-weight:var(--dw);font-size:clamp(22px,1.7vw,44px);line-height:1.14;text-wrap:balance;min-height:2.28em;transition:color .4s var(--ease)}
 .art-d{font-size:var(--fs-small);line-height:1.5;color:var(--ink-soft);max-width:44ch}
 .art-go{display:inline-flex;align-items:center;gap:10px;min-height:44px;font-weight:500;font-size:17px;color:var(--accent)}
 .art-go svg{width:17px;height:17px;transition:transform .4s var(--ease-out)}
 @media (hover:hover) and (pointer:fine){
   .art:hover::before{transform:none}
-  .art:hover .art-img img{transform:scale(1.04)}
-  .art:hover .art-img::after{opacity:.18}
+  .art:hover .art-img img{transform:scale(1.04);filter:saturate(1) brightness(1.08)}
+  .art:hover .art-img::after{opacity:.06}
   .art:hover .art-t{color:var(--accent)}
   .art:hover .art-go svg{transform:translateX(-5px)}
 }
 .art:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.art:focus-visible .art-img img{filter:saturate(1) brightness(1.08)}
+.art:focus-visible .art-img::after{opacity:.06}
 @media (prefers-reduced-motion:reduce){.art::before{transition:none}}
 
 /* ---------- the close: the trail ends in the button ---------- */
@@ -812,7 +792,7 @@ html.lenis,html.lenis body{height:auto}
 /* the socket: unlit until the trail arrives, then the whole button is charged */
 .plug{position:relative;z-index:2;justify-self:center;width:clamp(180px,15.5vw,320px);aspect-ratio:1;border-radius:50%;display:grid;place-content:center;justify-items:center;gap:12px;
   padding:28px;text-align:center;text-decoration:none;color:var(--ink);font-size:clamp(18px,1.35vw,28px);font-weight:500;line-height:1.2;
-  background:rgba(0,16,51,.5);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:inset 0 0 0 1px rgba(48,247,123,.45);
+  background:rgba(var(--n1),.5);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:inset 0 0 0 1px rgba(48,247,123,.45);
   transition:background .6s var(--ease),color .6s var(--ease),box-shadow .8s var(--ease),transform .5s var(--ease-out)}
 .plug svg{width:24px;height:24px;transition:transform .4s var(--ease-out)}
 .plug.is-lit{background:var(--accent);color:var(--accent-ink);box-shadow:0 0 0 1px var(--accent),0 0 90px rgba(48,247,123,.5)}
@@ -839,23 +819,37 @@ html.lenis,html.lenis body{height:auto}
 .lead-c button{justify-self:start}
 .topic{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;border:0;min-width:0}
 
-/* ---------- the footer: a giant closer ---------- */
-.ft{position:relative;z-index:1;padding:clamp(56px,9vh,128px) var(--gutter) calc(clamp(18px,3vh,32px) + env(safe-area-inset-bottom));overflow:hidden;
-  background:linear-gradient(to bottom,rgba(0,11,38,0),rgba(0,11,38,.75) 70%)}
+/* ---------- the footer: the columns over a night horizon ---------- */
+.ft{position:relative;z-index:1;padding:clamp(56px,9vh,128px) var(--gutter) calc(72px + env(safe-area-inset-bottom));overflow:hidden;
+  background:linear-gradient(to bottom,rgba(var(--n0),0),rgba(var(--n0),.75) 70%)}
 .ft-cols{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:32px clamp(18px,3vw,88px)}
 .ft-col{display:grid;align-content:start;justify-items:start}
 .ft-k{font-size:13px;color:var(--muted);margin-bottom:10px}
 .ft-col a,.ft-col span:not(.num){display:inline-flex;align-items:center;gap:.28em;min-height:44px;font-size:var(--fs-body);color:var(--ink-soft);text-decoration:none;transition:color .3s var(--ease)}
 @media (hover:hover) and (pointer:fine){.ft-col a:hover,.ft-legal a:hover{color:var(--accent)}}
-/* the name, lit from below like the rim of the planet */
-.ft-big{margin:clamp(48px,9vh,144px) 0 calc(.1em + clamp(10px,2vh,24px));font-size:clamp(50px,16.6vw,500px);line-height:.78;font-weight:300;letter-spacing:-.05em;text-align:center;white-space:nowrap}
-/* the scroll builds the name: letter after letter rises out of the planet's rim while the footer comes up (--fp,
-   0 as it enters to 1 at the end of the page). The gradient sits on each letter: clipped text on a parent of a moving
-   child is not painted reliably */
-.ft-big span{display:inline-block;direction:ltr;unicode-bidi:isolate}
-.ft-big i{--q:clamp(0, (var(--fp,1) - var(--li) * .045) / .5, 1);display:inline-block;font-style:normal;padding-bottom:.04em;color:transparent;
-  background:linear-gradient(to top,rgba(48,247,123,.95),rgba(243,246,252,.85) 38%,rgba(243,246,252,.12) 100%);-webkit-background-clip:text;background-clip:text;
-  transform:translateY(calc((1 - var(--q)) * 62%));opacity:calc(.08 + var(--q) * .92)}
+/* where the name stood (round 5, Idan: "it breaks the brand"), the planet's rim at night: the trail's light runs along the
+   horizon and the whole of it melts into the page at the sides. The scroll raises it and lights it (--fp) */
+.ft-sky{position:relative;z-index:-1;height:clamp(200px,34vh,420px);margin:0 calc(var(--gutter) * -1);pointer-events:none;
+  -webkit-mask-image:linear-gradient(to right,transparent,#000 24%,#000 76%,transparent),linear-gradient(to bottom,transparent,#000 38%,#000 82%,transparent);
+  -webkit-mask-composite:source-in;mask-image:linear-gradient(to right,transparent,#000 24%,#000 76%,transparent),linear-gradient(to bottom,transparent,#000 38%,#000 82%,transparent);
+  mask-composite:intersect}
+.ft-rim,.ft-glow{position:absolute;border-radius:50%;--ry:calc((1 - var(--fp,1)) * 110px)}
+.ft-rim{inset-inline:-75%;top:calc(56% + var(--ry));height:max(250vw,1400px);background:#000a22;
+  box-shadow:0 -1px 0 rgba(170,255,210,.55),0 -2px 8px rgba(48,247,123,.45),0 -14px 48px rgba(48,247,123,.16),0 -60px 160px rgba(40,110,255,.2),
+    inset 0 16px 44px rgba(48,247,123,.1),inset 0 60px 140px rgba(30,90,220,.12);
+  opacity:calc(.35 + var(--fp,1) * .65)}
+/* the trail's head, sliding back and forth along the horizon */
+@property --ft-a{syntax:"<angle>";inherits:false;initial-value:0deg}
+.ft-rim::before{content:"";position:absolute;inset:-2px;padding:2px;border-radius:inherit;
+  background:conic-gradient(from calc(var(--ft-a) - 9deg),rgba(190,255,220,0) 0deg,rgba(190,255,220,.95) 9deg,rgba(190,255,220,0) 18deg,rgba(190,255,220,0) 360deg);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);
+  filter:drop-shadow(0 0 6px rgba(48,247,123,.9));animation:ft-sweep 11s ease-in-out infinite alternate}
+@keyframes ft-sweep{from{--ft-a:-21deg}to{--ft-a:21deg}}
+/* the air above it, breathing slowly in the brand's blue and green */
+.ft-glow{inset-inline:8%;top:calc(56% + var(--ry) - 170px);height:340px;filter:blur(8px);
+  background:radial-gradient(50% 50% at 50% 72%,rgba(48,247,123,.15),rgba(24,84,210,.14) 46%,rgba(0,32,96,0) 74%);
+  opacity:calc(.25 + var(--fp,1) * .75);animation:ft-breathe 13s ease-in-out infinite alternate}
+@keyframes ft-breathe{from{scale:1 .92}to{scale:1.06 1.08}}
 /* the columns come up one after the other with it */
 .ft-col{--q:clamp(0, (var(--fp,1) - var(--ci,0) * .07) / .32, 1);translate:0 calc((1 - var(--q)) * 48px);opacity:calc(var(--q) * .9 + .1)}
 /* the headings drift against the page as they cross the screen (--dy, set by the scroll) */
@@ -865,18 +859,29 @@ html.lenis,html.lenis body{height:auto}
 .ft-legal{display:flex;flex-wrap:wrap;gap:4px 24px}
 .ft-legal a{display:inline-flex;align-items:center;min-height:44px;text-decoration:none;transition:color .3s var(--ease)}
 
-/* ---------- accessibility: a quiet disc in the corner, the choices in a panel ---------- */
-.ax-btn{position:fixed;inset-inline-end:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:45;width:48px;height:48px;display:grid;place-items:center;padding:0;border:0;
+/* ---------- accessibility: a quiet disc in the bottom end corner, the choices in a panel ---------- */
+/* round 5 (Idan: "bottom left, not in the header"). It never sits on the text: from 1280 the margin holds the whole disc;
+   narrower, it tucks half behind the screen's edge and stays a tab inside the margin; and while the phone bar is up it
+   takes the slot the bar keeps for it */
+.ax-btn{position:fixed;inset-inline-end:8px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:45;width:48px;height:48px;display:grid;place-items:center;padding:0;border:0;
   border-radius:50%;background:var(--glass);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:inset 0 0 0 1px var(--line);color:var(--ink);cursor:pointer;
-  transition:transform .6s var(--ease-out),box-shadow .4s var(--ease)}
-.ax-btn svg{width:26px;height:26px}
+  transition:transform .6s var(--ease-out),box-shadow .4s var(--ease),opacity .35s var(--ease),visibility 0s}
+.ax-btn svg{width:26px;height:26px;transition:transform .6s var(--ease-out)}
 @media (hover:hover) and (pointer:fine){.ax-btn:hover{box-shadow:inset 0 0 0 1px rgba(48,247,123,.55)}}
-/* the disc sits in the header beside the logo (the script moves it there): floating, it would sit on the text */
-.hd .ax-btn{position:relative;inset:auto;z-index:auto}
-.ax-scrim{position:fixed;inset:0;z-index:79;background:rgba(0,11,38,.55);opacity:0;visibility:hidden;transition:opacity .4s var(--ease),visibility 0s linear .4s}
+@media (max-width:1279px){
+  .ax-btn{inset-inline-end:0;transform:translateX(-50%)}
+  .ax-btn svg{transform:translateX(11px) scale(.72)}
+}
+@media (max-width:1023px){
+  html.mbar-on .ax-btn{transform:translate(19px,-3px)}
+  html.mbar-on .ax-btn svg{transform:none}
+}
+/* the open menu has the screen to itself */
+.menu-open .ax-btn{opacity:0;visibility:hidden;transition:opacity .25s var(--ease),visibility 0s linear .25s}
+.ax-scrim{position:fixed;inset:0;z-index:79;background:rgba(var(--n0),.55);opacity:0;visibility:hidden;transition:opacity .4s var(--ease),visibility 0s linear .4s}
 .ax-open .ax-scrim{opacity:1;visibility:visible;transition-delay:0s}
 .ax{position:fixed;inset-inline-end:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:80;width:min(380px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;
-  padding:24px;border-radius:28px;background:rgba(0,16,51,.9);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);
+  padding:24px;border-radius:28px;background:rgba(var(--n1),.9);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);
   box-shadow:inset 0 0 0 1px var(--line),0 24px 80px rgba(0,5,20,.6);color:var(--ink);
   visibility:hidden;opacity:0;transform:translateY(16px);transition:opacity .4s var(--ease),transform .6s var(--ease-out),visibility 0s linear .6s}
 .ax.open{visibility:visible;opacity:1;transform:none;transition-delay:0s}
@@ -917,7 +922,7 @@ html.lenis,html.lenis body{height:auto}
 .ax-read body{word-spacing:.06em}
 .ax-read p,.ax-read li{line-height:1.8}
 .ax-links a{text-decoration:underline!important;text-decoration-thickness:2px!important;text-underline-offset:.24em!important}
-.ax-contrast{--ink-soft:var(--ink);--muted:rgba(243,246,252,.9);--line:rgba(243,246,252,.45);--line-strong:rgba(243,246,252,.7);--glass:rgba(0,11,38,.94);background:var(--night-0)}
+.ax-contrast{--ink-soft:var(--ink);--muted:rgba(243,246,252,.9);--line:rgba(243,246,252,.45);--line-strong:rgba(243,246,252,.7);--glass:rgba(var(--n0),.94);background:var(--night-0)}
 .ax-contrast #sky,.ax-contrast body::before{display:none}
 .ax-contrast .gword{background:none;color:var(--accent)}
 .ax-still *,.ax-still *::before,.ax-still *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important}
@@ -993,7 +998,8 @@ html.lenis,html.lenis body{height:auto}
 .mbar{display:none}
 
 @media (prefers-reduced-motion:reduce){
-  .ft-big i,.ft-col{--q:1}
+  .ft-col{--q:1}
+  .ft-rim::before,.ft-glow{animation:none}
   [data-drift]{translate:none}
   .step-n,.step h3,.step p,.step-node{transition:none}
 }
@@ -1009,7 +1015,7 @@ html.lenis,html.lenis body{height:auto}
   .fig-v{font-size:clamp(68px,19vw,140px)}
   .cell h3{font-size:clamp(28px,7.4vw,44px)}
 
-  .proc-head,.calc-head{padding-inline-start:var(--rail-pad)}
+  .proc-head{padding-inline-start:var(--rail-pad)}
   .steps{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:none;row-gap:clamp(56px,9vh,96px)}
   .step:nth-child(n){grid-column:auto;grid-row:auto;align-self:auto;padding-inline-start:var(--rail-pad)}
   /* on the start rail, half way through the gutter and the rail pad, like the domains */
@@ -1019,10 +1025,6 @@ html.lenis,html.lenis body{height:auto}
   .step h3{font-size:clamp(24px,6.4vw,34px)}
   .step p{font-size:var(--fs-body)}
 
-  .calc-top{flex-direction:column;align-items:stretch}
-  .calc-out{justify-items:start;text-align:start;padding-inline-start:var(--rail-pad)}
-  .calc-v{font-size:clamp(30px,8.4vw,60px);flex-wrap:wrap;white-space:normal;row-gap:0}
-  .calc-in > :not(.line){padding-inline-start:calc(var(--gutter) + var(--rail-pad))}
   .lf{grid-template-columns:minmax(0,1fr);padding-inline-start:calc(var(--gutter) + var(--rail-pad))}
   .lf .btn{width:100%}
 
@@ -1042,8 +1044,9 @@ html.lenis,html.lenis body{height:auto}
   .ft-cols{grid-template-columns:repeat(2,minmax(0,1fr))}
   .ft{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
 
-  .mbar{position:fixed;inset-inline:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:40;display:flex;gap:8px;padding:6px;border-radius:999px;
-    background:rgba(0,16,51,.78);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:inset 0 0 0 1px var(--line),0 24px 48px -16px rgba(0,0,0,.6);
+  /* the bar is one pill the width of the screen, and its end holds the accessibility disc (the slot it keeps for it) */
+  .mbar{position:fixed;inset-inline:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:40;display:flex;gap:8px;padding:6px;padding-inline-end:64px;border-radius:999px;
+    background:rgba(var(--n1),.78);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:inset 0 0 0 1px var(--line),0 24px 48px -16px rgba(0,0,0,.6);
     transform:translateY(calc(100% + 24px));transition:transform .5s var(--ease-out)}
   .mbar.is-on{transform:none}
   .mbar a{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;border-radius:999px;font-size:16px;font-weight:500;text-decoration:none}
