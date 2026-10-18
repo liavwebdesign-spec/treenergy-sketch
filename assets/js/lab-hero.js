@@ -25,7 +25,7 @@ const SETS = {
     pins: { sol: [0.156, 0.57], sto: [0.512, 0.336], chg: [0.47, 0.555], srv: [0.884, 0.69] } },
   tall: { on: "assets/img/lab/tall-on.webp", off: "assets/img/lab/tall-off.webp", w: 1536, h: 2752, base: [0.5, 0.5],
     src: [0.55, 0.575], horizon: 0.255, sun: [0.826, 0.263],
-    pins: { sol: [0.1, 0.585], sto: [0.63, 0.367], chg: [0.55, 0.575], srv: [0.7, 0.487] } },
+    pins: { sol: [0.16, 0.585], sto: [0.63, 0.367], chg: [0.55, 0.575], srv: [0.7, 0.487] } },
 };
 
 const VS = `#version 300 es
@@ -199,7 +199,7 @@ function placePins(v, alpha) {
     y -= par.y * (0.004 + smooth(set.horizon, 1, u[1]) * 0.012) / v.zoom / v.sy * H;
     p.el.style.setProperty("--x", x.toFixed(1) + "px"); p.el.style.setProperty("--y", y.toFixed(1) + "px");
     // a place that has left the screen (the landing zoom) has no ring and no card
-    const off = x < 0 || x > W || y < 0 || y > H;
+    const off = x < 10 || x > W - 10 || y < 10 || y > H - 10;
     p.el.style.display = off ? "none" : "";
     // the card keeps inside the screen: it slides sideways on its stem, and opens under the ring when there is no room above
     if (off) continue;
