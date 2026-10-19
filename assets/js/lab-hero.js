@@ -96,7 +96,7 @@ uniform sampler2D tOn, tOff, tNear, tP0, tP1, tP2, tP3;
 uniform vec4 uPR[4];
 uniform mat2 uFxM;
 uniform vec2 uRes, uImg, uCenter, uPar, uSrc, uSun, uFoe, uHeadS, uFoc, uFxO, uFxC, uEnO;
-uniform float uZoom, uReveal, uTime, uAlpha, uHorizon, uStill, uM, uLow, uLift, uSink, uDim, uFly;
+uniform float uZoom, uReveal, uTime, uAlpha, uHorizon, uStill, uM, uLow, uLift, uSink, uDim, uFly, uOut;
 uniform float uPK, uFocR, uFocA, uPanS, uPanA, uFx, uFxK, uFxT, uEnR, uEnK, uRoll, uSpd, uMist, uMistP, uCalm;
 float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
 float noise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
@@ -266,6 +266,8 @@ void main(){
   col *= 1. - dot(q, q) * .55;
   vec3 night = vec3(0., 11., 38.) / 255.;
   float foot = smoothstep(.86, 1., v.y);
+  // the tour's end: as the stage scrolls away the scene stays, so its bottom edge melts into the night under it
+  foot = max(foot, smoothstep(.78, 1., vUv.y) * clamp(uOut * 4., 0., 1.));
   col = mix(col, night, foot * .92 * (1. - uFly));
   float a = uAlpha * (1. - foot * uFly);
   // the tour: out of the focus the scene steps back, and on the words' side it thins out into the page's night
@@ -279,7 +281,7 @@ void main(){
   o = vec4(col * a, a);
 }`;
 
-const UNIFORMS = ["tOn", "tOff", "tNear", "uRes", "uImg", "uCenter", "uPar", "uSrc", "uSun", "uFoe", "uHeadS", "uZoom", "uReveal", "uTime", "uAlpha", "uHorizon", "uStill", "uM", "uLow", "uLift", "uSink", "uDim", "uFly",
+const UNIFORMS = ["tOn", "tOff", "tNear", "uRes", "uImg", "uCenter", "uPar", "uSrc", "uSun", "uFoe", "uHeadS", "uZoom", "uReveal", "uTime", "uAlpha", "uHorizon", "uStill", "uM", "uLow", "uLift", "uSink", "uDim", "uFly", "uOut",
   "tP0", "tP1", "tP2", "tP3", "uPR", "uPK", "uFoc", "uFocR", "uFocA", "uPanS", "uPanA", "uFx", "uFxK", "uFxT", "uFxO", "uFxM", "uFxC", "uEnO", "uEnR", "uEnK",
   "uRoll", "uSpd", "uMist", "uMistP", "uCalm"];
 function setupGL() {
@@ -390,10 +392,12 @@ async function loadSet() {
 // ---- the scroll ----
 // the flight reads the page as it is (Lenis smooths the wheel, as on the home page), so the scene's line and the
 // domains' trail meet exactly; the two versions of 18.10 keep their own easing
-let target = 0, prog = 0;
+let target = 0, prog = 0, outY = 0;
 function readScroll() {
-  const r = sec.getBoundingClientRect(), span = r.height - (H || innerHeight);
+  const r = sec.getBoundingClientRect(), vh = H || innerHeight, span = r.height - vh;
   target = span > 0 ? clamp01(-r.top / span) : 0;
+  // how far the stage has gone up past its end, in screens (the tour's end keeps the scene and lets it rise)
+  outY = clamp01((vh - r.bottom) / vh);
 }
 addEventListener("scroll", readScroll, { passive: true });
 // on a desktop the tour follows the wheel more softly too (with its longer way in the css)
@@ -509,7 +513,7 @@ function trail(v, t, q, out) {
 
 // ---- the tour ----
 // the section reads as: up to .022 the scene as it opens, then for each place a flight (.085) and a stop (.125), and
-// from .862 the camera pulls back over the whole scene and it sinks into the page's night. Nothing new plays after the
+// from .862 the camera pulls back over the whole scene, which stays and rises past the visitor. Nothing new plays after the
 // last place (Liav 19.10: "אפשר לדעתי לסיים עם כל האנימציות אחרי שמסיימים את המעבירים בין העמדות")
 const TT = { t0: 0.022, tr: 0.085, dw: 0.125, out: 0.07 }, SEG = TT.tr + TT.dw;
 const easeIO = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(2 - 2 * t, 3) / 2);
@@ -701,9 +705,12 @@ function frame(now) {
     center = centerFor(zoom, u, a[0] * W, a[1] * H);
     F.m = 0.24 * hop; F.low = hop > 0 ? -0.035 * Math.sin(2 * Math.PI * e) : 0; F.foe = a;
     st.u = u; TS = st;
-    // the end: the camera back over the whole scene, which sinks into the page's night
-    const end = TT.t0 + set.tour.stops.length * SEG;
-    F.sink = smooth(end + 0.035, 0.99, p); F.lift = 0.3 * F.sink * F.sink; F.head = [0.5, 0.5];
+    // the end: the camera back over the whole scene, which stays (Liav 19.10: "אין צורך לעשות FADE לגמרי על כדור
+    // הארץ אלא להשאיר אותו ... שירגיש כאילו הוא עולה ואנחנו יורדים"). It starts to rise, and once the stage lets go
+    // it keeps rising slower than the page (K), so the visitor goes down past it; the two speeds meet at the release
+    const end = TT.t0 + set.tour.stops.length * SEG, e0 = end + 0.035, s = clamp01((p - e0) / (1 - e0)), K = 0.45;
+    const lEnd = (1 - K) * (1 - e0) * (sec.offsetHeight - H) / H / 2;
+    F.lift = lEnd * s * s - K * outY; F.sink = 0.2 * s + 0.15 * outY; F.head = [0.5, 0.5];
     titleA = 1 - smooth(0.004, 0.02, p);
     pinA = smooth(2.6, 3.4, since) * (1 - smooth(0, 0.016, p));
   } else {
@@ -736,7 +743,7 @@ function frame(now) {
   gl.uniform1f(U.uZoom, zoom); gl.uniform1f(U.uReveal, reveal); gl.uniform1f(U.uTime, reduce ? 0 : time);
   gl.uniform1f(U.uAlpha, alpha); gl.uniform1f(U.uHorizon, set.horizon); gl.uniform1f(U.uStill, reduce ? 1 : 0);
   gl.uniform1f(U.uM, F.m); gl.uniform1f(U.uLow, F.low); gl.uniform1f(U.uLift, F.lift); gl.uniform1f(U.uSink, F.sink);
-  gl.uniform1f(U.uDim, F.dim); gl.uniform1f(U.uFly, fly || tourOn ? 1 : 0);
+  gl.uniform1f(U.uDim, F.dim); gl.uniform1f(U.uFly, fly || tourOn ? 1 : 0); gl.uniform1f(U.uOut, tourOn ? outY : 0);
   // the tour (nothing of it outside the tour: every amount stays 0)
   const T = TU, live = tourOn ? 1 : 0;
   gl.uniform1f(U.uPK, tourOn && set.patchReady ? 1 : 0);
