@@ -41,7 +41,7 @@ const ZMAX = 2.6; // how close the camera lands before it pulls back over the wh
 const SETS = {
   wide: { on: "assets/img/lab/wide-on.webp", off: "assets/img/lab/wide-off.webp", near: "assets/img/lab/wide-near.webp", w: 2752, h: 1536, base: [0.5, 0.52],
     src: [0.47, 0.555], horizon: 0.21, sun: [0.6, 0.213],
-    pins: { sol: [0.156, 0.57], sto: [0.512, 0.336], chg: [0.47, 0.555], srv: [0.884, 0.69] },
+    pins: { sol: [0.156, 0.57], sto: [0.512, 0.336], chg: [0.482, 0.68], srv: [0.884, 0.69] },
     line: [[0.483, 0.647], [0.46, 0.648], [0.44, 0.648], [0.42, 0.645], [0.4, 0.629], [0.38, 0.618], [0.36, 0.602], [0.34, 0.591],
       [0.32, 0.578], [0.302, 0.562], [0.2625, 0.579], [0.225, 0.593]],
     fly: { zoom: 1.5, foe: [0.5, 0.46] },
@@ -54,7 +54,7 @@ const SETS = {
       stops: [
         { k: "sol", u: [0.155, 0.583], z: 1.6, side: 1, fx: 1, O: [0.0563, 0.5811], A: [0.1381, -0.054], B: [0.0418, 0.0573], ring: [0.155, 0.585, 0.122, 0.36, -9] },
         { k: "sto", u: [0.54, 0.485], z: 2.6, side: -1, fx: 2, O: [0.494, 0.52], A: [0.083, 0], B: [0, -0.072], ring: [0.535, 0.505, 0.06, 0.42, -4] },
-        { k: "chg", u: [0.475, 0.61], z: 1.9, side: 1, fx: 3, ring: [0.48, 0.63, 0.095, 0.4, 0] },
+        { k: "chg", u: [0.482, 0.665], z: 2.5, side: 1, fx: 3, ring: [0.482, 0.68, 0.075, 0.4, 0] },
         { k: "srv", u: [0.885, 0.7], z: 2.1, side: -1, fx: 4, O: [0.805, 0.756], A: [0.155, 0], B: [0, -0.104], ring: [0.883, 0.712, 0.095, 0.4, -6] },
       ],
       patches: [["sol", [0.03815, 0.42253, 0.27798, 0.74805]], ["sto", [0.42006, 0.32552, 0.65988, 0.65104]],
@@ -62,7 +62,7 @@ const SETS = {
     } },
   tall: { on: "assets/img/lab/tall-on.webp", off: "assets/img/lab/tall-off.webp", near: "assets/img/lab/tall-near.webp", w: 1536, h: 2752, base: [0.5, 0.5],
     src: [0.55, 0.575], horizon: 0.255, sun: [0.826, 0.263],
-    pins: { sol: [0.16, 0.585], sto: [0.63, 0.367], chg: [0.55, 0.575], srv: [0.7, 0.487] },
+    pins: { sol: [0.16, 0.585], sto: [0.63, 0.367], chg: [0.594, 0.647], srv: [0.7, 0.487] },
     line: [[0.594, 0.6243], [0.536, 0.6254], [0.487, 0.6243], [0.4536, 0.615], [0.412, 0.599], [0.371, 0.585], [0.33, 0.571],
       [0.2887, 0.554], [0.231, 0.5656], [0.165, 0.579]],
     fly: { zoom: 1.35, foe: [0.5, 0.42] },
@@ -72,7 +72,7 @@ const SETS = {
       stops: [
         { k: "sol", u: [0.1, 0.578], z: 1.8, side: 0, fx: 1, O: [-0.17, 0.592], A: [0.3004, -0.0658], B: [0.0914, 0.0407], ring: [0.075, 0.58, 0.15, 0.36, -9] },
         { k: "sto", u: [0.68, 0.485], z: 2.4, side: 0, fx: 2, O: [0.603, 0.511], A: [0.156, 0], B: [0, -0.053], ring: [0.68, 0.5, 0.11, 0.42, -4] },
-        { k: "chg", u: [0.565, 0.6], z: 2, side: 0, fx: 3, ring: [0.58, 0.62, 0.15, 0.4, 0] },
+        { k: "chg", u: [0.592, 0.638], z: 2.4, side: 0, fx: 3, ring: [0.594, 0.647, 0.12, 0.4, 0] },
         { k: "srv", u: [0.37, 0.355], z: 2, side: 0, fx: 5, ring: [0.375, 0.37, 0.12, 0.4, 0] },
       ],
       patches: [["sol", [0, 0.47275, 0.30534, 0.6835]], ["sto", [0.48438, 0.38263, 0.875, 0.59339]],
@@ -228,11 +228,11 @@ void main(){
       col = mix(col, col * vec3(.5, 1.18, .78) + G * .14, below * bld * inside * uFxK * .9);
       col += G * exp(-pow((ab.y - uFxT) / .011, 2.)) * (.35 + bld) * inside * uFxK * 1.3;
     } else if (uFx < 3.5) {
-      // charging: the energy runs in along every line to the hub under the city, and the city's lights come up
+      // charging: the energy runs in along every line to the charging hub (made into the picture, 19.10) and lights it
       float pl = pow(.5 + .5 * sin(rr * 70. + uTime * 5.), 16.);
       col += G * m * pl * smoothstep(.24, .02, rr) * uFxK * 1.3;
       col *= 1. + warm * .4 * uFxK * smoothstep(.22, .0, rr);
-      col += G * exp(-rr * rr * 1400.) * uFxK * (.45 + .25 * sin(uTime * 3.));
+      col += G * exp(-rr * rr * 1400.) * uFxK * (.12 + .08 * sin(uTime * 3.));
     } else if (uFx < 4.5) {
       // the data center: its windows flicker and a scan runs up through it
       float lit2 = smoothstep(.28, .55, lum(on)) * smoothstep(0., .06, on.b - on.r);
@@ -396,7 +396,9 @@ function readScroll() {
   target = span > 0 ? clamp01(-r.top / span) : 0;
 }
 addEventListener("scroll", readScroll, { passive: true });
-const lenis = (fly || tour) && !reduce && window.Lenis ? new window.Lenis({ autoRaf: false, lerp: 0.12 }) : null;
+// on a desktop the tour follows the wheel more softly too (with its longer way in the css)
+const slowDesk = tour && matchMedia("(min-width:1024px)").matches;
+const lenis = (fly || tour) && !reduce && window.Lenis ? new window.Lenis({ autoRaf: false, lerp: slowDesk ? 0.085 : 0.12 }) : null;
 
 // the page's living night, as on the home page
 let sky = null;
@@ -568,15 +570,16 @@ let flyUntil = 0;
 function glide(y, duration) { flyUntil = performance.now() + duration * 1000 + 120; lenis.scrollTo(y, { duration, easing: (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(2 - 2 * t, 2) / 2) }); }
 function goStop(i) {
   const y = yAt(TT.t0 + i * SEG + TT.tr + 0.012);
-  if (lenis) glide(y, 1.1 + 0.35 * Math.abs(i - Math.max(0, TS.to)));
+  if (lenis) glide(y, (slowDesk ? 1.4 : 1.1) + 0.35 * Math.abs(i - Math.max(0, TS.to)));
   else scrollTo({ top: y, behavior: "smooth" });
 }
 // a flight left half way settles: past its middle on to the next place, before it back to the last one
 let idleT = 0;
 function settle() {
   if (!tourOn || !lenis || performance.now() < flyUntil || TS.mode !== "go" || TS.raw < 0.03 || TS.raw > 0.97) return;
-  const pa = TT.t0 + TS.to * SEG;
-  glide(yAt(TS.raw < 0.5 ? (TS.to === 0 ? 0 : pa - 0.004) : pa + TT.tr + 0.012), 0.9);
+  // on a desktop the way is longer, so a short push of the wheel already carries on in the way it went
+  const pa = TT.t0 + TS.to * SEG, mid = slowDesk ? (lenis.direction < 0 ? 0.8 : 0.2) : 0.5;
+  glide(yAt(TS.raw < mid ? (TS.to === 0 ? 0 : pa - 0.004) : pa + TT.tr + 0.012), slowDesk ? 1.25 : 0.9);
 }
 // what the tour shows this frame: the marks, the words, and the shader's focus, frost, life and energy front
 const TU = { foc: [0.5, 0.5], focR: 1, focA: 0, panS: 1, panA: 0, fx: 0, fxK: 0, fxT: 0, fxO: [0, 0], fxM: [1, 0, 0, 1], fxC: [0, 0], enO: [0, 0], enR: 0, enK: 0,

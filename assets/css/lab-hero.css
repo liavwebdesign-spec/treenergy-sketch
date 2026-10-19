@@ -24,6 +24,9 @@ html[data-v="fly"] .lb{height:400vh}
 html.no-gl[data-v="fly"] .lb{height:100vh}
 /* the tour (the default, 19.10): the opening, four places with a flight and a stop each, and the scene sinking away */
 html[data-v="tour"] .lb{height:560vh}
+/* a desktop wheel moves the story further per notch than a finger on a phone, so a desktop gets a longer way
+   (Liav 19.10: "להאט קצת את קצב הגלילה בדסקטופ, זה מרגיש שזה מתקדם מהר מדי") */
+@media (min-width:1024px){html[data-v="tour"] .lb{height:760vh}}
 html.no-gl[data-v="tour"] .lb{height:100vh}
 .lb-stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;background:var(--night-0)}
 /* the scene sinks into the page's own night, so the stage has none of its own */
