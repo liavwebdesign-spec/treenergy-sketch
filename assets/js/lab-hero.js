@@ -6,6 +6,10 @@
 // each one. The place comes alive (the panels catch a sweep of light, the storage fills, the energy runs into the
 // city, the data center scans), the rest of the picture goes soft, the side across from it thins out into the page's
 // night and the place's words open there. It takes the place of the domains section under the scene.
+// The polish (Liav 19.10: "וואו זה נראה מדהיםם!", and more impressive without changing it): the flight between two
+// places lifts, banks into the turn and streaks at the edges through mist that rushes past the lens; the landing sends
+// a ripple over the ground and a front of energy out from the place; and at the end all four places light up as one
+// line hops between them before the scene sinks into the page's night.
 // ?v=fly is direction א (19.10): the scroll flies low over the city after one line of the network (a depth map of the
 // picture makes the near land rush by), and the line runs on as the site's trail into the domains section under it.
 // ?v=dive dives into the scene from the night Earth of the site, ?v=scene opens straight on it (the versions of 18.10).
@@ -91,7 +95,7 @@ uniform vec4 uPR[4];
 uniform mat2 uFxM;
 uniform vec2 uRes, uImg, uCenter, uPar, uSrc, uSun, uFoe, uHeadS, uFoc, uFxO, uFxC, uEnO;
 uniform float uZoom, uReveal, uTime, uAlpha, uHorizon, uStill, uM, uLow, uLift, uSink, uDim, uFly;
-uniform float uPK, uFocR, uFocA, uPanS, uPanA, uFx, uFxK, uFxT, uEnR, uEnK;
+uniform float uPK, uFocR, uFocA, uPanS, uPanA, uFx, uFxK, uFxT, uEnR, uEnK, uRoll, uSpd, uMist, uMistP;
 float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
 float noise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
   return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
@@ -114,8 +118,11 @@ void main(){
   vec2 c = clamp(uCenter, s * .5, 1. - s * .5);
   // the flight (direction א): the camera moves forward towards uFoe and down; a point moves out from uFoe the more,
   // the nearer it is (the depth map), and up as the camera drops. Found backwards from the screen in a few steps.
-  // uLift: the scene rising away as it sinks into the night
-  vec2 v = vUv + vec2(0., uLift), vs = v;
+  // uLift: the scene rising away as it sinks into the night. uRoll: the camera banks into a turn between two places
+  vec2 v = vUv;
+  if (uRoll != 0.) { vec2 rp = (v - .5) * vec2(sa, 1.); float cr = cos(uRoll), sr = sin(uRoll); v = mat2(cr, -sr, sr, cr) * rp / vec2(sa, 1.) + .5; }
+  v += vec2(0., uLift);
+  vec2 vs = v;
   if (uM + uLow > 0.) {
     float n = texture(tNear, c + (v - .5) * s).r;
     for (int i = 0; i < 4; i++){ vs = uFoe + (v - uFoe) * (1. - uM * n) + vec2(0., uLow * n); n = texture(tNear, c + (vs - .5) * s).r; }
@@ -138,7 +145,10 @@ void main(){
   float fd = length((vUv - uFoc) * vec2(sa, 1.));
   float side = uPanS > .5 ? vUv.x : uPanS < -.5 ? 1. - vUv.x : vUv.y;
   float pan = uPanA * smoothstep(.42, .64, side);
-  float bl = max(uFocA * smoothstep(uFocR, uFocR * 2.4, fd), pan);
+  // on a flight the edges streak away from the point the camera flies at (uFoe), the middle stays sharp
+  vec2 rq = (vUv - uFoe) * vec2(sa, 1.);
+  float spd = uSpd * smoothstep(.22, .9, length(rq));
+  float bl = max(max(uFocA * smoothstep(uFocR, uFocR * 2.4, fd), pan), spd);
   float lod0 = log2(max(1., s.x * uImg.x / uRes.x));
   // the network is read from the picture as it was made (the sharper patch is for the eye only)
   vec3 onM = on;
@@ -152,6 +162,12 @@ void main(){
     // a soft blur from the smaller copies of the picture, four taps turned against their blocks
     float lod = lod0 + bl * 3.4;
     vec2 o1 = vec2(.7, .35) * exp2(lod) / uImg, o2 = vec2(-.35, .7) * exp2(lod) / uImg;
+    // where the flight's streak is the blur, the four taps lie along the way out from uFoe instead of across it
+    if (spd > .01) {
+      vec2 rd = normalize(rq + 1e-5) / vec2(sa, 1.) * s, ks = vec2(smoothstep(0., 1., spd / bl));
+      float st = exp2(lod) / uImg.x * 1.6 / length(s);
+      o1 = mix(o1, rd * st, ks); o2 = mix(o2, rd * st * 2.4, ks);
+    }
     vec3 bo = (textureLod(tOn, uv + o1, lod) + textureLod(tOn, uv - o1, lod) + textureLod(tOn, uv + o2, lod) + textureLod(tOn, uv - o2, lod)).rgb * .25;
     vec3 bf = (textureLod(tOff, uv + o1, lod) + textureLod(tOff, uv - o1, lod) + textureLod(tOff, uv + o2, lod) + textureLod(tOff, uv - o2, lod)).rgb * .25;
     float t = smoothstep(.01, .2, bl);
@@ -229,6 +245,18 @@ void main(){
   }
   // on the way from one place to the next, a front of energy runs out along the lines from the place before
   if (uEnK > 0.) col += G * m * exp(-pow((length((uv - uEnO) * vec2(ia, 1.)) - uEnR) / .022, 2.)) * uEnK * 2.2;
+  // on a flight thin mist streams past the lens: three veils, each coming at the camera from where it flies and
+  // opening out past the edges, the middle kept clear (uMistP moves with the scroll, so the mist stops when it does)
+  if (uMist > 0.) {
+    float veil = 0.;
+    for (int i = 0; i < 3; i++) {
+      float t = fract(uMistP * 1.15 + float(i) / 3.), z = mix(.55, 3.2, t * t);
+      float w = fbm(rq / z * 2.6 + vec2(float(i) * 7.3, float(i) * 3.1) + vec2(uTime * .02, 0.));
+      veil += smoothstep(.4, .74, w) * sin(3.14159 * t) * (.55 + .45 * t);
+    }
+    veil *= uMist * smoothstep(.08, .55, length(rq));
+    col = mix(col, vec3(.66, .76, .9) * (.55 + .3 * lum(col)), clamp(veil * .85, 0., .78));
+  }
   // the edges sink into the page's night: a vignette, and the foot melts into it (direction א and the tour: into the
   // page's living night itself, so the foot fades out rather than to one colour)
   vec2 q = vUv - .5;
@@ -249,7 +277,8 @@ void main(){
 }`;
 
 const UNIFORMS = ["tOn", "tOff", "tNear", "uRes", "uImg", "uCenter", "uPar", "uSrc", "uSun", "uFoe", "uHeadS", "uZoom", "uReveal", "uTime", "uAlpha", "uHorizon", "uStill", "uM", "uLow", "uLift", "uSink", "uDim", "uFly",
-  "tP0", "tP1", "tP2", "tP3", "uPR", "uPK", "uFoc", "uFocR", "uFocA", "uPanS", "uPanA", "uFx", "uFxK", "uFxT", "uFxO", "uFxM", "uFxC", "uEnO", "uEnR", "uEnK"];
+  "tP0", "tP1", "tP2", "tP3", "uPR", "uPK", "uFoc", "uFocR", "uFocA", "uPanS", "uPanA", "uFx", "uFxK", "uFxT", "uFxO", "uFxM", "uFxC", "uEnO", "uEnR", "uEnK",
+  "uRoll", "uSpd", "uMist", "uMistP"];
 function setupGL() {
   const gl = cv.getContext("webgl2", { premultipliedAlpha: true, alpha: true, antialias: false });
   if (!gl) return null;
@@ -422,11 +451,17 @@ function along(s, t) {
   return { i, f, u: [lerp(a[0], b[0], f), lerp(a[1], b[1], f)] };
 }
 // where a point of the picture shows, with the flight applied (the shader's mapping, run forwards), in stage pixels
-const F = { m: 0, low: 0, lift: 0, lineLift: 0, sink: 0, dim: 0, amp: 2.5, foe: [0.5, 0.46], head: [0.5, 0.5] };
+const F = { m: 0, low: 0, lift: 0, lineLift: 0, sink: 0, dim: 0, roll: 0, amp: 2.5, foe: [0.5, 0.46], head: [0.5, 0.5] };
 function project(v, u) {
   const n = nearAt(u), k = 1 / (1 - F.m * n);
   const x0 = (u[0] - v.cx) / v.sx + 0.5, y0 = (u[1] - v.cy) / v.sy + 0.5;
-  return [(F.foe[0] + (x0 - F.foe[0]) * k) * W, (F.foe[1] + (y0 - F.foe[1] - F.low * n) * k - F.lineLift) * H];
+  let x = F.foe[0] + (x0 - F.foe[0]) * k, y = F.foe[1] + (y0 - F.foe[1] - F.low * n) * k - F.lineLift;
+  // the bank (the tour's turns): the screen turned about its middle, as the shader turns it
+  if (F.roll) {
+    const sa = W / H, px = (x - 0.5) * sa, py = y - 0.5, c = Math.cos(F.roll), s = Math.sin(F.roll);
+    x = (c * px - s * py) / sa + 0.5; y = s * px + c * py + 0.5;
+  }
+  return [x * W, y * H];
 }
 let ribbon = null, dom = null, lastKey = "";
 function trail(v, t, q, out) {
@@ -469,15 +504,16 @@ function trail(v, t, q, out) {
 }
 
 // ---- the tour ----
-// the section reads as: up to .022 the scene as it opens, then for each place a flight (.085) and a stop (.125), and
-// from .862 the camera pulls back over the whole scene and it sinks into the page's night
-const TT = { t0: 0.022, tr: 0.085, dw: 0.125, out: 0.07 }, SEG = TT.tr + TT.dw;
+// the section reads as: up to .022 the scene as it opens, then for each place a flight (.08) and a stop (.118); from
+// .814 the camera pulls back over the whole scene and one line hops from place to place (.12), and then it sinks into
+// the page's night
+const TT = { t0: 0.022, tr: 0.08, dw: 0.118, out: 0.12 }, SEG = TT.tr + TT.dw;
 const easeIO = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(2 - 2 * t, 3) / 2);
 let TS = { mode: "ov", from: -1, to: -1, raw: 0, e: 0, dw: 0, u: [0.5, 0.5] };
 function tourAt(p) {
   const n = set.tour.stops.length, end = TT.t0 + n * SEG;
   if (p < TT.t0) return { mode: "ov", from: -1, to: -1, raw: 0, e: 0, dw: 0 };
-  if (p >= end) { const raw = clamp01((p - end) / TT.out); return { mode: "out", from: n - 1, to: -1, raw, e: easeIO(raw), dw: 1 }; }
+  if (p >= end) { const raw = clamp01((p - end) / TT.out); return { mode: "out", from: n - 1, to: -1, raw, e: easeIO(clamp01(raw / 0.55)), dw: 1 }; }
   const i = Math.min(n - 1, Math.floor((p - TT.t0) / SEG)), q = p - TT.t0 - i * SEG;
   if (q < TT.tr) { const raw = q / TT.tr; return { mode: "go", from: i - 1, to: i, raw, e: easeIO(raw), dw: 0 }; }
   return { mode: "at", from: i, to: i, raw: 1, e: 1, dw: clamp01((q - TT.tr) / TT.dw) };
@@ -541,18 +577,48 @@ function settle() {
   glide(yAt(TS.raw < 0.5 ? (TS.to === 0 ? 0 : pa - 0.004) : pa + TT.tr + 0.012), 0.9);
 }
 // what the tour shows this frame: the marks, the words, and the shader's focus, frost, life and energy front
-const TU = { foc: [0.5, 0.5], focR: 1, focA: 0, panS: 1, panA: 0, fx: 0, fxK: 0, fxT: 0, fxO: [0, 0], fxM: [1, 0, 0, 1], fxC: [0, 0], enO: [0, 0], enR: 0, enK: 0 };
+const TU = { foc: [0.5, 0.5], focR: 1, focA: 0, panS: 1, panA: 0, fx: 0, fxK: 0, fxT: 0, fxO: [0, 0], fxM: [1, 0, 0, 1], fxC: [0, 0], enO: [0, 0], enR: 0, enK: 0,
+  spd: 0, mist: 0, mistP: 0 };
 let marks = null;
+// the landing: the moment the camera comes down on a place from a flight (by the clock, so it plays out once)
+const arr = { i: -1, t: -9, prev: "ov" };
+const LAND_S = 1.5;
 function tourDraw(v, time, pinA) {
-  const st = TS, S = set.tour.stops, tall = set === SETS.tall, ia = set.w / set.h;
+  const st = TS, S = set.tour.stops, n = S.length, tall = set === SETS.tall, ia = set.w / set.h;
   const ringR = (i) => (i < 0 ? 1 : (S[i].ring[2] * W) / v.sx / H * 1.05);
-  for (let i = 0; i < S.length; i++) {
-    const s = S[i], k = presence(st, i), [x, y] = screenOf(v, s.ring), rx = (s.ring[2] * W) / v.sx;
-    const g = { x, y, rx, ry: rx * s.ring[3], rot: s.ring[4] };
+  if (st.mode === "at") { if (arr.i !== st.to) { arr.i = st.to; arr.t = arr.prev === "go" ? time : -9; } }
+  else arr.i = -1;
+  arr.prev = st.mode;
+  const land = clamp01((time - arr.t) / LAND_S), landing = arr.i >= 0 && land < 1;
+  // the place's beam leaps up as the camera lands, and settles
+  const surge = landing ? Math.pow(Math.sin(Math.PI * smooth(0, 0.55, land)), 2) * 0.55 : 0;
+  // the end: the place just left stays lit, the line sets off from the first and lights each place as it reaches it
+  const out = st.mode === "out", fade = 1 - smooth(0, 0.45, F.sink), lineK = out ? clamp01((st.raw - 0.3) / 0.5) : 0;
+  const G = S.map((s) => {
+    const [x, y] = screenOf(v, s.ring), rx = (s.ring[2] * W) / v.sx;
+    return { x, y, rx, ry: rx * s.ring[3], rot: s.ring[4] + (F.roll * 180) / Math.PI };
+  });
+  const cum = [0];
+  for (let i = 1; i < n; i++) cum.push(cum[i - 1] + Math.hypot(G[i].x - G[i - 1].x, G[i].y - G[i - 1].y));
+  for (let i = 0; i < n; i++) cum[i] /= cum[n - 1] || 1;
+  let hit = -1, hitK = 0;
+  for (let i = 0; i < n; i++) {
+    const s = S[i], g = G[i], k = presence(st, i);
     // in the opening all four rings lie faint on their places; on the tour only the place the camera is at
     const idle = pinA * 0.55, lead = k > 0.01 && arts[i].box ? leadOf(g, s, arts[i].box, tall) : null;
-    marks.draw(i, { ...g, o: Math.max(idle, Math.min(1, k * 1.6)), d: idle > 0.01 ? 1 : k, beam: k, lead, leadK: smooth(0.55, 1, k) });
+    let o = Math.max(idle, Math.min(1, k * 1.6)), d = idle > 0.01 ? 1 : k, beam = k, wave = -1;
+    if (i === arr.i && landing) { beam = k * (1 + surge); wave = land; }
+    if (out) {
+      const f = i === n - 1 ? 1 : i === 0 ? smooth(0.18, 0.32, st.raw) : smooth(cum[i] - 0.04, cum[i] + 0.06, lineK);
+      const reach = i === 0 ? (st.raw - 0.2) / 0.16 : (st.raw - (0.3 + 0.5 * cum[i])) / 0.16;
+      const jolt = reach > 0 && reach < 1 ? Math.sin(Math.PI * reach) * 0.6 : 0;
+      o = Math.max(o, 0.9 * f); d = Math.max(d, f); beam = Math.max(beam, 0.6 * f * (1 + jolt));
+      if (reach > 0 && reach < 1) { wave = reach; hit = i; hitK = reach; }
+      o *= fade; beam *= fade;
+    }
+    marks.draw(i, { ...g, o, d, beam, wave, lead, leadK: smooth(0.55, 1, k) });
   }
+  marks.hop(out ? G.map((g) => [g.x, g.y]) : null, lineK, fade);
   // the place in focus, and the words: the place the camera leaves until half way, then the one it is going to
   const cur = st.mode === "go" && st.raw >= 0.5 ? st.to : st.from;
   TU.foc = [screenOf(v, st.u)[0] / W, screenOf(v, st.u)[1] / H];
@@ -568,11 +634,21 @@ function tourDraw(v, time, pinA) {
       TU.fxO = s.O; TU.fxM = [by / det, -ay / det, -bx / det, ax / det];
     }
   } else { TU.panA = 0; TU.fxK = 0; }
-  // the energy front, on the way between places (out of the city on the way to the first)
+  // the energy front, on the way between places (out of the city on the way to the first); as the camera lands, out
+  // from the place along its lines; at the end, through the whole network as the line joins the places
   if (st.mode === "go") {
     const o = st.from >= 0 ? S[st.from].u : set.src, t = S[st.to].u;
     TU.enO = o; TU.enR = 0.02 + st.raw * Math.hypot((t[0] - o[0]) * ia, t[1] - o[1]) * 1.08; TU.enK = Math.sin(Math.PI * st.raw);
+  } else if (landing) {
+    TU.enO = S[arr.i].u; TU.enR = 0.01 + (1 - Math.pow(1 - land, 2)) * 0.34; TU.enK = Math.pow(1 - land, 1.3);
+  } else if (hit >= 0) {
+    TU.enO = S[hit].u; TU.enR = 0.01 + (1 - Math.pow(1 - hitK, 2)) * 0.26; TU.enK = Math.pow(1 - hitK, 1.3);
   } else TU.enK = 0;
+  // on a flight the edges streak and mist streams past; the pull back at the end rises out through it again
+  const fl = st.mode === "go" ? Math.sin(Math.PI * st.raw) : out ? Math.sin(Math.PI * clamp01(st.raw / 0.55)) * 0.6 : 0;
+  TU.spd = st.mode === "go" ? fl * (st.from >= 0 ? 0.55 : 0.35) : 0;
+  TU.mist = fl * (st.mode === "go" && st.from >= 0 ? 1 : 0.75);
+  TU.mistP = st.mode === "go" ? st.to + st.e : 9 - clamp01(st.raw / 0.55);
   // the words: in as the camera arrives (each line after the one before), out as it leaves; the numeral fills with
   // the stop
   for (const a of arts) {
@@ -604,7 +680,7 @@ function frame(now) {
   const since = time - tReady;
 
   let alpha, zoom, reveal, globeA, titleA, pinA, center = null;
-  F.m = F.low = F.lift = F.lineLift = F.sink = F.dim = 0;
+  F.m = F.low = F.lift = F.lineLift = F.sink = F.dim = F.roll = 0;
   if (dive && !reduce) {
     const land = smooth(0.3, 0.58, prog);
     alpha = smooth(0.3, 0.46, prog);
@@ -639,21 +715,25 @@ function frame(now) {
     frame.tq = [t, q, p];
   } else if (tourOn) {
     // the tour: the scene opens by the clock as in "scene"; then the camera goes from place to place. On a flight
-    // the target point and its place on the screen glide over together, and between two places the camera lifts a
-    // little (and the near land moves against the far) before it comes down on the next; at a stop it eases in
+    // the target point and its place on the screen glide over together, and between two places the camera lifts,
+    // banks into the turn (the near land sweeping against the far, sinking as it climbs and rising as it comes down)
+    // before it comes down on the next; at a stop it eases in
     const p = prog, intro = lerp(1.18, 1, 1 - Math.pow(1 - smooth(0, 2.6, since), 3));
     alpha = smooth(0, 0.9, since);
     reveal = smooth(0.6, 3.4, since);
     const st = tourAt(p), A = poseOf(st.from, intro), B = st.mode === "at" ? A : poseOf(st.to, intro), e = st.e;
     const u = [lerp(A.u[0], B.u[0], e), lerp(A.u[1], B.u[1], e)], a = [lerp(A.a[0], B.a[0], e), lerp(A.a[1], B.a[1], e)];
     const hop = st.mode === "go" && st.from >= 0 ? Math.sin(Math.PI * e) : 0;
-    zoom = Math.max(1, lerp(A.z, B.z, e) * (1 - 0.16 * hop) * (st.mode === "at" ? 1 + 0.05 * st.dw : 1));
+    F.roll = -0.038 * (Math.sign(B.u[0] - A.u[0]) || 1) * hop * (set === SETS.tall ? 0.7 : 1);
+    zoom = Math.max(1, lerp(A.z, B.z, e) * (1 - 0.24 * hop) * (st.mode === "at" ? 1 + 0.05 * st.dw : 1)) * (1 + Math.abs(F.roll) * 1.6);
     center = centerFor(zoom, u, a[0] * W, a[1] * H);
-    F.m = 0.1 * hop; F.foe = a;
+    F.m = 0.24 * hop; F.low = hop > 0 ? -0.035 * Math.sin(2 * Math.PI * e) : 0; F.foe = a;
     st.u = u; TS = st;
-    // the end: the camera back over the whole scene, which sinks into the page's night
+    // the end: the camera back over the whole scene, the line through the places, and then it sinks into the night
     const end = TT.t0 + set.tour.stops.length * SEG;
-    F.sink = smooth(end + 0.035, 0.99, p); F.lift = 0.3 * F.sink * F.sink; F.head = [0.5, 0.5];
+    F.sink = smooth(end + TT.out * 0.92, 0.997, p); F.lift = 0.3 * F.sink * F.sink; F.lineLift = F.lift; F.head = [0.5, 0.5];
+    // the network steps back for the end's one line, as it does for the chased line of direction א
+    F.dim = st.mode === "out" ? smooth(0.12, 0.32, st.raw) : 0;
     globeA = 0;
     titleA = 1 - smooth(0.004, 0.02, p);
     pinA = smooth(2.6, 3.4, since) * (1 - smooth(0, 0.016, p));
@@ -697,6 +777,7 @@ function frame(now) {
   gl.uniform1f(U.uFx, T.fx); gl.uniform1f(U.uFxK, T.fxK * live); gl.uniform1f(U.uFxT, T.fxT);
   gl.uniform2f(U.uFxO, T.fxO[0], T.fxO[1]); gl.uniformMatrix2fv(U.uFxM, false, T.fxM); gl.uniform2f(U.uFxC, T.fxC[0], T.fxC[1]);
   gl.uniform2f(U.uEnO, T.enO[0], T.enO[1]); gl.uniform1f(U.uEnR, T.enR); gl.uniform1f(U.uEnK, T.enK * live);
+  gl.uniform1f(U.uRoll, F.roll); gl.uniform1f(U.uSpd, T.spd * live); gl.uniform1f(U.uMist, T.mist * live); gl.uniform1f(U.uMistP, T.mistP);
   gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.drawArrays(gl.TRIANGLES, 0, 3);
   cv.style.opacity = 1;
 
