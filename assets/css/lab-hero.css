@@ -24,7 +24,7 @@ html[data-v="scene"] .lb{height:190vh}
 html[data-v="fly"] .lb{height:400vh}
 html.no-gl[data-v="fly"] .lb{height:100vh}
 /* the tour (the default, 19.10): the opening, four places with a flight and a stop each, and the scene sinking away */
-html[data-v="tour"] .lb{height:600vh}
+html[data-v="tour"] .lb{height:560vh}
 html.no-gl[data-v="tour"] .lb{height:100vh}
 .lb-stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;background:var(--night-0)}
 /* the scene sinks into the page's own night, so the stage has none of its own */
@@ -95,10 +95,6 @@ html[data-v="scene"] .lb-globe{display:none}
 .lb-marks .mk-lead{stroke:rgba(48,247,123,.75);stroke-width:1}
 .lb-marks .mk-dot{fill:var(--accent)}
 .lb-marks .mk-wave{fill:none;stroke:#8DFFBC;filter:drop-shadow(0 0 5px rgba(48,247,123,.8))}
-.lb-marks .mk-link,.lb-marks .mk-link-w{fill:none;stroke-dasharray:1 1;stroke-dashoffset:1;stroke-linecap:round}
-.lb-marks .mk-link-w{stroke:rgba(48,247,123,.24);stroke-width:14}
-.lb-marks .mk-link{stroke:#E6FFF0;stroke-width:2.2;filter:drop-shadow(0 0 7px rgba(48,247,123,1))}
-.lb-marks .mk-head{filter:drop-shadow(0 0 10px rgba(48,247,123,1))}
 /* the beam of light rising from the ground at the place */
 .lb-beams{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .lb-beams i{position:absolute;left:0;top:0;opacity:0;transform-origin:50% 100%; /* qa-allow: physical, placed in screen pixels, the same in both directions */
