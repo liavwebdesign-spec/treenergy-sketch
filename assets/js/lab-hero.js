@@ -2,13 +2,16 @@
 // Daniel's picture, made again twice: the network on and the network off, the same pixels otherwise. The scene lives
 // on them: the network lights up from the city outward and energy keeps running along its lines, the city lights and
 // the stars breathe, the sunrise pulses, the clouds roil, and the land has depth under the pointer.
-// Direction א (Liav 19.10, "יאללה רוץ על הא'"), the default: the page opens on the scene, and the scroll flies into
-// it, low over the city (a depth map of the picture makes the near land rush by and the far land hold), after one
-// line of the network that lights up stronger, from the city to the solar farm. The scene then sinks into the page's
-// night and only the line stays: it is the site's own trail, and it runs on down into the domains section under it.
+// The tour (Liav 19.10, the default): the scroll takes the camera from place to place in the scene, and it stops at
+// each one. The place comes alive (the panels catch a sweep of light, the storage fills, the energy runs into the
+// city, the data center scans), the rest of the picture goes soft, the side across from it thins out into the page's
+// night and the place's words open there. It takes the place of the domains section under the scene.
+// ?v=fly is direction א (19.10): the scroll flies low over the city after one line of the network (a depth map of the
+// picture makes the near land rush by), and the line runs on as the site's trail into the domains section under it.
 // ?v=dive dives into the scene from the night Earth of the site, ?v=scene opens straight on it (the versions of 18.10).
 import { Ribbon } from "./ribbon.js";
 import { mountDom, trailAmp, BAND } from "./lab-dom.js";
+import { mountMarks } from "./lab-tour.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -17,11 +20,11 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const smooth = (a, b, x) => { const t = clamp01((x - a) / (b - a)); return t * t * (3 - 2 * t); };
 
 const root = document.documentElement;
-const mode = root.dataset.v, dive = mode === "dive", fly = mode === "fly";
+const mode = root.dataset.v, dive = mode === "dive", fly = mode === "fly", tour = mode === "tour";
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const fine = matchMedia("(hover:hover) and (pointer:fine)").matches;
 // the page is one journey from the scene down: a reload starts it again from the top, not in the middle of the flight
-if (fly && "scrollRestoration" in history && !location.hash) history.scrollRestoration = "manual";
+if ((fly || tour) && "scrollRestoration" in history && !location.hash) history.scrollRestoration = "manual";
 const sec =$(".lb"), stage = $(".lb-stage"), cv = $(".lb-scene"), h1 = $(".lb-h"), pinsEl = $(".lb-pins"), cue = $(".lb-cue");
 const HEAD = 0.72; // the screen line the trail's head rides, as on the home page
 
@@ -35,14 +38,46 @@ const SETS = {
     pins: { sol: [0.156, 0.57], sto: [0.512, 0.336], chg: [0.47, 0.555], srv: [0.884, 0.69] },
     line: [[0.483, 0.647], [0.46, 0.648], [0.44, 0.648], [0.42, 0.645], [0.4, 0.629], [0.38, 0.618], [0.36, 0.602], [0.34, 0.591],
       [0.32, 0.578], [0.302, 0.562], [0.2625, 0.579], [0.225, 0.593]],
-    fly: { zoom: 1.5, foe: [0.5, 0.46] } },
+    fly: { zoom: 1.5, foe: [0.5, 0.46] },
+    // the tour: where each place is (u), how close the camera comes (z), the side its words open on (side: 1 the
+    // right of the screen, -1 the left), its life (fx: 1 the panels' sweep, 2 the storage filling, 3 the energy
+    // running into the city, 4 the data center's scan) on the ground it covers (O + a·A + b·B), and its ring on the
+    // ground (centre, radius as a fraction of the picture's width, how flat, the turn). patches: the same picture made
+    // twice as sharp around each place (an upscale of the original, its colour matched to this picture)
+    tour: {
+      stops: [
+        { k: "sol", u: [0.155, 0.583], z: 1.6, side: 1, fx: 1, O: [0.0563, 0.5811], A: [0.1381, -0.054], B: [0.0418, 0.0573], ring: [0.155, 0.585, 0.122, 0.36, -9] },
+        { k: "sto", u: [0.54, 0.485], z: 2.6, side: -1, fx: 2, O: [0.494, 0.52], A: [0.083, 0], B: [0, -0.072], ring: [0.535, 0.505, 0.06, 0.42, -4] },
+        { k: "chg", u: [0.475, 0.61], z: 1.9, side: 1, fx: 3, ring: [0.48, 0.63, 0.095, 0.4, 0] },
+        { k: "srv", u: [0.885, 0.7], z: 2.1, side: -1, fx: 4, O: [0.805, 0.756], A: [0.155, 0], B: [0, -0.104], ring: [0.883, 0.712, 0.095, 0.4, -6] },
+      ],
+      patches: [["sol", [0.03815, 0.42253, 0.27798, 0.74805]], ["sto", [0.42006, 0.32552, 0.65988, 0.65104]],
+        ["chg", [0.35501, 0.44206, 0.59484, 0.76758]], ["srv", [0.76017, 0.53711, 1, 0.86263]]],
+    } },
   tall: { on: "assets/img/lab/tall-on.webp", off: "assets/img/lab/tall-off.webp", near: "assets/img/lab/tall-near.webp", w: 1536, h: 2752, base: [0.5, 0.5],
     src: [0.55, 0.575], horizon: 0.255, sun: [0.826, 0.263],
     pins: { sol: [0.16, 0.585], sto: [0.63, 0.367], chg: [0.55, 0.575], srv: [0.7, 0.487] },
     line: [[0.594, 0.6243], [0.536, 0.6254], [0.487, 0.6243], [0.4536, 0.615], [0.412, 0.599], [0.371, 0.585], [0.33, 0.571],
       [0.2887, 0.554], [0.231, 0.5656], [0.165, 0.579]],
-    fly: { zoom: 1.35, foe: [0.5, 0.42] } },
+    fly: { zoom: 1.35, foe: [0.5, 0.42] },
+    // a phone's picture has no data center: the fourth stop is the wind turbines on the hill (fx 5: the power running
+    // out of them), for the power stations; the words open under the place
+    tour: {
+      stops: [
+        { k: "sol", u: [0.1, 0.578], z: 1.8, side: 0, fx: 1, O: [-0.17, 0.592], A: [0.3004, -0.0658], B: [0.0914, 0.0407], ring: [0.075, 0.58, 0.15, 0.36, -9] },
+        { k: "sto", u: [0.68, 0.485], z: 2.4, side: 0, fx: 2, O: [0.603, 0.511], A: [0.156, 0], B: [0, -0.053], ring: [0.68, 0.5, 0.11, 0.42, -4] },
+        { k: "chg", u: [0.565, 0.6], z: 2, side: 0, fx: 3, ring: [0.58, 0.62, 0.15, 0.4, 0] },
+        { k: "srv", u: [0.37, 0.355], z: 2, side: 0, fx: 5, ring: [0.375, 0.37, 0.12, 0.4, 0] },
+      ],
+      patches: [["sol", [0, 0.47275, 0.30534, 0.6835]], ["sto", [0.48438, 0.38263, 0.875, 0.59339]],
+        ["chg", [0.36979, 0.49455, 0.76042, 0.70531]], ["pwr", [0.17448, 0.25472, 0.5651, 0.46548]]],
+    } },
 };
+for (const [name, s] of Object.entries(SETS)) {
+  s.name = name;
+  // in the tour the cards of the opening stand on the tour's own places
+  if (tour) for (const t of s.tour.stops) s.pins[t.k] = t.u;
+}
 
 const VS = `#version 300 es
 in vec2 p; out vec2 vUv;
@@ -51,15 +86,26 @@ void main(){ vUv = vec2(p.x * .5 + .5, .5 - p.y * .5); gl_Position = vec4(p, 0.,
 const FS = `#version 300 es
 precision highp float;
 in vec2 vUv; out vec4 o;
-uniform sampler2D tOn, tOff, tNear;
-uniform vec2 uRes, uImg, uCenter, uPar, uSrc, uSun, uFoe, uHeadS;
+uniform sampler2D tOn, tOff, tNear, tP0, tP1, tP2, tP3;
+uniform vec4 uPR[4];
+uniform mat2 uFxM;
+uniform vec2 uRes, uImg, uCenter, uPar, uSrc, uSun, uFoe, uHeadS, uFoc, uFxO, uFxC, uEnO;
 uniform float uZoom, uReveal, uTime, uAlpha, uHorizon, uStill, uM, uLow, uLift, uSink, uDim, uFly;
+uniform float uPK, uFocR, uFocA, uPanS, uPanA, uFx, uFxK, uFxT, uEnR, uEnK;
 float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
 float noise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
   return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
 float fbm(vec2 p){ float a = .5, s = 0.; for (int i = 0; i < 4; i++){ s += a * noise(p); p *= 2.03; a *= .5; } return s; }
 float lum(vec3 c){ return dot(c, vec3(.2126, .7152, .0722)); }
 float greenness(vec3 c){ return c.g - max(c.r, c.b); }
+float satf(vec3 c){ return max(c.r, max(c.g, c.b)) - min(c.r, min(c.g, c.b)); }
+// the tour's detail patches: the same picture twice as sharp around a place, feathered into it
+vec3 patchOn(sampler2D t, vec4 r, vec2 uv, vec3 c, float lod){
+  vec2 sz = r.zw - r.xy, f = (uv - r.xy) / sz;
+  if (f.x <= 0. || f.y <= 0. || f.x >= 1. || f.y >= 1.) return c;
+  vec2 e = min(f, 1. - f) * sz;
+  return mix(c, textureLod(t, f, lod).rgb, smoothstep(0., .03, e.x) * smoothstep(0., .05, e.y));
+}
 void main(){
   // cover, around the centre the camera looks at
   float sa = uRes.x / uRes.y, ia = uImg.x / uImg.y;
@@ -87,10 +133,34 @@ void main(){
   uv = clamp(uv, vec2(.0005), vec2(.9995));
 
   vec3 on = texture(tOn, uv).rgb, off = texture(tOff, uv).rgb;
+  // the tour: the place in focus sharp (its detail patch), the rest of the picture soft, and the side the words open
+  // on (uPanS: 1 the right, -1 the left, 0 the foot) softer still
+  float fd = length((vUv - uFoc) * vec2(sa, 1.));
+  float side = uPanS > .5 ? vUv.x : uPanS < -.5 ? 1. - vUv.x : vUv.y;
+  float pan = uPanA * smoothstep(.42, .64, side);
+  float bl = max(uFocA * smoothstep(uFocR, uFocR * 2.4, fd), pan);
+  float lod0 = log2(max(1., s.x * uImg.x / uRes.x));
+  // the network is read from the picture as it was made (the sharper patch is for the eye only)
+  vec3 onM = on;
+  if (uPK > 0.) {
+    float lp = log2(max(1., 2. * s.x * uImg.x / uRes.x));
+    vec3 sharp = patchOn(tP0, uPR[0], uv, on, lp);
+    sharp = patchOn(tP1, uPR[1], uv, sharp, lp); sharp = patchOn(tP2, uPR[2], uv, sharp, lp); sharp = patchOn(tP3, uPR[3], uv, sharp, lp);
+    on = mix(on, sharp, uPK * (1. - smoothstep(0., .25, bl)));
+  }
+  if (bl > .01) {
+    // a soft blur from the smaller copies of the picture, four taps turned against their blocks
+    float lod = lod0 + bl * 3.4;
+    vec2 o1 = vec2(.7, .35) * exp2(lod) / uImg, o2 = vec2(-.35, .7) * exp2(lod) / uImg;
+    vec3 bo = (textureLod(tOn, uv + o1, lod) + textureLod(tOn, uv - o1, lod) + textureLod(tOn, uv + o2, lod) + textureLod(tOn, uv - o2, lod)).rgb * .25;
+    vec3 bf = (textureLod(tOff, uv + o1, lod) + textureLod(tOff, uv - o1, lod) + textureLod(tOff, uv + o2, lod) + textureLod(tOff, uv - o2, lod)).rgb * .25;
+    float t = smoothstep(.01, .2, bl);
+    on = mix(on, bo, t); onM = mix(onM, bo, t); off = mix(off, bf, t);
+  }
   // the network's own pixels: what the lit picture has and the dark one has not
   // (only where the lit picture is really bright and green: the dark sky's compression noise stays out)
-  float m = clamp((greenness(on) - greenness(off)) * 5. + (lum(on) - lum(off)) * 2., 0., 1.)
-    * smoothstep(.16, .34, lum(on)) * smoothstep(.04, .12, greenness(on)) * step(uHorizon - .02, uv.y);
+  float m = clamp((greenness(onM) - greenness(off)) * 5. + (lum(onM) - lum(off)) * 2., 0., 1.)
+    * smoothstep(.16, .34, lum(onM)) * smoothstep(.04, .12, greenness(onM)) * step(uHorizon - .02, uv.y);
   // the light spreads from the city: a soft front, the picture turning on behind it
   vec2 dd = (uv - uSrc) * vec2(ia, 1.);
   float r = length(dd), R = uReveal * 1.9;
@@ -120,14 +190,57 @@ void main(){
   float sunG = exp(-dot(sv, sv) * 260.) * (.22 + .1 * sin(uTime * .7));
   float streak = exp(-abs(sv.y) * 260.) * exp(-abs(sv.x) * 3.2) * .18;
   col += vec3(1., .82, .58) * (sunG + streak);
-  // the edges sink into the page's night: a vignette, and the foot melts into it (direction א: into the page's
-  // living night itself, so the foot fades out rather than to one colour)
+  // the tour: the place the camera stands at comes alive, on its own ground (a = along A, b = along B)
+  if (uFxK > 0.) {
+    vec2 ab = uFxM * (uv - uFxO);
+    float inside = smoothstep(0., .04, ab.x) * smoothstep(1., .96, ab.x) * smoothstep(0., .04, ab.y) * smoothstep(1., .96, ab.y);
+    vec2 dv = (uv - uFxC) * vec2(ia, 1.);
+    float rr = length(dv);
+    if (uFx < 1.5) {
+      // solar: a sweep of light runs along the rows of blue panels, and leaves them faintly charged behind it
+      float panel = smoothstep(.02, .1, on.b - on.r) * smoothstep(.06, .26, lum(on)) * (1. - smoothstep(.04, .16, greenness(on)));
+      float sw = fract(uTime * .2) * 1.5 - .25;
+      float band = exp(-pow((ab.x - sw) / .045, 2.)), after = smoothstep(sw + .02, sw - .25, ab.x) * smoothstep(sw - .9, sw - .25, ab.x);
+      col += (vec3(.6, .88, 1.) * band * 1.1 + G * after * .16) * panel * inside * uFxK;
+    } else if (uFx < 2.5) {
+      // storage: the buildings fill up like batteries as the scroll goes on, a bright level line at the top of the charge
+      float bld = smoothstep(.22, .42, lum(on)) * (1. - smoothstep(.14, .32, satf(on)));
+      float below = smoothstep(uFxT + .012, uFxT - .012, ab.y);
+      col = mix(col, col * vec3(.5, 1.18, .78) + G * .14, below * bld * inside * uFxK * .9);
+      col += G * exp(-pow((ab.y - uFxT) / .011, 2.)) * (.35 + bld) * inside * uFxK * 1.3;
+    } else if (uFx < 3.5) {
+      // charging: the energy runs in along every line to the hub under the city, and the city's lights come up
+      float pl = pow(.5 + .5 * sin(rr * 70. + uTime * 5.), 16.);
+      col += G * m * pl * smoothstep(.24, .02, rr) * uFxK * 1.7;
+      col *= 1. + warm * .4 * uFxK * smoothstep(.22, .0, rr);
+      col += G * exp(-rr * rr * 1400.) * uFxK * (.45 + .25 * sin(uTime * 3.));
+    } else if (uFx < 4.5) {
+      // the data center: its windows flicker and a scan runs up through it
+      float lit2 = smoothstep(.28, .55, lum(on)) * smoothstep(0., .06, on.b - on.r);
+      vec2 cl = floor(uv * uImg / 2.);
+      float fl = step(.55, fract(hash(cl) + uTime * (.5 + hash(cl + 3.))));
+      float scan = exp(-pow((ab.y - (fract(uTime * .32) * 1.3 - .15)) / .05, 2.));
+      col += (vec3(.6, .85, 1.) * lit2 * fl * .3 + vec3(.45, 1., .75) * scan * (.25 + lit2) * .5) * inside * uFxK;
+    } else {
+      // the power stations (a phone's fourth stop, the wind turbines): the power runs out of them along the lines
+      col += G * m * pow(.5 + .5 * sin(rr * 55. - uTime * 4.), 16.) * smoothstep(.36, .02, rr) * uFxK * 1.6;
+      col += G * exp(-rr * rr * 900.) * uFxK * .3;
+    }
+  }
+  // on the way from one place to the next, a front of energy runs out along the lines from the place before
+  if (uEnK > 0.) col += G * m * exp(-pow((length((uv - uEnO) * vec2(ia, 1.)) - uEnR) / .022, 2.)) * uEnK * 2.2;
+  // the edges sink into the page's night: a vignette, and the foot melts into it (direction א and the tour: into the
+  // page's living night itself, so the foot fades out rather than to one colour)
   vec2 q = vUv - .5;
   col *= 1. - dot(q, q) * .55;
   vec3 night = vec3(0., 11., 38.) / 255.;
   float foot = smoothstep(.86, 1., v.y);
   col = mix(col, night, foot * .92 * (1. - uFly));
   float a = uAlpha * (1. - foot * uFly);
+  // the tour: out of the focus the scene steps back, and on the words' side it thins out into the page's night
+  col *= 1. - uFocA * smoothstep(uFocR, uFocR * 2.8, fd) * .3;
+  col = mix(col, night, pan * .4);
+  a *= 1. - pan * .58;
   // the sink: the scene goes back into the night from the edges in, the line's head last
   float rd = length((vUv - uHeadS) * vec2(sa, 1.)), edge = 2.2 * (1. - uSink);
   a *= (1. - smoothstep(edge - .3, edge + .1, rd)) * (1. - smoothstep(.55, 1., uSink));
@@ -135,7 +248,8 @@ void main(){
   o = vec4(col * a, a);
 }`;
 
-const UNIFORMS = ["tOn", "tOff", "tNear", "uRes", "uImg", "uCenter", "uPar", "uSrc", "uSun", "uFoe", "uHeadS", "uZoom", "uReveal", "uTime", "uAlpha", "uHorizon", "uStill", "uM", "uLow", "uLift", "uSink", "uDim", "uFly"];
+const UNIFORMS = ["tOn", "tOff", "tNear", "uRes", "uImg", "uCenter", "uPar", "uSrc", "uSun", "uFoe", "uHeadS", "uZoom", "uReveal", "uTime", "uAlpha", "uHorizon", "uStill", "uM", "uLow", "uLift", "uSink", "uDim", "uFly",
+  "tP0", "tP1", "tP2", "tP3", "uPR", "uPK", "uFoc", "uFocR", "uFocA", "uPanS", "uPanA", "uFx", "uFxK", "uFxT", "uFxO", "uFxM", "uFxC", "uEnO", "uEnR", "uEnK"];
 function setupGL() {
   const gl = cv.getContext("webgl2", { premultipliedAlpha: true, alpha: true, antialias: false });
   if (!gl) return null;
@@ -150,6 +264,8 @@ function setupGL() {
   const loc = gl.getAttribLocation(pr, "p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
   const U = {}; for (const n of UNIFORMS) U[n] = gl.getUniformLocation(pr, n);
   gl.uniform1i(U.tOn, 0); gl.uniform1i(U.tOff, 1); gl.uniform1i(U.tNear, 2);
+  // the tour's patches on units 3-6, a dark pixel in each until they come
+  ["tP0", "tP1", "tP2", "tP3"].forEach((n, i) => { gl.uniform1i(U[n], 3 + i); blank(gl, 3 + i); });
   return { gl, U };
 }
 
@@ -164,9 +280,17 @@ function texture(gl, unit, img) {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   return t;
 }
+function blank(gl, unit) {
+  const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
+  return t;
+}
 
 let W = 1, H = 1, dpr = 1, set = null, ctx = null, globe = null;
 const pins = $$(".lb-pin").map((el) => ({ el, k: el.dataset.k, card: $(".lb-card", el) }));
+// the tour's words, one block for each place (tourOn: the tour runs, with WebGL and with motion)
+const arts = tour ? $$(".lb-stop").map((el, i) => ({ el, i, n: $(".n", el), on: false, box: null })) : [];
+let tourOn = false;
 
 // the camera over the picture: how much of it shows and around which point
 function view(zoom, center) {
@@ -186,6 +310,9 @@ function resize() {
   W = stage.clientWidth; H = stage.clientHeight; dpr = Math.min(devicePixelRatio || 1, 2);
   const next = W / H < 0.9 ? SETS.tall : SETS.wide;
   if (next !== set && ctx) { set = next; loadSet(); } else set = next;
+  // the tour's words: beside the place on a wide screen, under it on a tall one
+  stage.dataset.fmt = set.name;
+  for (const a of arts) a.el.dataset.side = String(set.tour.stops[a.i].side);
   cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
   if (ctx) ctx.gl.viewport(0, 0, cv.width, cv.height);
   if (globe) globe.resize();
@@ -209,15 +336,24 @@ function nearAt(u) {
 
 async function loadSet() {
   const s = set;
-  const [on, off, near] = await Promise.all([loadImg(s.on), loadImg(s.off), fly ? loadImg(s.near) : null]);
+  const [on, off, near] = await Promise.all([loadImg(s.on), loadImg(s.off), fly || tour ? loadImg(s.near) : null]);
   if (s !== set) return;
   const { gl } = ctx;
   texture(gl, 0, on); texture(gl, 1, off);
   // a 1px black stand-in where there is no flight: the land does not move
   if (near) { texture(gl, 2, near); s.nd = nearData(near); }
-  else { const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, t); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4)); }
+  else blank(gl, 2);
   if (s.lineLen === undefined) lineLengths(s);
   s.ready = true; $(".lb-still").src = s.on;
+  // the tour's sharper patches come after the scene itself, and step in when they are all here
+  if (tourOn) {
+    s.patchReady = false;
+    Promise.all(s.tour.patches.map(([k]) => loadImg(`assets/img/lab/${s.name}-p-${k}.webp`))).then((imgs) => {
+      if (s !== set) return;
+      imgs.forEach((im, i) => texture(gl, 3 + i, im));
+      s.patchReady = true;
+    }).catch((e) => console.warn("patches", e));
+  }
 }
 
 // ---- the scroll ----
@@ -229,7 +365,7 @@ function readScroll() {
   target = span > 0 ? clamp01(-r.top / span) : 0;
 }
 addEventListener("scroll", readScroll, { passive: true });
-const lenis = fly && !reduce && window.Lenis ? new window.Lenis({ autoRaf: false, lerp: 0.12 }) : null;
+const lenis = (fly || tour) && !reduce && window.Lenis ? new window.Lenis({ autoRaf: false, lerp: 0.12 }) : null;
 
 // the page's living night, as on the home page
 let sky = null;
@@ -332,6 +468,120 @@ function trail(v, t, q, out) {
   F.head = [h.x / W, h.y / H];
 }
 
+// ---- the tour ----
+// the section reads as: up to .022 the scene as it opens, then for each place a flight (.085) and a stop (.125), and
+// from .862 the camera pulls back over the whole scene and it sinks into the page's night
+const TT = { t0: 0.022, tr: 0.085, dw: 0.125, out: 0.07 }, SEG = TT.tr + TT.dw;
+const easeIO = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(2 - 2 * t, 3) / 2);
+let TS = { mode: "ov", from: -1, to: -1, raw: 0, e: 0, dw: 0, u: [0.5, 0.5] };
+function tourAt(p) {
+  const n = set.tour.stops.length, end = TT.t0 + n * SEG;
+  if (p < TT.t0) return { mode: "ov", from: -1, to: -1, raw: 0, e: 0, dw: 0 };
+  if (p >= end) { const raw = clamp01((p - end) / TT.out); return { mode: "out", from: n - 1, to: -1, raw, e: easeIO(raw), dw: 1 }; }
+  const i = Math.min(n - 1, Math.floor((p - TT.t0) / SEG)), q = p - TT.t0 - i * SEG;
+  if (q < TT.tr) { const raw = q / TT.tr; return { mode: "go", from: i - 1, to: i, raw, e: easeIO(raw), dw: 0 }; }
+  return { mode: "at", from: i, to: i, raw: 1, e: 1, dw: clamp01((q - TT.tr) / TT.dw) };
+}
+// where the camera stands for a place: close in, the place on the side of the screen away from its words (on a tall
+// screen high up, the words under it); -1 is the whole scene
+function poseOf(i, intro) {
+  if (i < 0) return { u: set.base, a: [0.5, 0.5], z: intro };
+  const s = set.tour.stops[i];
+  if (set === SETS.tall) return { u: s.u, a: [0.5, 0.34], z: s.z };
+  return { u: s.u, a: [s.side > 0 ? 0.3 : 0.7, 0.56], z: Math.max(1.05, s.z * Math.min(1.1, Math.max(0.82, W / H / 1.6))) };
+}
+// how present a place is (its ring, its words, its life): 1 while the camera stands at it, in and out on the flights
+function presence(st, i, a = 0.45) {
+  if (st.mode === "at") return i === st.to ? 1 : 0;
+  if (st.mode === "go") return i === st.from ? 1 - smooth(0, a, st.raw) : i === st.to ? smooth(1 - a, 1, st.raw) : 0;
+  if (st.mode === "out") return i === st.from ? 1 - smooth(0, a, st.raw) : 0;
+  return 0;
+}
+// a point of the picture on the stage, with the pointer's depth (as the shader moves the land)
+function screenOf(v, u) {
+  const [x, y] = project(v, u), d = 0.004 + smooth(set.horizon, 1, u[1]) * 0.012;
+  return [x - par.x * d / v.zoom / v.sx * W, y - par.y * d / v.zoom / v.sy * H];
+}
+// the words' boxes, read once per layout (the leader lines end on them)
+function measureStops() {
+  const sr = stage.getBoundingClientRect();
+  for (const a of arts) {
+    const r = a.el.getBoundingClientRect();
+    a.box = { l: r.left - sr.left, r: r.right - sr.left, t: r.top - sr.top, b: r.bottom - sr.top, nY: r.top - sr.top + a.n.offsetTop + a.n.offsetHeight * 0.56 };
+  }
+}
+// the leader line: from the ring's end on the words' side, a short level step, then on to the numeral; on a tall
+// screen down from the ring's front to just over the words, then along to their start
+function leadOf(g, s, b, tall) {
+  const a = (g.rot * Math.PI) / 180, c = Math.cos(a), sn = Math.sin(a);
+  if (tall) {
+    const P0 = [g.x - g.ry * sn, g.y + g.ry * c], y1 = b.t - 18;
+    if (y1 < P0[1] + 16) return null;
+    return [P0, [P0[0], y1], [b.r - 6, y1]];
+  }
+  const side = s.side, P0 = [g.x + side * g.rx * c, g.y + side * g.rx * sn], edge = side > 0 ? b.l - 18 : b.r + 18;
+  if ((edge - P0[0]) * side < 60) return null;
+  return [P0, [P0[0] + side * 26, P0[1]], [edge, b.nY]];
+}
+// the scroll position of a place's stop, and the way there
+const yAt = (p) => sec.getBoundingClientRect().top + scrollY + p * (sec.offsetHeight - H);
+// while the page itself takes the camera somewhere, a slow frame must not read as a flight left half way
+let flyUntil = 0;
+function glide(y, duration) { flyUntil = performance.now() + duration * 1000 + 120; lenis.scrollTo(y, { duration, easing: (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(2 - 2 * t, 2) / 2) }); }
+function goStop(i) {
+  const y = yAt(TT.t0 + i * SEG + TT.tr + 0.012);
+  if (lenis) glide(y, 1.1 + 0.35 * Math.abs(i - Math.max(0, TS.to)));
+  else scrollTo({ top: y, behavior: "smooth" });
+}
+// a flight left half way settles: past its middle on to the next place, before it back to the last one
+let idleT = 0;
+function settle() {
+  if (!tourOn || !lenis || performance.now() < flyUntil || TS.mode !== "go" || TS.raw < 0.03 || TS.raw > 0.97) return;
+  const pa = TT.t0 + TS.to * SEG;
+  glide(yAt(TS.raw < 0.5 ? (TS.to === 0 ? 0 : pa - 0.004) : pa + TT.tr + 0.012), 0.9);
+}
+// what the tour shows this frame: the marks, the words, and the shader's focus, frost, life and energy front
+const TU = { foc: [0.5, 0.5], focR: 1, focA: 0, panS: 1, panA: 0, fx: 0, fxK: 0, fxT: 0, fxO: [0, 0], fxM: [1, 0, 0, 1], fxC: [0, 0], enO: [0, 0], enR: 0, enK: 0 };
+let marks = null;
+function tourDraw(v, time, pinA) {
+  const st = TS, S = set.tour.stops, tall = set === SETS.tall, ia = set.w / set.h;
+  const ringR = (i) => (i < 0 ? 1 : (S[i].ring[2] * W) / v.sx / H * 1.05);
+  for (let i = 0; i < S.length; i++) {
+    const s = S[i], k = presence(st, i), [x, y] = screenOf(v, s.ring), rx = (s.ring[2] * W) / v.sx;
+    const g = { x, y, rx, ry: rx * s.ring[3], rot: s.ring[4] };
+    // in the opening all four rings lie faint on their places; on the tour only the place the camera is at
+    const idle = pinA * 0.55, lead = k > 0.01 && arts[i].box ? leadOf(g, s, arts[i].box, tall) : null;
+    marks.draw(i, { ...g, o: Math.max(idle, Math.min(1, k * 1.6)), d: idle > 0.01 ? 1 : k, beam: k, lead, leadK: smooth(0.55, 1, k) });
+  }
+  // the place in focus, and the words: the place the camera leaves until half way, then the one it is going to
+  const cur = st.mode === "go" && st.raw >= 0.5 ? st.to : st.from;
+  TU.foc = [screenOf(v, st.u)[0] / W, screenOf(v, st.u)[1] / H];
+  TU.focR = lerp(ringR(st.from), ringR(st.to < 0 ? st.from : st.to), st.e);
+  TU.focA = st.mode === "at" ? 1 : st.mode === "go" ? (st.from < 0 ? smooth(0.3, 1, st.raw) : 1 - 0.8 * Math.sin(Math.PI * st.raw)) : st.mode === "out" ? 1 - smooth(0, 0.5, st.raw) : 0;
+  if (cur >= 0) {
+    const s = S[cur], k = presence(st, cur, 0.4);
+    TU.panS = tall ? 0 : s.side; TU.panA = k;
+    TU.fx = s.fx; TU.fxK = presence(st, cur, 0.45); TU.fxC = s.u;
+    TU.fxT = st.mode === "at" ? 0.1 + 0.86 * smooth(0, 0.9, st.dw) : cur === st.to ? 0.1 : 0.96;
+    if (s.O) {
+      const [ax, ay] = s.A, [bx, by] = s.B, det = ax * by - ay * bx;
+      TU.fxO = s.O; TU.fxM = [by / det, -ay / det, -bx / det, ax / det];
+    }
+  } else { TU.panA = 0; TU.fxK = 0; }
+  // the energy front, on the way between places (out of the city on the way to the first)
+  if (st.mode === "go") {
+    const o = st.from >= 0 ? S[st.from].u : set.src, t = S[st.to].u;
+    TU.enO = o; TU.enR = 0.02 + st.raw * Math.hypot((t[0] - o[0]) * ia, t[1] - o[1]) * 1.08; TU.enK = Math.sin(Math.PI * st.raw);
+  } else TU.enK = 0;
+  // the words: in as the camera arrives (each line after the one before), out as it leaves; the numeral fills with
+  // the stop
+  for (const a of arts) {
+    const on = presence(st, a.i, 0.4) > 0.5;
+    if (on !== a.on) { a.on = on; a.el.classList.toggle("is-on", on); }
+  }
+  if (cur >= 0) arts[cur].el.style.setProperty("--pw", (st.mode === "at" ? st.dw : cur === st.to ? 0 : 1).toFixed(3));
+}
+
 // ---- the timeline ----
 // dive: 0-.42 the Earth turns and dives to Israel, .3-.55 the scene takes over and the camera lands, .5-.78 the
 // network lights up from the city, then the camera settles in. scene: the network lights by itself on arrival.
@@ -346,7 +596,7 @@ function frame(now) {
   if (sky && scrollY !== frame.sy) { frame.sy = scrollY; sky.scroll(scrollY); }
   if (dom) dom.tick();
   const time = (now - t0) / 1000;
-  prog = fly ? target : prog + (target - prog) * (reduce ? 1 : 0.1);
+  prog = fly || tourOn ? target : prog + (target - prog) * (reduce ? 1 : 0.1);
   par.x += (par.tx - par.x) * 0.05; par.y += (par.ty - par.y) * 0.05;
   if (!fine && !reduce) { par.x = Math.sin(time * 0.21) * 0.5; par.y = Math.cos(time * 0.17) * 0.3; }
   if (!set || !set.ready || !ctx) return;
@@ -387,6 +637,26 @@ function frame(now) {
     titleA = 1 - smooth(0.005, 0.06, p);
     pinA = smooth(2.6, 3.4, since) * (1 - smooth(0, 0.04, p));
     frame.tq = [t, q, p];
+  } else if (tourOn) {
+    // the tour: the scene opens by the clock as in "scene"; then the camera goes from place to place. On a flight
+    // the target point and its place on the screen glide over together, and between two places the camera lifts a
+    // little (and the near land moves against the far) before it comes down on the next; at a stop it eases in
+    const p = prog, intro = lerp(1.18, 1, 1 - Math.pow(1 - smooth(0, 2.6, since), 3));
+    alpha = smooth(0, 0.9, since);
+    reveal = smooth(0.6, 3.4, since);
+    const st = tourAt(p), A = poseOf(st.from, intro), B = st.mode === "at" ? A : poseOf(st.to, intro), e = st.e;
+    const u = [lerp(A.u[0], B.u[0], e), lerp(A.u[1], B.u[1], e)], a = [lerp(A.a[0], B.a[0], e), lerp(A.a[1], B.a[1], e)];
+    const hop = st.mode === "go" && st.from >= 0 ? Math.sin(Math.PI * e) : 0;
+    zoom = Math.max(1, lerp(A.z, B.z, e) * (1 - 0.16 * hop) * (st.mode === "at" ? 1 + 0.05 * st.dw : 1));
+    center = centerFor(zoom, u, a[0] * W, a[1] * H);
+    F.m = 0.1 * hop; F.foe = a;
+    st.u = u; TS = st;
+    // the end: the camera back over the whole scene, which sinks into the page's night
+    const end = TT.t0 + set.tour.stops.length * SEG;
+    F.sink = smooth(end + 0.035, 0.99, p); F.lift = 0.3 * F.sink * F.sink; F.head = [0.5, 0.5];
+    globeA = 0;
+    titleA = 1 - smooth(0.004, 0.02, p);
+    pinA = smooth(2.6, 3.4, since) * (1 - smooth(0, 0.016, p));
   } else {
     alpha = reduce ? 1 : smooth(0, 0.9, since);
     zoom = reduce ? 1 : lerp(1.18, 1, 1 - Math.pow(1 - smooth(0, 2.6, since), 3)) * lerp(1, 1.1, prog);
@@ -400,6 +670,7 @@ function frame(now) {
     center = [lerp(home[0], focus[0], k), lerp(home[1], focus[1], k)];
   }
   const v = view(zoom, center); v.zoom = zoom;
+  if (tourOn && marks) tourDraw(v, time, pinA);
 
   // the line: rebuilt only when the scroll (or the screen) changed
   if (ribbon) {
@@ -416,13 +687,22 @@ function frame(now) {
   gl.uniform1f(U.uZoom, zoom); gl.uniform1f(U.uReveal, reveal); gl.uniform1f(U.uTime, reduce ? 0 : time);
   gl.uniform1f(U.uAlpha, alpha); gl.uniform1f(U.uHorizon, set.horizon); gl.uniform1f(U.uStill, reduce ? 1 : 0);
   gl.uniform1f(U.uM, F.m); gl.uniform1f(U.uLow, F.low); gl.uniform1f(U.uLift, F.lift); gl.uniform1f(U.uSink, F.sink);
-  gl.uniform1f(U.uDim, F.dim); gl.uniform1f(U.uFly, fly ? 1 : 0);
+  gl.uniform1f(U.uDim, F.dim); gl.uniform1f(U.uFly, fly || tourOn ? 1 : 0);
+  // the tour (nothing of it outside the tour: every amount stays 0)
+  const T = TU, live = tourOn ? 1 : 0;
+  gl.uniform1f(U.uPK, tourOn && set.patchReady ? 1 : 0);
+  if (tourOn && frame.prs !== set.name) { frame.prs = set.name; gl.uniform4fv(U.uPR, new Float32Array(set.tour.patches.flatMap(([, r]) => r))); }
+  gl.uniform2f(U.uFoc, T.foc[0], T.foc[1]); gl.uniform1f(U.uFocR, T.focR); gl.uniform1f(U.uFocA, T.focA * live);
+  gl.uniform1f(U.uPanS, T.panS); gl.uniform1f(U.uPanA, T.panA * live);
+  gl.uniform1f(U.uFx, T.fx); gl.uniform1f(U.uFxK, T.fxK * live); gl.uniform1f(U.uFxT, T.fxT);
+  gl.uniform2f(U.uFxO, T.fxO[0], T.fxO[1]); gl.uniformMatrix2fv(U.uFxM, false, T.fxM); gl.uniform2f(U.uFxC, T.fxC[0], T.fxC[1]);
+  gl.uniform2f(U.uEnO, T.enO[0], T.enO[1]); gl.uniform1f(U.uEnR, T.enR); gl.uniform1f(U.uEnK, T.enK * live);
   gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.drawArrays(gl.TRIANGLES, 0, 3);
   cv.style.opacity = 1;
 
   $(".lb-globe").style.opacity = globeA.toFixed(3);
   h1.style.setProperty("--ho", clamp01(titleA).toFixed(3));
-  if (cue) cue.style.setProperty("--co", (1 - smooth(0.02, 0.1, prog)).toFixed(3));
+  if (cue) cue.style.setProperty("--co", (1 - (tourOn ? smooth(0.002, 0.014, prog) : smooth(0.02, 0.1, prog))).toFixed(3));
   placePins(v, pinA);
   // the solar farm's card stands open like the reference; on touch the cards take turns until one is touched
   if (pinA > 0.9 && lastPin < 0.9 && !touched) { show("sol"); cycleAt = time + 4.5; cycleI = 0; }
@@ -434,10 +714,20 @@ function frame(now) {
 // ---- start ----
 try { ctx = setupGL(); } catch (e) { ctx = null; console.warn(e); }
 if (!ctx) root.classList.add("no-gl");
+tourOn = tour && !reduce && !!ctx;
 resize(); readScroll();
-dom = mountDom({ HEAD, reduce, stageH: () => H });
+// the tour takes the place of the domains section; without WebGL or motion the section stays, as on the home page
+if (!tourOn) dom = mountDom({ HEAD, reduce, stageH: () => H });
 if (dom) dom.layout();
-const relayout = () => { resize(); readScroll(); for (const p of pins) p.cw = 0; if (dom) dom.layout(); lastKey = ""; if (lenis) lenis.resize(); };
+if (tourOn) {
+  marks = mountMarks($(".lb-tour"), arts.length);
+  measureStops();
+  // a place pointed at in the opening, or a link in a place's words reached by the keyboard, takes the tour there
+  for (const p of pins) p.el.addEventListener("click", (e) => { if (e.defaultPrevented) return; e.preventDefault(); goStop(arts.findIndex((a) => a.el.dataset.k === p.k)); });
+  for (const a of arts) a.el.addEventListener("focusin", () => { if (!a.on) goStop(a.i); });
+  if (lenis) lenis.on("scroll", () => { clearTimeout(idleT); idleT = setTimeout(settle, 220); });
+}
+const relayout = () => { resize(); readScroll(); for (const p of pins) p.cw = 0; if (dom) dom.layout(); if (tourOn) measureStops(); lastKey = ""; if (lenis) lenis.resize(); };
 let rz = 0;
 addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(relayout, 120); });
 addEventListener("load", relayout);

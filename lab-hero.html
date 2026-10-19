@@ -10,11 +10,12 @@
 <link rel="preload" href="assets/fonts/hatzor-regular.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/almoni-regular-aaa.woff2" as="font" type="font/woff2" crossorigin>
 <script>
-  // sketch only (round 5 experiment): the hero rebuilt after Daniel's reference picture. The default (direction א,
-  // 19.10) opens on the scene and the scroll flies into it, after the line, down into the domains; ?v=dive dives into
-  // the scene from the night Earth, ?v=scene opens straight on it (the two versions of 18.10)
+  // sketch only (round 5 experiment): the hero rebuilt after Daniel's reference picture. The default (the tour, Liav
+  // 19.10) opens on the scene and the scroll takes the camera from place to place, the words of each opening beside
+  // it; ?v=fly is direction א (19.10, the flight after the line), ?v=dive dives into the scene from the night Earth,
+  // ?v=scene opens straight on it (the two versions of 18.10)
   document.documentElement.classList.add("js");
-  (function (d) { var v = new URLSearchParams(location.search).get("v"); d.setAttribute("data-v", v === "scene" || v === "dive" ? v : "fly"); })(document.documentElement);
+  (function (d) { var v = new URLSearchParams(location.search).get("v"); d.setAttribute("data-v", v === "scene" || v === "dive" || v === "fly" ? v : "tour"); })(document.documentElement);
 </script>
 <link rel="stylesheet" href="assets/css/site.css">
 <link rel="stylesheet" href="assets/css/lab-hero.css">
@@ -45,6 +46,42 @@
         <a class="lb-pin" href="#dom-storage" data-k="sto"><i></i><span class="lb-card"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="16" height="10" rx="2"/><path d="M21 10.5v3M6.5 10v4M10 10v4M13.5 10v4"/></svg><b>אגירת אנרגיה</b><span>ייזום, תכנון והקמת מערכות אגירת אנרגיה בשילוב סולארי, לצריכה עצמית ולייצור חשמל</span></span></a>
         <a class="lb-pin" href="#dom-charge" data-k="chg"><i></i><span class="lb-card"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2.5 5.5 13.5H12l-1 8 7.5-11H12z"/></svg><b>טעינת רכבים</b><span>הפעלת רשת טעינת רכבים אולטרה מהירה בפריסה ארצית</span></span></a>
         <a class="lb-pin" href="index.html#contact" data-k="srv"><i></i><span class="lb-card"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3.5" width="16" height="7" rx="1.5"/><rect x="4" y="13.5" width="16" height="7" rx="1.5"/><path d="M8 7h.01M8 17h.01M12 7h4M12 17h4"/></svg><em>בצמיחה</em><b>חוות שרתים ותחנות כוח</b><span>בארץ ובאירופה</span></span></a>
+      </div>
+      <!-- the tour: the camera stops at each place; the scene thins out on the side across from it and its words open there -->
+      <div class="lb-tour">
+        <svg class="lb-marks" aria-hidden="true"></svg>
+        <article class="lb-stop" data-k="sol" aria-labelledby="st-sol-h">
+          <span class="n num" aria-hidden="true">01</span>
+          <p class="kick">שלושה תחומים, שותף אחד</p>
+          <h2 id="st-sol-h">אנרגיה סולארית</h2>
+          <p class="lb-stop-p">ייזום, תכנון והקמת מערכות סולאריות על שלל תשתיות ואלמנטים.</p>
+          <a class="lnk" href="index.html#contact-lead" data-topic="solar">מידע נוסף<span class="sr"> על אנרגיה סולארית</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
+          <ol class="lb-ticks" aria-hidden="true"><li class="now"></li><li></li><li></li><li></li></ol>
+        </article>
+        <article class="lb-stop" data-k="sto" aria-labelledby="st-sto-h">
+          <span class="n num" aria-hidden="true">02</span>
+          <p class="kick">שלושה תחומים, שותף אחד</p>
+          <h2 id="st-sto-h">אגירת אנרגיה</h2>
+          <p class="lb-stop-p">ייזום, תכנון והקמת מערכות אגירת אנרגיה בשילוב סולארי, לצריכה עצמית ולייצור חשמל.</p>
+          <a class="lnk" href="index.html#contact-lead" data-topic="storage">מידע נוסף<span class="sr"> על אגירת אנרגיה</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
+          <ol class="lb-ticks" aria-hidden="true"><li class="done"></li><li class="now"></li><li></li><li></li></ol>
+        </article>
+        <article class="lb-stop" data-k="chg" aria-labelledby="st-chg-h">
+          <span class="n num" aria-hidden="true">03</span>
+          <p class="kick">שלושה תחומים, שותף אחד</p>
+          <h2 id="st-chg-h">טעינת רכבים</h2>
+          <p class="lb-stop-p">הפעלת רשת טעינת רכבים אולטרה מהירה בפריסה ארצית.</p>
+          <a class="lnk" href="index.html#contact-lead" data-topic="charge">מידע נוסף<span class="sr"> על טעינת רכבים</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
+          <ol class="lb-ticks" aria-hidden="true"><li class="done"></li><li class="done"></li><li class="now"></li><li></li></ol>
+        </article>
+        <article class="lb-stop" data-k="srv" aria-labelledby="st-srv-h">
+          <span class="n num" aria-hidden="true">04</span>
+          <p class="kick">בצמיחה</p>
+          <h2 id="st-srv-h">חוות שרתים ותחנות כוח</h2>
+          <p class="lb-stop-p">בארץ ובאירופה.</p>
+          <a class="lnk" href="index.html#contact">דברו איתנו<span class="sr"> על חוות שרתים ותחנות כוח</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
+          <ol class="lb-ticks" aria-hidden="true"><li class="done"></li><li class="done"></li><li class="done"></li><li class="now"></li></ol>
+        </article>
       </div>
       <p class="lb-cue" aria-hidden="true">גללו</p>
     </div>
@@ -128,12 +165,12 @@
   <section class="lb-end">
     <p>כאן ממשיך העמוד</p>
     <a href="index.html">חזרה לעמוד הבית</a>
-    <p class="lb-also"><a href="lab-hero.html">טיסה אל העמוד</a> · <a href="lab-hero.html?v=dive">צלילה מהכדור</a> · <a href="lab-hero.html?v=scene">הסצנה בלבד</a></p>
+    <p class="lb-also"><a href="lab-hero.html">סיור במוקדים</a> · <a href="lab-hero.html?v=dive">צלילה מהכדור</a> · <a href="lab-hero.html?v=scene">הסצנה בלבד</a></p>
   </section>
 </main>
 
 <nav class="lb-switch" aria-label="גרסאות הניסוי">
-  <a href="lab-hero.html" data-for="fly">טיסה אל העמוד</a>
+  <a href="lab-hero.html" data-for="tour">סיור במוקדים</a>
   <a href="lab-hero.html?v=dive" data-for="dive">צלילה מהכדור</a>
   <a href="lab-hero.html?v=scene" data-for="scene">הסצנה בלבד</a>
 </nav>

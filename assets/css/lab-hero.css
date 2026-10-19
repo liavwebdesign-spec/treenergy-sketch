@@ -23,9 +23,12 @@ html[data-v="scene"] .lb{height:190vh}
 /* direction א: the scene, then the flight into it, the chase after the line and the scene sinking into the night */
 html[data-v="fly"] .lb{height:400vh}
 html.no-gl[data-v="fly"] .lb{height:100vh}
+/* the tour (the default, 19.10): the opening, four places with a flight and a stop each, and the scene sinking away */
+html[data-v="tour"] .lb{height:560vh}
+html.no-gl[data-v="tour"] .lb{height:100vh}
 .lb-stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;background:var(--night-0)}
 /* the scene sinks into the page's own night, so the stage has none of its own */
-html[data-v="fly"] .lb-stage{background:none}
+html[data-v="fly"] .lb-stage,html[data-v="tour"] .lb-stage{background:none}
 .lb-trail{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .lb-globe,.lb-scene,.lb-still{position:absolute;inset:0;width:100%;height:100%}
 .lb-globe canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
@@ -70,6 +73,61 @@ html[data-v="scene"] .lb-globe{display:none}
 .lb-cue::after{content:"";display:block;width:1px;height:34px;margin:10px auto 0;background:linear-gradient(var(--accent),transparent);animation:lb-cue 2.2s var(--ease) infinite;transform-origin:top}
 @keyframes lb-cue{0%{transform:scaleY(0)}50%{transform:scaleY(1)}100%{transform:scaleY(1);opacity:0}}
 
+/* ---------- the tour ----------
+   it runs with WebGL and with motion, and then takes the place of the domains section; otherwise the section stays */
+.lb-tour{position:absolute;inset:0;z-index:6;pointer-events:none;display:none}
+@media (prefers-reduced-motion:no-preference){
+  html[data-v="tour"]:not(.no-gl) .lb-tour{display:block}
+  html[data-v="tour"]:not(.no-gl) #domains{display:none}
+  /* in the tour the rings on the ground mark the places; the old dot steps back, its card stays for the opening */
+  html[data-v="tour"]:not(.no-gl) .lb-pin > i{opacity:0}
+}
+.lb-marks{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.lb-marks .mk-back,.lb-marks .mk-front,.lb-marks .mk-front-w,.lb-marks .mk-lead{fill:none;stroke-dasharray:1 1;stroke-dashoffset:1}
+.lb-marks .mk-back{stroke:rgba(48,247,123,.4);stroke-width:1}
+.lb-marks .mk-front-w{stroke:rgba(48,247,123,.16);stroke-width:9;stroke-linecap:round}
+.lb-marks .mk-front{stroke:#8DFFBC;stroke-width:1.6;stroke-linecap:round}
+.lb-marks .mk-in{fill:none;stroke:rgba(48,247,123,.38);stroke-width:1;stroke-dasharray:2 9;animation:mk-turn 16s linear infinite}
+@keyframes mk-turn{to{stroke-dashoffset:-220}}
+.lb-marks .mk-core{fill:var(--accent);filter:drop-shadow(0 0 6px rgba(48,247,123,.9))}
+.lb-marks .mk-spark{fill:#EFFFF5}
+.lb-marks .mk-halo{fill:rgba(48,247,123,.28)}
+.lb-marks .mk-lead{stroke:rgba(48,247,123,.75);stroke-width:1}
+.lb-marks .mk-dot{fill:var(--accent)}
+/* the beam of light rising from the ground at the place */
+.lb-beams{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lb-beams i{position:absolute;left:0;top:0;opacity:0;transform-origin:50% 100%; /* qa-allow: physical, placed in screen pixels, the same in both directions */
+  background:linear-gradient(to top,rgba(48,247,123,.34),rgba(48,247,123,.1) 45%,rgba(48,247,123,0));
+  -webkit-mask-image:linear-gradient(to right,transparent,#000 38%,#000 62%,transparent);mask-image:linear-gradient(to right,transparent,#000 38%,#000 62%,transparent)}
+
+/* a place's words: on the side of the screen across from it (the picture sets the side, so it is physical), under it
+   on a tall screen. They come in line after line as the camera arrives, and go as it leaves */
+.lb-stop{position:absolute;top:50%;width:min(440px,34vw);translate:0 -50%;display:grid;justify-items:start;gap:clamp(10px,1.5vh,18px);
+  text-align:start;text-shadow:0 2px 24px rgba(var(--n0),.8);pointer-events:none}
+.lb-stop[data-side="1"]{right:var(--gutter); /* qa-allow: physical, the words open across the screen from the place, which the picture puts on the left */}
+.lb-stop[data-side="-1"]{left:var(--gutter); /* qa-allow: physical, the words open across the screen from the place, which the picture puts on the right */}
+.lb-stop > *{margin:0;opacity:0;transform:translateY(16px);transition:opacity .3s var(--ease),transform .4s var(--ease)}
+.lb-stop.is-on{pointer-events:auto}
+.lb-stop.is-on > *{opacity:1;transform:none;transition:opacity .6s var(--ease),transform .8s var(--ease);transition-delay:calc(var(--i,0) * 80ms)}
+.lb-stop > :nth-child(2){--i:1}.lb-stop > :nth-child(3){--i:2}.lb-stop > :nth-child(4){--i:3}.lb-stop > :nth-child(5){--i:4}.lb-stop > :nth-child(6){--i:5}
+/* the numeral is a battery, as in the domains: it fills with green through the stop */
+.lb-stop .n{display:block;font-family:var(--display);font-weight:400;font-size:clamp(64px,6.4vw,150px);line-height:1;padding-top:.14em;margin:-.14em 0 -4px;
+  color:transparent;text-shadow:none;letter-spacing:-.01em;
+  background:linear-gradient(to top,var(--accent) calc(var(--pw,0) * 100%),rgba(243,246,252,.16) calc(var(--pw,0) * 100%));-webkit-background-clip:text;background-clip:text;
+  filter:drop-shadow(0 0 calc(var(--pw,0) * 22px) rgba(48,247,123,.35))}
+.lb-stop h2{font-family:var(--display);font-weight:400;font-size:clamp(34px,3.3vw,76px);line-height:1.04;letter-spacing:-.012em}
+.lb-stop-p{font-size:var(--fs-body);line-height:1.6;color:var(--ink-soft);max-width:34ch}
+.lb-ticks{display:flex;gap:6px;padding:0;list-style:none}
+.lb-ticks li{width:26px;height:2px;border-radius:2px;background:rgba(243,246,252,.2)}
+.lb-ticks li.done{background:var(--accent)}
+/* the tick of this place fills from the start of the line (the right) */
+.lb-ticks li.now{background:linear-gradient(to left,var(--accent) calc(var(--pw,0) * 100%),rgba(243,246,252,.2) calc(var(--pw,0) * 100%))}
+/* a tall screen: the words under the place, over the comparison switch */
+.lb-stage[data-fmt="tall"] .lb-stop{top:auto;bottom:calc(84px + env(safe-area-inset-bottom));inset-inline:var(--gutter);width:auto;translate:none;gap:8px}
+.lb-stage[data-fmt="tall"] .lb-stop .n{font-size:clamp(48px,13vw,84px)}
+.lb-stage[data-fmt="tall"] .lb-stop h2{font-size:clamp(28px,7.4vw,52px)}
+.lb-stage[data-fmt="tall"] .lb-stop-p{font-size:clamp(16px,2.2vw,19px);line-height:1.55}
+
 .lb-end{min-height:70vh;display:grid;place-content:center;gap:14px;text-align:center;color:var(--muted)}
 .lb-end p{margin:0}
 .lb-end .lb-also{font-size:14px}
@@ -82,7 +140,7 @@ html[data-v="scene"] .lb-globe{display:none}
 .lb-switch{transition:opacity .3s var(--ease),visibility 0s}
 /* at the end of the page the switch steps aside; the same two links sit in the words there */
 .lb-switch.is-away{opacity:0;visibility:hidden;transition:opacity .3s var(--ease),visibility 0s .3s}
-html[data-v="fly"] .lb-switch [data-for="fly"],html[data-v="dive"] .lb-switch [data-for="dive"],html[data-v="scene"] .lb-switch [data-for="scene"]{background:var(--accent);color:#00143F}
+html[data-v="tour"] .lb-switch [data-for="tour"],html[data-v="dive"] .lb-switch [data-for="dive"],html[data-v="scene"] .lb-switch [data-for="scene"]{background:var(--accent);color:#00143F}
 @media (max-width:767px){
   .lb-h{top:clamp(92px,13vh,120px);font-size:clamp(36px,10.4vw,52px)}
   .lb-cue{display:none}
@@ -94,4 +152,4 @@ html[data-v="fly"] .lb-switch [data-for="fly"],html[data-v="dive"] .lb-switch [d
   .lb-card b{font-size:15px}
   .lb-card span{font-size:12.5px;line-height:1.45}
 }
-@media (prefers-reduced-motion:reduce){.lb-pin > i::after,.lb-cue::after{animation:none}html[data-v="fly"] .lb{height:100vh}}
+@media (prefers-reduced-motion:reduce){.lb-pin > i::after,.lb-cue::after{animation:none}html[data-v="fly"] .lb,html[data-v="tour"] .lb{height:100vh}}
