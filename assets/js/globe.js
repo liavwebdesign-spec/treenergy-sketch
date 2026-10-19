@@ -510,7 +510,7 @@ function buildNet(list, sites) {
 // where Israel must land on screen (hx, hy).
 // Round 5: on wide screens the opening line stands high on the end side, in the open night beside the globe (Idan:
 // "higher, not at the bottom"); the globe sits a little lower and further toward the start edge to give it the sky.
-// low: the round 4 frame, the line across the globe's foot (kept for comparison, ?title=low)
+// low: the round 4 frame, the line across the globe's foot (where the screen is too narrow or square for the line on top)
 function frame(W, H, low) {
   const tall = W / H < 1.05;
   if (tall) {

@@ -1,23 +1,18 @@
-// The hero experiment (sketch only, Liav 18.10: "a separate page that recreates the reference as closely as possible").
-// Daniel's picture, made again twice: the network on and the network off, the same pixels otherwise. The scene lives
-// on them: the network lights up from the city outward and energy keeps running along its lines, the city lights and
-// the stars breathe, the sunrise pulses, the clouds roil, and the land has depth under the pointer.
-// The tour (Liav 19.10, the default): the scroll takes the camera from place to place in the scene, and it stops at
-// each one. The place comes alive (the panels catch a sweep of light, the storage fills, the energy runs into the
-// city, the data center scans), the rest of the picture goes soft, the side across from it thins out into the page's
-// night and the place's words open there. It takes the place of the domains section under the scene.
-// The polish (Liav 19.10: "וואו זה נראה מדהיםם!", and more impressive without changing it): the flight between two
-// places lifts, banks into the turn and streaks at the edges through mist that rushes past the lens; the landing sends
-// a ripple over the ground and a front of energy out from the place. After the last place nothing new plays: the
-// camera pulls back and the scene sinks (Liav 19.10, after a look at a version that lit all four places at the end:
-// "אנימציות מיותרות של עיגולי רדיוס"), and the energy on the lines runs softer on the tour ("עומס של שובלים").
-// ?v=fly is direction א (19.10): the scroll flies low over the city after one line of the network (a depth map of the
-// picture makes the near land rush by), and the line runs on as the site's trail into the domains section under it.
-// The two versions of 18.10 (the dive from the night Earth, the scene alone) are gone (Liav 19.10: "אפשר להיפטר לדעתי
-// מאפקט ה'צלילה מהכדור' ו'הסצנה בלבד'"); without motion the scene still stands still as it opens.
-import { Ribbon } from "./ribbon.js";
-import { mountDom, trailAmp, BAND } from "./lab-dom.js";
-import { mountMarks } from "./lab-tour.js";
+// Treenergy · the scene page's opening (scene.html, sketch only). Daniel's picture, made again twice: the network on
+// and the network off, the same pixels otherwise. The scene lives on them: the network lights up from the city outward
+// and energy keeps running along its lines, the city lights and the stars breathe, the sunrise pulses, the clouds
+// roil, and the land has depth under the pointer.
+// The tour (Liav 19.10): the scroll takes the camera from place to place in the scene, and it stops at each one. The
+// place comes alive (the panels catch a sweep of light, the storage fills, the energy runs into the city, the data
+// center scans), the rest of the picture goes soft, the side across from it thins out into the page's night and the
+// place's words open there. It takes the place of the domains section, which stays for a visitor without WebGL or
+// motion. The flight between two places lifts, banks into the turn and streaks at the edges through mist; the landing
+// sends a ripple over the ground and a front of energy out from the place. After the last place nothing new plays
+// (Liav 19.10: "אנימציות מיותרות של עיגולי רדיוס"): the camera pulls back and the scene stays, rising slower than the
+// page as the visitor goes on down (Liav 19.10: "להשאיר אותו ... שירגיש כאילו הוא עולה ואנחנו יורדים").
+// The rest of the page is the home page's own (site.js: the night, the header, the menu, Lenis, every section below).
+import { mountDom } from "./scene-dom.js";
+import { mountMarks } from "./scene-marks.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -26,25 +21,18 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const smooth = (a, b, x) => { const t = clamp01((x - a) / (b - a)); return t * t * (3 - 2 * t); };
 
 const root = document.documentElement;
-const mode = root.dataset.v, fly = mode === "fly", tour = mode === "tour";
-const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+// __still: the visitor stopped motion in the accessibility panel (as in site.js)
+const reduce = !!window.__still || matchMedia("(prefers-reduced-motion: reduce)").matches;
 const fine = matchMedia("(hover:hover) and (pointer:fine)").matches;
-// the page is one journey from the scene down: a reload starts it again from the top, not in the middle of the flight
-if ((fly || tour) && "scrollRestoration" in history && !location.hash) history.scrollRestoration = "manual";
-const sec =$(".lb"), stage = $(".lb-stage"), cv = $(".lb-scene"), h1 = $(".lb-h"), pinsEl = $(".lb-pins"), cue = $(".lb-cue");
+const sec = $(".lb"), stage = $(".lb-stage"), cv = $(".lb-scene"), h1 = $(".lb-h"), pinsEl = $(".lb-pins"), cue = $(".lb-cue");
 const HEAD = 0.72; // the screen line the trail's head rides, as on the home page
 
-// the two pictures and their places (image fractions, y down): the city is where the energy starts, the solar farm,
-// the network's high node and the data center carry the other cards. line: the network line the camera chases, from
-// the hub under the city along to the tower by the solar farm and on along the farm's edge (traced on the picture)
+// the two pictures and their places (image fractions, y down): the city is where the energy starts; the cards of the
+// opening stand on the tour's own places
 const ZMAX = 2.6; // how close the camera lands before it pulls back over the whole scene
 const SETS = {
-  wide: { on: "assets/img/lab/wide-on.webp", off: "assets/img/lab/wide-off.webp", near: "assets/img/lab/wide-near.webp", w: 2752, h: 1536, base: [0.5, 0.52],
+  wide: { on: "assets/img/scene/wide-on.webp", off: "assets/img/scene/wide-off.webp", near: "assets/img/scene/wide-near.webp", w: 2752, h: 1536, base: [0.5, 0.52],
     src: [0.47, 0.555], horizon: 0.21, sun: [0.6, 0.213],
-    pins: { sol: [0.156, 0.57], sto: [0.512, 0.336], chg: [0.482, 0.68], srv: [0.884, 0.69] },
-    line: [[0.483, 0.647], [0.46, 0.648], [0.44, 0.648], [0.42, 0.645], [0.4, 0.629], [0.38, 0.618], [0.36, 0.602], [0.34, 0.591],
-      [0.32, 0.578], [0.302, 0.562], [0.2625, 0.579], [0.225, 0.593]],
-    fly: { zoom: 1.5, foe: [0.5, 0.46] },
     // the tour: where each place is (u), how close the camera comes (z), the side its words open on (side: 1 the
     // right of the screen, -1 the left), its life (fx: 1 the panels' sweep, 2 the storage filling, 3 the energy
     // running into the city, 4 the data center's scan) on the ground it covers (O + a·A + b·B), and its ring on the
@@ -60,12 +48,8 @@ const SETS = {
       patches: [["sol", [0.03815, 0.42253, 0.27798, 0.74805]], ["sto", [0.42006, 0.32552, 0.65988, 0.65104]],
         ["chg", [0.35501, 0.44206, 0.59484, 0.76758]], ["srv", [0.76017, 0.53711, 1, 0.86263]]],
     } },
-  tall: { on: "assets/img/lab/tall-on.webp", off: "assets/img/lab/tall-off.webp", near: "assets/img/lab/tall-near.webp", w: 1536, h: 2752, base: [0.5, 0.5],
+  tall: { on: "assets/img/scene/tall-on.webp", off: "assets/img/scene/tall-off.webp", near: "assets/img/scene/tall-near.webp", w: 1536, h: 2752, base: [0.5, 0.5],
     src: [0.55, 0.575], horizon: 0.255, sun: [0.826, 0.263],
-    pins: { sol: [0.16, 0.585], sto: [0.63, 0.367], chg: [0.594, 0.647], srv: [0.7, 0.487] },
-    line: [[0.594, 0.6243], [0.536, 0.6254], [0.487, 0.6243], [0.4536, 0.615], [0.412, 0.599], [0.371, 0.585], [0.33, 0.571],
-      [0.2887, 0.554], [0.231, 0.5656], [0.165, 0.579]],
-    fly: { zoom: 1.35, foe: [0.5, 0.42] },
     // a phone's picture has no data center: the fourth stop is the wind turbines on the hill (fx 5: the power running
     // out of them), for the power stations; the words open under the place
     tour: {
@@ -80,9 +64,8 @@ const SETS = {
     } },
 };
 for (const [name, s] of Object.entries(SETS)) {
-  s.name = name;
-  // in the tour the cards of the opening stand on the tour's own places
-  if (tour) for (const t of s.tour.stops) s.pins[t.k] = t.u;
+  s.name = name; s.pins = {};
+  for (const t of s.tour.stops) s.pins[t.k] = t.u;
 }
 
 const VS = `#version 300 es
@@ -118,9 +101,9 @@ void main(){
   vec2 s = sa > ia ? vec2(1., ia / sa) : vec2(sa / ia, 1.);
   s /= uZoom;
   vec2 c = clamp(uCenter, s * .5, 1. - s * .5);
-  // the flight (direction א): the camera moves forward towards uFoe and down; a point moves out from uFoe the more,
-  // the nearer it is (the depth map), and up as the camera drops. Found backwards from the screen in a few steps.
-  // uLift: the scene rising away as it sinks into the night. uRoll: the camera banks into a turn between two places
+  // the flight between two places: the camera moves forward towards uFoe and down; a point moves out from uFoe the
+  // more, the nearer it is (the depth map), and up as the camera drops. Found backwards from the screen in a few steps.
+  // uLift: the scene rising past the visitor at the end. uRoll: the camera banks into a turn between two places
   vec2 v = vUv;
   if (uRoll != 0.) { vec2 rp = (v - .5) * vec2(sa, 1.); float cr = cos(uRoll), sr = sin(uRoll); v = mat2(cr, -sr, sr, cr) * rp / vec2(sa, 1.) + .5; }
   v += vec2(0., uLift);
@@ -260,8 +243,8 @@ void main(){
     veil *= uMist * smoothstep(.08, .55, length(rq));
     col = mix(col, vec3(.66, .76, .9) * (.55 + .3 * lum(col)), clamp(veil * .85, 0., .78));
   }
-  // the edges sink into the page's night: a vignette, and the foot melts into it (direction א and the tour: into the
-  // page's living night itself, so the foot fades out rather than to one colour)
+  // the edges sink into the page's night: a vignette, and the foot melts into it (on the tour: into the page's living
+  // night itself, so the foot fades out rather than to one colour)
   vec2 q = vUv - .5;
   col *= 1. - dot(q, q) * .55;
   vec3 night = vec3(0., 11., 38.) / 255.;
@@ -323,7 +306,7 @@ function blank(gl, unit) {
 let W = 1, H = 1, dpr = 1, set = null, ctx = null;
 const pins = $$(".lb-pin").map((el) => ({ el, k: el.dataset.k, card: $(".lb-card", el) }));
 // the tour's words, one block for each place (tourOn: the tour runs, with WebGL and with motion)
-const arts = tour ? $$(".lb-stop").map((el, i) => ({ el, i, n: $(".n", el), on: false, box: null })) : [];
+const arts = $$(".lb-stop").map((el, i) => ({ el, i, n: $(".n", el), on: false, box: null }));
 let tourOn = false;
 
 // the camera over the picture: how much of it shows and around which point
@@ -351,7 +334,7 @@ function resize() {
   if (ctx) ctx.gl.viewport(0, 0, cv.width, cv.height);
 }
 
-// the depth map is read twice: by the shader, and here, small, to place the chased line on the moving land
+// the depth map is read twice: by the shader, and here, small, to place the marks on the moving land
 function nearData(img) {
   const w = Math.round(img.naturalWidth / 4), h = Math.round(img.naturalHeight / 4);
   const c = document.createElement("canvas"); c.width = w; c.height = h;
@@ -369,19 +352,18 @@ function nearAt(u) {
 
 async function loadSet() {
   const s = set;
-  const [on, off, near] = await Promise.all([loadImg(s.on), loadImg(s.off), fly || tour ? loadImg(s.near) : null]);
+  const [on, off, near] = await Promise.all([loadImg(s.on), loadImg(s.off), tourOn ? loadImg(s.near) : null]);
   if (s !== set) return;
   const { gl } = ctx;
   texture(gl, 0, on); texture(gl, 1, off);
   // a 1px black stand-in where there is no flight: the land does not move
   if (near) { texture(gl, 2, near); s.nd = nearData(near); }
   else blank(gl, 2);
-  if (s.lineLen === undefined) lineLengths(s);
   s.ready = true; $(".lb-still").src = s.on;
   // the tour's sharper patches come after the scene itself, and step in when they are all here
   if (tourOn) {
     s.patchReady = false;
-    Promise.all(s.tour.patches.map(([k]) => loadImg(`assets/img/lab/${s.name}-p-${k}.webp`))).then((imgs) => {
+    Promise.all(s.tour.patches.map(([k]) => loadImg(`assets/img/scene/${s.name}-p-${k}.webp`))).then((imgs) => {
       if (s !== set) return;
       imgs.forEach((im, i) => texture(gl, 3 + i, im));
       s.patchReady = true;
@@ -390,8 +372,7 @@ async function loadSet() {
 }
 
 // ---- the scroll ----
-// the flight reads the page as it is (Lenis smooths the wheel, as on the home page), so the scene's line and the
-// domains' trail meet exactly; the two versions of 18.10 keep their own easing
+// the tour reads the page as it is (the page's own Lenis smooths the wheel)
 let target = 0, prog = 0, outY = 0;
 function readScroll() {
   const r = sec.getBoundingClientRect(), vh = H || innerHeight, span = r.height - vh;
@@ -400,13 +381,10 @@ function readScroll() {
   outY = clamp01((vh - r.bottom) / vh);
 }
 addEventListener("scroll", readScroll, { passive: true });
-// on a desktop the tour follows the wheel more softly too (with its longer way in the css)
-const slowDesk = tour && matchMedia("(min-width:1024px)").matches;
-const lenis = (fly || tour) && !reduce && window.Lenis ? new window.Lenis({ autoRaf: false, lerp: slowDesk ? 0.085 : 0.12 }) : null;
-
-// the page's living night, as on the home page
-let sky = null;
-import("./sky.js").then(({ mountSky }) => { sky = mountSky($("#sky")); }).catch((e) => console.warn("sky", e));
+// the page's own smooth scroll (site.js, which also follows a desktop wheel more softly here, with the longer way in
+// the css); none where motion is stopped
+const slowDesk = matchMedia("(min-width:1024px)").matches;
+const lenis = reduce ? null : window.__lenis || null;
 
 // the pointer gives the land its depth (fine pointers only); phones get a slow drift instead
 const par = { x: 0, y: 0, tx: 0, ty: 0 };
@@ -444,26 +422,12 @@ function placePins(v, alpha) {
   }
 }
 
-// ---- direction א: the chased line ----
-// the line's own length in the picture (in picture pixels), so the head runs along it at an even pace
-function lineLengths(s) {
-  const L = [0];
-  for (let i = 1; i < s.line.length; i++) L.push(L[i - 1] + Math.hypot((s.line[i][0] - s.line[i - 1][0]) * s.w, (s.line[i][1] - s.line[i - 1][1]) * s.h));
-  s.lineL = L; s.lineLen = L[L.length - 1];
-}
-// t (0..1) along the line: the segment, how far into it, and the point
-function along(s, t) {
-  const L = s.lineL, x = clamp01(t) * s.lineLen;
-  let i = 0; while (i < L.length - 2 && L[i + 1] < x) i++;
-  const f = clamp01((x - L[i]) / ((L[i + 1] - L[i]) || 1)), a = s.line[i], b = s.line[i + 1];
-  return { i, f, u: [lerp(a[0], b[0], f), lerp(a[1], b[1], f)] };
-}
 // where a point of the picture shows, with the flight applied (the shader's mapping, run forwards), in stage pixels
-const F = { m: 0, low: 0, lift: 0, lineLift: 0, sink: 0, dim: 0, roll: 0, amp: 2.5, foe: [0.5, 0.46], head: [0.5, 0.5] };
+const F = { m: 0, low: 0, lift: 0, sink: 0, roll: 0, foe: [0.5, 0.46], head: [0.5, 0.5] };
 function project(v, u) {
   const n = nearAt(u), k = 1 / (1 - F.m * n);
   const x0 = (u[0] - v.cx) / v.sx + 0.5, y0 = (u[1] - v.cy) / v.sy + 0.5;
-  let x = F.foe[0] + (x0 - F.foe[0]) * k, y = F.foe[1] + (y0 - F.foe[1] - F.low * n) * k - F.lineLift;
+  let x = F.foe[0] + (x0 - F.foe[0]) * k, y = F.foe[1] + (y0 - F.foe[1] - F.low * n) * k;
   // the bank (the tour's turns): the screen turned about its middle, as the shader turns it
   if (F.roll) {
     const sa = W / H, px = (x - 0.5) * sa, py = y - 0.5, c = Math.cos(F.roll), s = Math.sin(F.roll);
@@ -471,45 +435,7 @@ function project(v, u) {
   }
   return [x * W, y * H];
 }
-let ribbon = null, dom = null, lastKey = "";
-function trail(v, t, q, out) {
-  const P = set.line.map((u) => project(v, u)), n = P.length;
-  const segs = [];
-  // as the scene sinks, the line's tail reaches back out of the side of the screen (the trail comes and goes only by
-  // the sides): from the hub on along the way it came, bending level as it leaves
-  let o = 0;
-  if (out > 0.001) {
-    let dx = P[0][0] - P[1][0], dy = P[0][1] - P[1][1]; const dl = Math.hypot(dx, dy) || 1; dx /= dl; dy /= dl;
-    const side = dx >= 0 ? W + 90 : -90, reach = Math.abs(side - P[0][0]);
-    const X = [side, Math.min(H * 0.8, Math.max(H * 0.18, P[0][1] + dy / (Math.abs(dx) || 1) * reach * 0.5))];
-    const S = [lerp(P[0][0], X[0], out), lerp(P[0][1], X[1], out)], k = Math.hypot(S[0] - P[0][0], S[1] - P[0][1]) / 3;
-    segs.push(["C", S[0], S[1], S[0] - Math.sign(dx || 1) * k, S[1], P[0][0] + dx * k, P[0][1] + dy * k, P[0][0], P[0][1]]);
-    o = 1;
-  }
-  // the line in the picture, smoothed through its points
-  for (let i = 0; i < n - 1; i++) {
-    const a = P[Math.max(0, i - 1)], b = P[i], c = P[i + 1], d = P[Math.min(n - 1, i + 2)];
-    segs.push(["C", b[0], b[1], b[0] + (c[0] - a[0]) / 6, b[1] + (c[1] - a[1]) / 6, c[0] - (d[0] - b[0]) / 6, c[1] - (d[1] - b[1]) / 6, c[0], c[1]]);
-  }
-  // then away from the picture, down onto the domains' rail: it arrives on the head's line, the moment the stage lets
-  // go, in the direction the domains' trail sets off in
-  const e = P[n - 1], pe = P[n - 2];
-  let tx = e[0] - pe[0], ty = e[1] - pe[1]; const tl = Math.hypot(tx, ty) || 1; tx /= tl; ty /= tl;
-  const j = dom ? dom.join : { x: W * 0.5, dx: 0, dy: 1 }, E = [j.x, innerHeight * HEAD];
-  const L = Math.hypot(E[0] - e[0], E[1] - e[1]);
-  segs.push(["C", e[0], e[1], e[0] + tx * L * 0.42, e[1] + ty * L * 0.42, E[0] - j.dx * L * 0.55, E[1] - j.dy * L * 0.55, E[0], E[1]]);
-  ribbon.setPath(segs);
-  // the head: along the line in the picture, then down the swing
-  const M = ribbon.marks, Lr = ribbon.L, K = n - 1 + o;
-  let hl;
-  if (q > 0) hl = M[K] + q * (Lr - M[K]);
-  else { const a = along(set, t); hl = M[a.i + o] + a.f * (M[a.i + o + 1] - M[a.i + o]); }
-  // the head stays lit right up to the hand-over (the ribbon hides it at its very end), and goes the moment the
-  // domains' own head takes over
-  ribbon.draw(q >= 1 ? 1 : Math.min(hl, Lr * 0.996) / Lr);
-  const h = ribbon.head();
-  F.head = [h.x / W, h.y / H];
-}
+let dom = null;
 
 // ---- the tour ----
 // the section reads as: up to .022 the scene as it opens, then for each place a flight (.085) and a stop (.125), and
@@ -576,6 +502,20 @@ function goStop(i) {
   const y = yAt(TT.t0 + i * SEG + TT.tr + 0.012);
   if (lenis) glide(y, (slowDesk ? 1.4 : 1.1) + 0.35 * Math.abs(i - Math.max(0, TS.to)));
   else scrollTo({ top: y, behavior: "smooth" });
+}
+// the domains' ids move from their articles (hidden while the tour runs) to a point in the tour, a little into each
+// place's stop: an in-page link centres a point (site.js), so the point lies half a screen below the stop's scroll
+// position, and the css places it (scene.css: .lb-at), so it is right at every size without a measure
+const AT = { sol: "dom-solar", sto: "dom-storage", chg: "dom-charge" };
+function placeAnchors() {
+  set.tour.stops.forEach((st, i) => {
+    const id = AT[st.k], art = id && document.getElementById(id); if (!art) return;
+    art.removeAttribute("id");
+    const at = document.createElement("span");
+    at.className = "lb-at"; at.id = id; at.setAttribute("aria-hidden", "true");
+    at.style.setProperty("--p", (TT.t0 + i * SEG + TT.tr + 0.03).toFixed(4));
+    sec.appendChild(at);
+  });
 }
 // a flight left half way settles: past its middle on to the next place, before it back to the last one
 let idleT = 0;
@@ -647,18 +587,13 @@ function tourDraw(v, time, pinA) {
 }
 
 // ---- the timeline ----
-// fly (direction א): the scene arrives by the clock; then the scroll: .02-.56 the flight, .12-.6 the head
-// runs along the line from the hub to the farm and the camera follows it, .56-.86 the scene sinks, and .6-1 the line
-// swings down to the domains, where it stands on the head's line exactly as the stage lets go
 const t0 = performance.now(); let tReady = -1, lastPin = -1;
 function frame(now) {
   requestAnimationFrame(frame);
-  if (lenis) lenis.raf(now);
   readScroll();
-  if (sky && scrollY !== frame.sy) { frame.sy = scrollY; sky.scroll(scrollY); }
   if (dom) dom.tick();
   const time = (now - t0) / 1000;
-  prog = fly || tourOn ? target : prog + (target - prog) * (reduce ? 1 : 0.1);
+  prog = tourOn ? target : prog + (target - prog) * (reduce ? 1 : 0.1);
   par.x += (par.tx - par.x) * 0.05; par.y += (par.ty - par.y) * 0.05;
   if (!fine && !reduce) { par.x = Math.sin(time * 0.21) * 0.5; par.y = Math.cos(time * 0.17) * 0.3; }
   if (!set || !set.ready || !ctx) return;
@@ -666,30 +601,8 @@ function frame(now) {
   const since = time - tReady;
 
   let alpha, zoom, reveal, titleA, pinA, center = null;
-  F.m = F.low = F.lift = F.lineLift = F.sink = F.dim = F.roll = 0;
-  if (fly && !reduce) {
-    const p = prog, fz = set.fly;
-    alpha = smooth(0, 0.9, since);
-    reveal = smooth(0.6, 3.4, since);
-    const f = smooth(0.02, 0.56, p);
-    zoom = lerp(1.18, 1, 1 - Math.pow(1 - smooth(0, 2.6, since), 3)) * lerp(1, fz.zoom, f);
-    F.m = 0.52 * f; F.low = 0.07 * f; F.foe = fz.foe;
-    F.dim = smooth(0.1, 0.34, p);
-    F.sink = smooth(0.56, 0.86, p); F.lift = 0.3 * F.sink * F.sink;
-    // the line lets go of the sinking scene, so it does not end up pressed against the top of the screen
-    F.lineLift = F.lift * (1 - 0.7 * F.sink * F.sink * F.sink);
-    // the line grows from a thin thread of the network into the site's trail as the scene goes
-    const grow = smooth(0.5, 0.86, p);
-    F.amp = lerp(2.5, trailAmp(), grow);
-    if (ribbon) ribbon.headK = lerp(0.55, 1, grow);
-    // the camera follows the head along the line, flying towards it
-    const t = smooth(0.12, 0.6, p), lin = clamp01((p - 0.6) / 0.4), q = 1 - (1 - lin) * (1 - lin);
-    const hu = along(set, t).u, hc = centerFor(zoom, hu, fz.foe[0] * W, fz.foe[1] * H);
-    center = [lerp(set.base[0], hc[0], smooth(0.03, 0.42, p)), lerp(set.base[1], hc[1], smooth(0.03, 0.42, p))];
-    titleA = 1 - smooth(0.005, 0.06, p);
-    pinA = smooth(2.6, 3.4, since) * (1 - smooth(0, 0.04, p));
-    frame.tq = [t, q, p];
-  } else if (tourOn) {
+  F.m = F.low = F.lift = F.sink = F.roll = 0;
+  if (tourOn) {
     // the tour: the scene opens by the clock; then the camera goes from place to place. On a flight
     // the target point and its place on the screen glide over together, and between two places the camera lifts,
     // banks into the turn (the near land sweeping against the far, sinking as it climbs and rising as it comes down)
@@ -728,13 +641,6 @@ function frame(now) {
   const v = view(zoom, center); v.zoom = zoom;
   if (tourOn && marks) tourDraw(v, time, pinA);
 
-  // the line: rebuilt only when the scroll (or the screen) changed
-  if (ribbon) {
-    const [t, q, p] = frame.tq, key = p.toFixed(5) + "|" + W + "|" + H + "|" + (dom ? dom.join.x.toFixed(1) : "") + "|" + (since < 2.7 ? since.toFixed(2) : "");
-    if (p > 0.12 && key !== lastKey) { lastKey = key; trail(v, t, q, smooth(0.58, 0.9, p)); }
-    else if (p <= 0.12 && lastKey !== "0") { lastKey = "0"; ribbon.draw(0); F.head = fly ? [set.fly.foe[0], set.fly.foe[1]] : [0.5, 0.5]; }
-  }
-
   const { gl, U } = ctx;
   gl.uniform2f(U.uRes, cv.width, cv.height); gl.uniform2f(U.uImg, set.w, set.h);
   gl.uniform2f(U.uCenter, v.cx, v.cy); gl.uniform2f(U.uPar, par.x, par.y);
@@ -743,7 +649,7 @@ function frame(now) {
   gl.uniform1f(U.uZoom, zoom); gl.uniform1f(U.uReveal, reveal); gl.uniform1f(U.uTime, reduce ? 0 : time);
   gl.uniform1f(U.uAlpha, alpha); gl.uniform1f(U.uHorizon, set.horizon); gl.uniform1f(U.uStill, reduce ? 1 : 0);
   gl.uniform1f(U.uM, F.m); gl.uniform1f(U.uLow, F.low); gl.uniform1f(U.uLift, F.lift); gl.uniform1f(U.uSink, F.sink);
-  gl.uniform1f(U.uDim, F.dim); gl.uniform1f(U.uFly, fly || tourOn ? 1 : 0); gl.uniform1f(U.uOut, tourOn ? outY : 0);
+  gl.uniform1f(U.uDim, 0); gl.uniform1f(U.uFly, tourOn ? 1 : 0); gl.uniform1f(U.uOut, tourOn ? outY : 0);
   // the tour (nothing of it outside the tour: every amount stays 0)
   const T = TU, live = tourOn ? 1 : 0;
   gl.uniform1f(U.uPK, tourOn && set.patchReady ? 1 : 0);
@@ -771,12 +677,14 @@ function frame(now) {
 // ---- start ----
 try { ctx = setupGL(); } catch (e) { ctx = null; console.warn(e); }
 if (!ctx) root.classList.add("no-gl");
-tourOn = tour && !reduce && !!ctx;
+tourOn = !reduce && !!ctx;
 resize(); readScroll();
 // the tour takes the place of the domains section; without WebGL or motion the section stays, as on the home page
 if (!tourOn) dom = mountDom({ HEAD, reduce, stageH: () => H });
 if (dom) dom.layout();
 if (tourOn) {
+  // the domains' places on the page are now the tour's stops: the header's nodes and the menu land on them
+  placeAnchors();
   marks = mountMarks($(".lb-tour"), arts.length);
   measureStops();
   // a place pointed at in the opening, or a link in a place's words reached by the keyboard, takes the tour there
@@ -784,12 +692,11 @@ if (tourOn) {
   for (const a of arts) a.el.addEventListener("focusin", () => { if (!a.on) goStop(a.i); });
   if (lenis) lenis.on("scroll", () => { clearTimeout(idleT); idleT = setTimeout(settle, 220); });
 }
-const relayout = () => { resize(); readScroll(); for (const p of pins) p.cw = 0; if (dom) dom.layout(); if (tourOn) measureStops(); lastKey = ""; if (lenis) lenis.resize(); };
+const relayout = () => { resize(); readScroll(); for (const p of pins) p.cw = 0; if (dom) dom.layout(); if (tourOn) measureStops(); };
 let rz = 0;
 addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(relayout, 120); });
 addEventListener("load", relayout);
 if (document.fonts) document.fonts.ready.then(relayout);
-if (ctx && fly && !reduce) ribbon = new Ribbon($(".lb-trail"), { ...BAND(), amp: () => F.amp, wave: 520, taperStart: 120, sparks: 4, seed: 3, anchor: "end" });
 if (ctx) {
   loadSet();
   requestAnimationFrame(frame);

@@ -1,37 +1,19 @@
-/* The hero experiment (sketch only, 18.10): Daniel's reference picture as a living scene. Same tokens as the site */
-@font-face{font-family:"Hatzor";src:url(../fonts/hatzor-regular.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
-@font-face{font-family:"Almoni";src:url(../fonts/almoni-regular-aaa.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
-@font-face{font-family:"Almoni";src:url(../fonts/almoni-medium-aaa.woff2) format("woff2");font-weight:500;font-style:normal;font-display:swap}
-:root{
-  --night-0:#000B26; --n0:0,11,38; --n1:0,16,51;
-  --ink:#F3F6FC; --ink-soft:rgba(243,246,252,.78); --muted:rgba(243,246,252,.56);
-  --accent:#30F77B; --tint:#8FB0FF;
-  --ease:cubic-bezier(.2,.6,.2,1);
-  --gutter:clamp(20px,4.4vw,112px);
-  --display:"Hatzor","Almoni",system-ui,sans-serif; --text:"Almoni",system-ui,sans-serif;
-}
-*,*::before,*::after{box-sizing:border-box}
-/* the page under the scene is the home page's own (site.css): its living night, its domains section and its trail */
+/* Treenergy · the scene page's opening (scene.html, sketch only): Daniel's reference picture as a living scene, and the
+   tour through its places, which takes the place of the domains section. The page around it is the home page's own
+   (site.css: the tokens, the fonts, the night, every section below) */
 
-.lb-hd{position:fixed;inset:0 0 auto;z-index:20;display:flex;justify-content:flex-end;padding:clamp(16px,2.4vw,32px) var(--gutter);pointer-events:none}
-.lb-logo{pointer-events:auto;display:inline-grid;place-items:center;min-height:44px}
-.lb-logo img{height:clamp(30px,2.5vw,42px);width:auto;display:block}
-
-/* the stage stays while the section scrolls under it */
-.lb{position:relative;height:340vh}
-/* direction א: the scene, then the flight into it, the chase after the line and the scene sinking into the night */
-html[data-v="fly"] .lb{height:400vh}
-html.no-gl[data-v="fly"] .lb{height:100vh}
-/* the tour (the default, 19.10): the opening, four places with a flight and a stop each, and the scene sinking away */
-html[data-v="tour"] .lb{height:560vh}
-/* a desktop wheel moves the story further per notch than a finger on a phone, so a desktop gets a longer way
-   (Liav 19.10: "להאט קצת את קצב הגלילה בדסקטופ, זה מרגיש שזה מתקדם מהר מדי") */
-@media (min-width:1024px){html[data-v="tour"] .lb{height:760vh}}
-html.no-gl[data-v="tour"] .lb{height:100vh}
-.lb-stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;background:var(--night-0)}
+/* the stage stays while the section scrolls under it. The tour (with WebGL and with motion): the opening, four places
+   with a flight and a stop each, and the scene rising away; a desktop wheel moves the story further per notch than a
+   finger on a phone, so a desktop gets a longer way (Liav 19.10: "להאט קצת את קצב הגלילה בדסקטופ, זה מרגיש שזה מתקדם
+   מהר מדי"). Without the tour the scene is one screen, and the domains section follows it */
+.lb{--lbh:560vh;position:relative;height:100vh;height:100svh}
+@media (min-width:1024px){.lb{--lbh:760vh}}
+html.open-anim:not(.no-gl) .lb{height:var(--lbh)}
+/* the domains' places in the tour (scene.js moves their ids here): a point a little into each stop, half a screen
+   below the stop's scroll position, since an in-page link centres the point it goes to */
+.lb-at{position:absolute;inset-inline-start:0;width:1px;height:0;top:calc(var(--p,0) * (var(--lbh) - 100svh) + 50svh);pointer-events:none}
 /* the scene sinks into the page's own night, so the stage has none of its own */
-html[data-v="fly"] .lb-stage,html[data-v="tour"] .lb-stage{background:none}
-.lb-trail{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.lb-stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden}
 .lb-scene,.lb-still{position:absolute;inset:0;width:100%;height:100%}
 .lb-scene{display:block;opacity:0}
 .lb-still{object-fit:cover;opacity:0}
@@ -42,7 +24,7 @@ html[data-v="fly"] .lb-stage,html[data-v="tour"] .lb-stage{background:none}
 .lb-h{position:absolute;z-index:4;inset-inline-start:var(--gutter);top:clamp(96px,15vh,170px);margin:0;display:grid;
   font-family:var(--display);font-weight:400;font-size:clamp(40px,5.4vw,104px);line-height:1.02;letter-spacing:-.005em;text-align:start;
   text-shadow:0 2px 30px rgba(var(--n0),.6);opacity:var(--ho,1);transform:translateY(calc((1 - var(--ho,1)) * -18px));pointer-events:none}
-.gword{background:linear-gradient(100deg,var(--accent) 15%,var(--tint) 95%);-webkit-background-clip:text;background-clip:text;color:transparent;padding-bottom:.08em;text-shadow:none}
+.lb-h .gword{padding-bottom:.08em;text-shadow:none}
 
 /* the places: a breathing ring on the site, the card above it on a thin stem (the reference's callout) */
 .lb-pins{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:var(--po,0);transition:opacity .2s linear}
@@ -76,12 +58,10 @@ html[data-v="fly"] .lb-stage,html[data-v="tour"] .lb-stage{background:none}
 /* ---------- the tour ----------
    it runs with WebGL and with motion, and then takes the place of the domains section; otherwise the section stays */
 .lb-tour{position:absolute;inset:0;z-index:6;pointer-events:none;display:none}
-@media (prefers-reduced-motion:no-preference){
-  html[data-v="tour"]:not(.no-gl) .lb-tour{display:block}
-  html[data-v="tour"]:not(.no-gl) #domains{display:none}
-  /* in the tour the rings on the ground mark the places; the old dot steps back, its card stays for the opening */
-  html[data-v="tour"]:not(.no-gl) .lb-pin > i{opacity:0}
-}
+html.open-anim:not(.no-gl) .lb-tour{display:block}
+html.open-anim:not(.no-gl) #domains{display:none}
+/* in the tour the rings on the ground mark the places; the old dot steps back, its card stays for the opening */
+html.open-anim:not(.no-gl) .lb-pin > i{opacity:0}
 .lb-marks{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 .lb-marks .mk-back,.lb-marks .mk-front,.lb-marks .mk-front-w,.lb-marks .mk-lead{fill:none;stroke-dasharray:1 1;stroke-dashoffset:1}
 .lb-marks .mk-back{stroke:rgba(48,247,123,.4);stroke-width:1}
@@ -123,15 +103,11 @@ html[data-v="fly"] .lb-stage,html[data-v="tour"] .lb-stage{background:none}
 .lb-ticks li.done{background:var(--accent)}
 /* the tick of this place fills from the start of the line (the right) */
 .lb-ticks li.now{background:linear-gradient(to left,var(--accent) calc(var(--pw,0) * 100%),rgba(243,246,252,.2) calc(var(--pw,0) * 100%))}
-/* a tall screen: the words under the place, over the comparison switch */
+/* a tall screen: the words under the place, over the night comparison's switch (?bg) */
 .lb-stage[data-fmt="tall"] .lb-stop{top:auto;bottom:calc(84px + env(safe-area-inset-bottom));inset-inline:var(--gutter);width:auto;translate:none;gap:8px}
 .lb-stage[data-fmt="tall"] .lb-stop .n{font-size:clamp(48px,13vw,84px)}
 .lb-stage[data-fmt="tall"] .lb-stop h2{font-size:clamp(28px,7.4vw,52px)}
 .lb-stage[data-fmt="tall"] .lb-stop-p{font-size:clamp(16px,2.2vw,19px);line-height:1.55}
-
-.lb-end{min-height:70vh;display:grid;place-content:center;gap:14px;text-align:center;color:var(--muted)}
-.lb-end p{margin:0}
-.lb-end a{color:var(--ink);text-decoration:none;border-bottom:1px solid rgba(48,247,123,.45);justify-self:center;padding-block:10px 2px}
 
 @media (max-width:767px){
   .lb-h{top:clamp(92px,13vh,120px);font-size:clamp(36px,10.4vw,52px)}
@@ -143,4 +119,5 @@ html[data-v="fly"] .lb-stage,html[data-v="tour"] .lb-stage{background:none}
   .lb-card b{font-size:15px}
   .lb-card span{font-size:12.5px;line-height:1.45}
 }
-@media (prefers-reduced-motion:reduce){.lb-pin > i::after,.lb-cue::after{animation:none}html[data-v="fly"] .lb,html[data-v="tour"] .lb{height:100vh}}
+@media (prefers-reduced-motion:reduce){.lb-pin > i::after,.lb-cue::after{animation:none}}
+.ax-still .lb-pin > i::after,.ax-still .lb-cue::after{animation:none}

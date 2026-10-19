@@ -1,7 +1,7 @@
-// The hero experiment, direction א (sketch only, Liav 19.10: "יאללה רוץ על הא'"): the real domains section under the
-// scene, so the scene's line can run on into it. The same section as the home page and the same trail: the band comes
-// down onto the rail, goes into each machine (the ring, the scan, the numeral filling) and leaves by the side.
-// Ported from site.js (layoutDom, domTick and their helpers), which runs only on the home page.
+// Treenergy · the scene page's domains section, for a visitor the tour can't run for (no WebGL, or motion stopped):
+// the same section as the home page and the same trail. The band comes down onto the rail, goes into each machine
+// (the ring, the scan, the numeral filling) and leaves by the side. Ported from site.js (layoutDom, domTick and their
+// helpers), which there hands over from the globe; here the scene above stands still. Its words come in by site.js.
 import { Ribbon } from "./ribbon.js";
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -11,10 +11,10 @@ const NS = "http://www.w3.org/2000/svg";
 const RINGS = [[1, 1, -7, 0, 1.6, 0.95], [0.95, 0.78, -4.5, 0.035, 1, 0.5], [1.06, 1.22, -9.5, -0.03, 0.8, 0.32]];
 const KEY_TY = 0.15;
 
-export const wide = () => innerWidth >= 1024;
-// the band's half width and its fibres: the scene's line grows into exactly this, so the two read as one
-export const trailAmp = () => (innerWidth < 768 ? 14 : 28);
-export const BAND = () => (innerWidth < 768 ? { strands: 16, loose: 4 } : { strands: 26, loose: 6 });
+const wide = () => innerWidth >= 1024;
+// the band's half width and its fibres, as on the home page
+const trailAmp = () => (innerWidth < 768 ? 14 : 28);
+const BAND = () => (innerWidth < 768 ? { strands: 16, loose: 4 } : { strands: 26, loose: 6 });
 
 // a smooth way down through given points (y only grows), as on the home page
 function spline(pts) {
@@ -37,7 +37,7 @@ function spline(pts) {
   return segs;
 }
 
-// HEAD: the screen line the head rides; the scene hands the line over on it, the moment the stage lets go
+// HEAD: the screen line the head rides; stageH: the scene's height above the section
 export function mountDom({ HEAD, reduce, stageH }) {
   const dom = $("#domains"); if (!dom) return null;
   const shots = $$(".shot", dom), nums = $$(".sc-n", dom), svg = $(".dom-trail", dom), more = $(".dom-more", dom);
@@ -80,16 +80,16 @@ export function mountDom({ HEAD, reduce, stageH }) {
     nums[i].style.setProperty("--pw", pw.toFixed(4));
   }
 
-  // x where the scene's line lands on the domains: wide screens, between the first machine and the middle; phones, the
-  // rail on the start side, half way through the gutter and the rail pad
+  // x where the band comes in: wide screens, between the first machine and the middle; phones, the rail on the start
+  // side, half way through the gutter and the rail pad
   function railX() {
     const W = document.documentElement.clientWidth;
     if (wide()) { const r = shots[0].getBoundingClientRect(), c = r.left + r.width / 2; return c + (W / 2 - c) * 0.2; }
     const g = parseFloat(getComputedStyle(dom).paddingRight), rp = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--rail-pad")) || 28;
     return W - (g + rp) / 2;
   }
-  // the hand-over, in the domains' frame: on the head's line at the moment the stage lets go (the domains' top is then
-  // the stage's foot)
+  // where the band starts, in the domains' frame: on the head's line at the moment the scene above has gone by (the
+  // domains' top is then its foot)
   const jointY = () => innerHeight * HEAD - stageH();
 
   function layout() {
@@ -139,13 +139,6 @@ export function mountDom({ HEAD, reduce, stageH }) {
     boxes.forEach((b, i) => setScan(i, (headY - b.top) / (b.h * 0.92)));
   }
 
-  // the words come in as on the home page
-  const groups = $$(".rv-wait", dom);
-  groups.forEach((g) => $$(".rv", g).forEach((el, i) => el.style.setProperty("--i", i)));
-  if ("IntersectionObserver" in window) {
-    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("is-in"); io.unobserve(e.target); } }), { rootMargin: "0px 0px -18% 0px" });
-    groups.forEach((g) => io.observe(g));
-  } else groups.forEach((g) => g.classList.add("is-in"));
 
   return { railX, join, layout, tick, jointY };
 }

@@ -3,7 +3,7 @@
 // second ring turning inside it, a spark running round, a soft beam rising from the ground, and a leader line out to
 // the place's words on the frosted side. When the camera lands, a ripple of light rolls out over the ground from the
 // place (Liav 19.10: "וואו זה נראה מדהיםם!", and polish it further without changing it). Everything here is in stage
-// pixels; lab-hero.js says where and how much.
+// pixels; scene.js says where and how much.
 // The page at rest must not keep writing to the DOM (dom-churn): the spark runs by itself (SMIL, along the ring), and
 // every other value is written only when it changed.
 const NS = "http://www.w3.org/2000/svg";

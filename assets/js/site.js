@@ -1,6 +1,8 @@
 // Treenergy · home page behaviour.
 // The living night (sky.js), the header's power line, the power-up menu, the opening entrance, Lenis + GSAP,
 // the journey (globe + trail), the intro statement, and the domains: the trail runs on and powers each picture.
+// The scene page (scene.html, 19.10) opens on the tour instead (scene.js): there is no journey and no domains section
+// of this script's, and everything below that needs them stands aside.
 import { Ribbon } from "./ribbon.js";
 import { mountSky } from "./sky.js";
 
@@ -13,6 +15,8 @@ const gsap = window.gsap, ST = window.ScrollTrigger, Split = window.SplitText;
 const hasGsap = !!(gsap && ST);
 if (hasGsap) gsap.registerPlugin(ST, ...(Split ? [Split] : []));
 const doc = document.documentElement;
+// the scene page: the tour takes the place of the globe, the opening and the domains (scene.js runs them)
+const scenePage = !!$(".lb");
 
 /* ---------- the living night ---------- */
 let sky = null;
@@ -133,6 +137,8 @@ addEventListener("keydown", (e) => {
 // the distance and the move eases in and out, so a hop of one section and a trip down the whole page both read as one move.
 const glideEase = (k) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
 document.addEventListener("click", (e) => {
+  // (a place in the scene page's tour takes the visitor there itself)
+  if (e.defaultPrevented) return;
   const a = e.target.closest('a[href^="#"]'); if (!a) return;
   const id = a.getAttribute("href"), t = id.length > 1 ? $(id) : null; if (!t) return;
   e.preventDefault();
@@ -214,13 +220,14 @@ function enter(root, at) {
   root.classList.add("rv-on");
   inView(root, () => root.classList.add("is-in"), at);
 }
-enter($(".hero"));
+if (!scenePage) enter($(".hero"));
 $$(".rv-wait").forEach((g) => enter(g, 0.82));
 
 /* ---------- Lenis + GSAP ---------- */
 let lenis = null;
 if (hasGsap && !reduce && window.Lenis) {
-  lenis = new window.Lenis({ autoRaf: false, lerp: 0.12, anchors: { offset: -72 } });
+  // the scene page's tour follows a desktop wheel more softly (Liav 19.10: "להאט קצת את קצב הגלילה בדסקטופ")
+  lenis = new window.Lenis({ autoRaf: false, lerp: scenePage && innerWidth >= 1024 ? 0.085 : 0.12, anchors: { offset: -72 } });
   window.__lenis = lenis;
   // the scroll's speed makes the night flow
   lenis.on("scroll", (e) => { ST.update(); if (sky) sky.scroll(e.scroll, e.velocity * 60); });
@@ -234,7 +241,7 @@ if (hasGsap && !reduce && window.Lenis) {
 
 /* ---------- the journey: globe + trail + the opening leaving ---------- */
 const journey = $(".journey"), stage = $("#globe"), heroEl = $(".hero");
-const dom = $("#domains"), shots = $$(".shot", dom), nums = $$(".sc-n", dom);
+const dom = $("#domains"), domOn = !scenePage, shots = domOn ? $$(".shot", dom) : [], nums = $$(".sc-n", dom);
 // every machine is there twice: dimmed in the night, and lit, uncovered from the top down by the trail's head line, so
 // it is lit exactly as far as the energy has come. A ring of three fibres wraps it, drawn as the head passes: the back
 // halves (behind the machine) first, then the front ones over it
@@ -364,12 +371,12 @@ function measureSeam() {
 
 // the opening: both lines flush to the start edge; on wide screens the two ways on stand in the room the shorter
 // second line leaves, centred on it. Where that room is too small they stay under the line (the CSS default)
-const heroSide = $(".hero-side", heroEl), heroL2 = $(".h-line.l2", heroEl), heroH1 = $("h1", heroEl);
+const heroSide = heroEl && $(".hero-side", heroEl), heroL2 = heroEl && $(".h-line.l2", heroEl), heroH1 = heroEl && $("h1", heroEl);
 // round 5: on wide landscape screens the line stands high on the end side, in the open night beside the globe, in three
-// lines and the two ways on under it (?title=low keeps the round 4 layout for comparison)
-const titleLow = new URLSearchParams(location.search).get("title") === "low";
-const topTitle = () => !titleLow && wide() && innerWidth / innerHeight >= 1.05;
+// lines and the two ways on under it
+const topTitle = () => wide() && innerWidth / innerHeight >= 1.05;
 function layoutHero() {
+  if (!heroEl) return;
   heroEl.classList.remove("is-beside");
   const top = topTitle();
   heroEl.classList.toggle("is-top", top); stage.classList.toggle("has-top", top);
@@ -424,6 +431,7 @@ function fitTop() {
 }
 
 function setJourney(p) {
+  if (!journey) return;
   jp = p;
   if (globe) globe.setProgress(p);
   if (!reduce) {
@@ -433,7 +441,9 @@ function setJourney(p) {
     stage.style.setProperty("--scrim", (1 - smooth(0.05, 0.4, p)).toFixed(3));
   }
 }
-if (hasGsap) {
+if (!journey) {
+  // the scene page: no journey
+} else if (hasGsap) {
   ST.create({ trigger: journey, start: "top top", end: "bottom bottom", onUpdate: (s) => setJourney(s.progress), onRefresh: (s) => setJourney(s.progress) });
 } else {
   let top = 0, span = 1;
@@ -445,7 +455,7 @@ if (hasGsap) {
 function webglOK() {
   try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch (e) { return false; }
 }
-if (webglOK()) {
+if (journey && webglOK()) {
   // phones: the labels stop above the opening words (wide screens keep the words beside the globe)
   const floor = () => { if (wide()) return Infinity; const top = [...heroEl.children].find((e) => e.getClientRects().length); return top.getBoundingClientRect().top - stage.getBoundingClientRect().top; };
   // the intro's words in the stage's frame: the trail waits rather than run over them
@@ -479,11 +489,13 @@ function initIntro() {
 // down through the middle of every sign, drawing it; after the last one it bends away and leaves by the side of the
 // screen (the reasons below take it back in from the other side), so the trail never stops in the middle of the page.
 const domSvg = $(".dom-trail", dom), domMore = $(".dom-more", dom);
-const domRibbon = new Ribbon(domSvg, { ...BAND, amp: trailAmp, wave: 520, taperStart: 0, taperEnd: 0, sparks: 4, seed: 3 });
+// (the scene page's domains, shown only where the tour can't run, are scene.js's)
+const domRibbon = domOn ? new Ribbon(domSvg, { ...BAND, amp: trailAmp, wave: 520, taperStart: 0, taperEnd: 0, sparks: 4, seed: 3 }) : null;
 let boxes = [];
 const KEY_TY = 0.15;
 
 function layoutDom() {
+  if (!domOn) return;
   measureSeam();
   const r = dom.getBoundingClientRect(), W = r.width, H = r.height, x0 = railX(), J = jointY();
   domSvg.setAttribute("viewBox", `0 0 ${W} ${H}`);
@@ -534,6 +546,7 @@ function layoutDom() {
   domRibbon.setPath(segs);
 }
 function domTick() {
+  if (!domOn) return;
   const r = dom.getBoundingClientRect();
   if (r.top > innerHeight * 1.4 || r.bottom < -innerHeight * 0.2) return;
   if (reduce) return;
@@ -878,7 +891,7 @@ function relayout() {
   layoutProc();
   layoutClose();
   layoutWorks();
-  if (reduce) { domRibbon.draw(1); whyRibbon.draw(1); procRibbon.draw(1); closeRibbon.draw(1); steps.forEach((s) => s.classList.add("on")); plug.classList.add("is-lit"); }
+  if (reduce) { if (domRibbon) domRibbon.draw(1); whyRibbon.draw(1); procRibbon.draw(1); closeRibbon.draw(1); steps.forEach((s) => s.classList.add("on")); plug.classList.add("is-lit"); }
   if (globe) { globe.resize(); if (topTitle()) fitTop(); }
   tick();
   if (lenis) requestAnimationFrame(() => lenis.resize());

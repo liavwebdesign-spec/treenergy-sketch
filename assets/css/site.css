@@ -382,7 +382,7 @@ html.lenis,html.lenis body{height:auto}
 .hero.is-beside .hero-side{position:absolute;margin:0;inset-inline-start:var(--side-x);top:var(--side-t);flex-wrap:nowrap}
 /* round 5 (Idan: "the title higher, not at the bottom"): on wide landscape screens the line stands high on the start
    side in the open night beside the globe, in three lines, the ways on under it. The script sizes it so no line reaches
-   the globe's rim (?title=low keeps the round 4 layout) */
+   the globe's rim (narrower or squarer screens keep the round 4 layout) */
 .hero.is-top{justify-content:flex-start;padding-top:calc(var(--hd-h) + clamp(12px,3.5vh,48px)) /* qa-allow: sec: the opening's words start under the header, this is not a section's rhythm */}
 .hero.is-top h1{font-size:var(--fs-top,var(--fs-hero));max-width:6.4em}
 .hero.is-top .hero-side{margin-top:clamp(24px,4vh,48px);max-width:36vw}
