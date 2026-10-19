@@ -22,7 +22,7 @@ html.open-anim:not(.no-gl) .lb{height:var(--lbh)}
 .no-gl .lb-scene{display:none}
 
 .lb-h{position:absolute;z-index:4;inset-inline-start:var(--gutter);top:clamp(96px,15vh,170px);margin:0;display:grid;
-  font-family:var(--display);font-weight:400;font-size:clamp(40px,5.4vw,104px);line-height:1.02;letter-spacing:-.005em;text-align:start;
+  font-family:var(--display);font-weight:400;font-size:clamp(40px,6.4vw,128px);line-height:1.02;letter-spacing:-.005em;text-align:start;
   text-shadow:0 2px 30px rgba(var(--n0),.6);opacity:var(--ho,1);transform:translateY(calc((1 - var(--ho,1)) * -18px));pointer-events:none}
 .lb-h .gword{padding-bottom:.08em;text-shadow:none}
 
