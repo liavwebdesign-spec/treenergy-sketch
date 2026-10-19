@@ -17,9 +17,8 @@
 .lb-logo{pointer-events:auto;display:inline-grid;place-items:center;min-height:44px}
 .lb-logo img{height:clamp(30px,2.5vw,42px);width:auto;display:block}
 
-/* the stage stays while the section scrolls under it: the dive, the landing, the network lighting up */
+/* the stage stays while the section scrolls under it */
 .lb{position:relative;height:340vh}
-html[data-v="scene"] .lb{height:190vh}
 /* direction א: the scene, then the flight into it, the chase after the line and the scene sinking into the night */
 html[data-v="fly"] .lb{height:400vh}
 html.no-gl[data-v="fly"] .lb{height:100vh}
@@ -30,14 +29,12 @@ html.no-gl[data-v="tour"] .lb{height:100vh}
 /* the scene sinks into the page's own night, so the stage has none of its own */
 html[data-v="fly"] .lb-stage,html[data-v="tour"] .lb-stage{background:none}
 .lb-trail{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.lb-globe,.lb-scene,.lb-still{position:absolute;inset:0;width:100%;height:100%}
-.lb-globe canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.lb-scene,.lb-still{position:absolute;inset:0;width:100%;height:100%}
 .lb-scene{display:block;opacity:0}
 .lb-still{object-fit:cover;opacity:0}
 /* no WebGL: the picture itself, network on */
 .no-gl .lb-still{opacity:1}
-.no-gl .lb-globe,.no-gl .lb-scene{display:none}
-html[data-v="scene"] .lb-globe{display:none}
+.no-gl .lb-scene{display:none}
 
 .lb-h{position:absolute;z-index:4;inset-inline-start:var(--gutter);top:clamp(96px,15vh,170px);margin:0;display:grid;
   font-family:var(--display);font-weight:400;font-size:clamp(40px,5.4vw,104px);line-height:1.02;letter-spacing:-.005em;text-align:start;
@@ -131,21 +128,11 @@ html[data-v="scene"] .lb-globe{display:none}
 
 .lb-end{min-height:70vh;display:grid;place-content:center;gap:14px;text-align:center;color:var(--muted)}
 .lb-end p{margin:0}
-.lb-end .lb-also{font-size:14px}
 .lb-end a{color:var(--ink);text-decoration:none;border-bottom:1px solid rgba(48,247,123,.45);justify-self:center;padding-block:10px 2px}
 
-/* the comparison switch (sketch only) */
-.lb-switch{position:fixed;z-index:30;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:4px;padding:4px;border-radius:999px; /* qa-allow: physical, centred or placed in screen pixels, the same in both directions */
-  background:rgba(0,14,46,.7);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:inset 0 0 0 1px rgba(243,246,252,.14)}
-.lb-switch a{display:inline-grid;place-items:center;min-height:40px;padding:0 16px;border-radius:999px;font-size:14px;color:var(--ink-soft);text-decoration:none;white-space:nowrap}
-.lb-switch{transition:opacity .3s var(--ease),visibility 0s}
-/* at the end of the page the switch steps aside; the same two links sit in the words there */
-.lb-switch.is-away{opacity:0;visibility:hidden;transition:opacity .3s var(--ease),visibility 0s .3s}
-html[data-v="tour"] .lb-switch [data-for="tour"],html[data-v="dive"] .lb-switch [data-for="dive"],html[data-v="scene"] .lb-switch [data-for="scene"]{background:var(--accent);color:#00143F}
 @media (max-width:767px){
   .lb-h{top:clamp(92px,13vh,120px);font-size:clamp(36px,10.4vw,52px)}
   .lb-cue{display:none}
-  .lb-switch a{padding:0 10px;font-size:13px}
   /* a phone's card stays small and close to its ring so the scene is not covered */
   .lb-card{max-width:min(212px,60vw);padding:10px 12px 12px;gap:2px 8px;border-radius:13px;--gap:32px}
   .lb-card::after{height:22px}

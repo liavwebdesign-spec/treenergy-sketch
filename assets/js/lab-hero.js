@@ -13,7 +13,8 @@
 // "אנימציות מיותרות של עיגולי רדיוס"), and the energy on the lines runs softer on the tour ("עומס של שובלים").
 // ?v=fly is direction א (19.10): the scroll flies low over the city after one line of the network (a depth map of the
 // picture makes the near land rush by), and the line runs on as the site's trail into the domains section under it.
-// ?v=dive dives into the scene from the night Earth of the site, ?v=scene opens straight on it (the versions of 18.10).
+// The two versions of 18.10 (the dive from the night Earth, the scene alone) are gone (Liav 19.10: "אפשר להיפטר לדעתי
+// מאפקט ה'צלילה מהכדור' ו'הסצנה בלבד'"); without motion the scene still stands still as it opens.
 import { Ribbon } from "./ribbon.js";
 import { mountDom, trailAmp, BAND } from "./lab-dom.js";
 import { mountMarks } from "./lab-tour.js";
@@ -25,7 +26,7 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const smooth = (a, b, x) => { const t = clamp01((x - a) / (b - a)); return t * t * (3 - 2 * t); };
 
 const root = document.documentElement;
-const mode = root.dataset.v, dive = mode === "dive", fly = mode === "fly", tour = mode === "tour";
+const mode = root.dataset.v, fly = mode === "fly", tour = mode === "tour";
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const fine = matchMedia("(hover:hover) and (pointer:fine)").matches;
 // the page is one journey from the scene down: a reload starts it again from the top, not in the middle of the flight
@@ -317,7 +318,7 @@ function blank(gl, unit) {
   return t;
 }
 
-let W = 1, H = 1, dpr = 1, set = null, ctx = null, globe = null;
+let W = 1, H = 1, dpr = 1, set = null, ctx = null;
 const pins = $$(".lb-pin").map((el) => ({ el, k: el.dataset.k, card: $(".lb-card", el) }));
 // the tour's words, one block for each place (tourOn: the tour runs, with WebGL and with motion)
 const arts = tour ? $$(".lb-stop").map((el, i) => ({ el, i, n: $(".n", el), on: false, box: null })) : [];
@@ -346,7 +347,6 @@ function resize() {
   for (const a of arts) a.el.dataset.side = String(set.tour.stops[a.i].side);
   cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
   if (ctx) ctx.gl.viewport(0, 0, cv.width, cv.height);
-  if (globe) globe.resize();
 }
 
 // the depth map is read twice: by the shader, and here, small, to place the chased line on the moving land
@@ -640,9 +640,7 @@ function tourDraw(v, time, pinA) {
 }
 
 // ---- the timeline ----
-// dive: 0-.42 the Earth turns and dives to Israel, .3-.55 the scene takes over and the camera lands, .5-.78 the
-// network lights up from the city, then the camera settles in. scene: the network lights by itself on arrival.
-// fly (direction א): the scene arrives by the clock as in "scene"; then the scroll: .02-.56 the flight, .12-.6 the head
+// fly (direction א): the scene arrives by the clock; then the scroll: .02-.56 the flight, .12-.6 the head
 // runs along the line from the hub to the farm and the camera follows it, .56-.86 the scene sinks, and .6-1 the line
 // swings down to the domains, where it stands on the head's line exactly as the stage lets go
 const t0 = performance.now(); let tReady = -1, lastPin = -1;
@@ -660,18 +658,9 @@ function frame(now) {
   if (tReady < 0) tReady = time;
   const since = time - tReady;
 
-  let alpha, zoom, reveal, globeA, titleA, pinA, center = null;
+  let alpha, zoom, reveal, titleA, pinA, center = null;
   F.m = F.low = F.lift = F.lineLift = F.sink = F.dim = F.roll = 0;
-  if (dive && !reduce) {
-    const land = smooth(0.3, 0.58, prog);
-    alpha = smooth(0.3, 0.46, prog);
-    zoom = lerp(ZMAX, 1, 1 - Math.pow(1 - land, 2.2)) * lerp(1, 1.07, smooth(0.78, 1, prog));
-    reveal = smooth(0.5, 0.8, prog);
-    globeA = 1 - smooth(0.34, 0.5, prog);
-    titleA = (1 - smooth(0.04, 0.16, prog)) + smooth(0.74, 0.86, prog);
-    pinA = smooth(0.74, 0.84, prog);
-    if (globe) globe.setProgress(clamp01(prog / 0.5));
-  } else if (fly && !reduce) {
+  if (fly && !reduce) {
     const p = prog, fz = set.fly;
     alpha = smooth(0, 0.9, since);
     reveal = smooth(0.6, 3.4, since);
@@ -690,12 +679,11 @@ function frame(now) {
     const t = smooth(0.12, 0.6, p), lin = clamp01((p - 0.6) / 0.4), q = 1 - (1 - lin) * (1 - lin);
     const hu = along(set, t).u, hc = centerFor(zoom, hu, fz.foe[0] * W, fz.foe[1] * H);
     center = [lerp(set.base[0], hc[0], smooth(0.03, 0.42, p)), lerp(set.base[1], hc[1], smooth(0.03, 0.42, p))];
-    globeA = 0;
     titleA = 1 - smooth(0.005, 0.06, p);
     pinA = smooth(2.6, 3.4, since) * (1 - smooth(0, 0.04, p));
     frame.tq = [t, q, p];
   } else if (tourOn) {
-    // the tour: the scene opens by the clock as in "scene"; then the camera goes from place to place. On a flight
+    // the tour: the scene opens by the clock; then the camera goes from place to place. On a flight
     // the target point and its place on the screen glide over together, and between two places the camera lifts,
     // banks into the turn (the near land sweeping against the far, sinking as it climbs and rising as it comes down)
     // before it comes down on the next; at a stop it eases in
@@ -713,14 +701,13 @@ function frame(now) {
     // the end: the camera back over the whole scene, which sinks into the page's night
     const end = TT.t0 + set.tour.stops.length * SEG;
     F.sink = smooth(end + 0.035, 0.99, p); F.lift = 0.3 * F.sink * F.sink; F.head = [0.5, 0.5];
-    globeA = 0;
     titleA = 1 - smooth(0.004, 0.02, p);
     pinA = smooth(2.6, 3.4, since) * (1 - smooth(0, 0.016, p));
   } else {
     alpha = reduce ? 1 : smooth(0, 0.9, since);
     zoom = reduce ? 1 : lerp(1.18, 1, 1 - Math.pow(1 - smooth(0, 2.6, since), 3)) * lerp(1, 1.1, prog);
     reveal = reduce ? 1 : smooth(0.6, 3.4, since);
-    globeA = 0; titleA = 1; pinA = reduce ? 1 : smooth(2.6, 3.4, since);
+    titleA = 1; pinA = reduce ? 1 : smooth(2.6, 3.4, since);
   }
   if (!center) {
     // where the camera looks: from the city (where the Earth's point lands) out to the whole picture
@@ -761,7 +748,6 @@ function frame(now) {
   gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.drawArrays(gl.TRIANGLES, 0, 3);
   cv.style.opacity = 1;
 
-  $(".lb-globe").style.opacity = globeA.toFixed(3);
   h1.style.setProperty("--ho", clamp01(titleA).toFixed(3));
   if (cue) cue.style.setProperty("--co", (1 - (tourOn ? smooth(0.002, 0.014, prog) : smooth(0.02, 0.1, prog))).toFixed(3));
   placePins(v, pinA);
@@ -797,30 +783,9 @@ if (ctx && fly && !reduce) ribbon = new Ribbon($(".lb-trail"), { ...BAND(), amp:
 if (ctx) {
   loadSet();
   requestAnimationFrame(frame);
-  // the night Earth of the site, framed here for the dive: whole in the opening, and in the end Israel fills the
-  // screen exactly where the city of the scene will land
-  if (dive && !reduce) {
-    import("./globe.js").then(({ mountGlobe, LL }) => mountGlobe($(".lb-globe"), {
-      frame: (w, h) => {
-        const tall = w / h < 1.05, R = tall ? Math.min(0.86 * w, 0.4 * h) : Math.min(0.62 * h, 0.4 * w);
-        const a = tall ? { R, cx: 0.5 * w, cy: 0.6 * h, lat: 24, lon: 22 } : { R, cx: 0.5 * w, cy: 0.62 * h, lat: 24, lon: 20 };
-        const s = w / h < 0.9 ? SETS.tall : SETS.wide, z = ZMAX;
-        const cv0 = view(z, s.src), at = toScreen({ ...cv0 }, s.src);
-        return { tall, S: 0.2, a, b: { R: Math.max(w, h) * 5.5, hx: at[0], hy: at[1], lat: LL.chg[0], lon: LL.chg[1] } };
-      },
-      pointer: false, sharp: true,
-    })).then((g) => { globe = g; if (g) { g.setProgress(0); g.replay && g.replay(); } }).catch((e) => console.warn(e));
-  }
 } else {
   // no WebGL: the domains' trail still runs with the scroll
   const loop = () => { requestAnimationFrame(loop); if (dom) dom.tick(); };
   requestAnimationFrame(loop);
 }
 
-// the comparison switch steps aside once the page under the scene shows, so it never sits on its words
-const sw = $(".lb-switch"), away = [$("#domains"), $(".lb-end")].filter(Boolean);
-if (sw && away.length && "IntersectionObserver" in window) {
-  const seen = new Set();
-  const io = new IntersectionObserver((es) => { es.forEach((e) => (e.isIntersecting ? seen.add(e.target) : seen.delete(e.target))); sw.classList.toggle("is-away", seen.size > 0); });
-  away.forEach((el) => io.observe(el));
-}

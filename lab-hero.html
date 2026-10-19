@@ -12,10 +12,9 @@
 <script>
   // sketch only (round 5 experiment): the hero rebuilt after Daniel's reference picture. The default (the tour, Liav
   // 19.10) opens on the scene and the scroll takes the camera from place to place, the words of each opening beside
-  // it; ?v=fly is direction א (19.10, the flight after the line), ?v=dive dives into the scene from the night Earth,
-  // ?v=scene opens straight on it (the two versions of 18.10)
+  // it; ?v=fly is direction א (19.10, the flight after the line). The dive and the scene alone of 18.10 are gone (19.10)
   document.documentElement.classList.add("js");
-  (function (d) { var v = new URLSearchParams(location.search).get("v"); d.setAttribute("data-v", v === "scene" || v === "dive" || v === "fly" ? v : "tour"); })(document.documentElement);
+  (function (d) { var v = new URLSearchParams(location.search).get("v"); d.setAttribute("data-v", v === "fly" ? v : "tour"); })(document.documentElement);
 </script>
 <link rel="stylesheet" href="assets/css/site.css">
 <link rel="stylesheet" href="assets/css/lab-hero.css">
@@ -32,8 +31,6 @@
 <main>
   <section class="lb" aria-labelledby="lb-h">
     <div class="lb-stage">
-      <!-- the night Earth (the dive starts here) -->
-      <div class="lb-globe" aria-hidden="true"><canvas class="gl-canvas"></canvas></div>
       <!-- the scene: the picture with the network off and on, lit live -->
       <canvas class="lb-scene" aria-hidden="true"></canvas>
       <img class="lb-still" src="assets/img/lab/wide-on.webp" alt="" aria-hidden="true">
@@ -165,14 +162,8 @@
   <section class="lb-end">
     <p>כאן ממשיך העמוד</p>
     <a href="index.html">חזרה לעמוד הבית</a>
-    <p class="lb-also"><a href="lab-hero.html">סיור במוקדים</a> · <a href="lab-hero.html?v=dive">צלילה מהכדור</a> · <a href="lab-hero.html?v=scene">הסצנה בלבד</a></p>
   </section>
 </main>
 
-<nav class="lb-switch" aria-label="גרסאות הניסוי">
-  <a href="lab-hero.html" data-for="tour">סיור במוקדים</a>
-  <a href="lab-hero.html?v=dive" data-for="dive">צלילה מהכדור</a>
-  <a href="lab-hero.html?v=scene" data-for="scene">הסצנה בלבד</a>
-</nav>
 </body>
 </html>
