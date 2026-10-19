@@ -11,9 +11,7 @@
   --display:"Hatzor","Almoni",system-ui,sans-serif; --text:"Almoni",system-ui,sans-serif;
 }
 *,*::before,*::after{box-sizing:border-box}
-html{background:var(--night-0);color:var(--ink);-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--night-0);font-family:var(--text);font-size:17px;line-height:1.5;overflow-x:clip}
-a{color:inherit}
+/* the page under the scene is the home page's own (site.css): its living night, its domains section and its trail */
 
 .lb-hd{position:fixed;inset:0 0 auto;z-index:20;display:flex;justify-content:flex-end;padding:clamp(16px,2.4vw,32px) var(--gutter);pointer-events:none}
 .lb-logo{pointer-events:auto;display:inline-grid;place-items:center;min-height:44px}
@@ -22,7 +20,13 @@ a{color:inherit}
 /* the stage stays while the section scrolls under it: the dive, the landing, the network lighting up */
 .lb{position:relative;height:340vh}
 html[data-v="scene"] .lb{height:190vh}
+/* direction א: the scene, then the flight into it, the chase after the line and the scene sinking into the night */
+html[data-v="fly"] .lb{height:400vh}
+html.no-gl[data-v="fly"] .lb{height:100vh}
 .lb-stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;background:var(--night-0)}
+/* the scene sinks into the page's own night, so the stage has none of its own */
+html[data-v="fly"] .lb-stage{background:none}
+.lb-trail{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .lb-globe,.lb-scene,.lb-still{position:absolute;inset:0;width:100%;height:100%}
 .lb-globe canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .lb-scene{display:block;opacity:0}
@@ -78,10 +82,11 @@ html[data-v="scene"] .lb-globe{display:none}
 .lb-switch{transition:opacity .3s var(--ease),visibility 0s}
 /* at the end of the page the switch steps aside; the same two links sit in the words there */
 .lb-switch.is-away{opacity:0;visibility:hidden;transition:opacity .3s var(--ease),visibility 0s .3s}
-html[data-v="dive"] .lb-switch [data-for="dive"],html[data-v="scene"] .lb-switch [data-for="scene"]{background:var(--accent);color:#00143F}
+html[data-v="fly"] .lb-switch [data-for="fly"],html[data-v="dive"] .lb-switch [data-for="dive"],html[data-v="scene"] .lb-switch [data-for="scene"]{background:var(--accent);color:#00143F}
 @media (max-width:767px){
   .lb-h{top:clamp(92px,13vh,120px);font-size:clamp(36px,10.4vw,52px)}
   .lb-cue{display:none}
+  .lb-switch a{padding:0 10px;font-size:13px}
   /* a phone's card stays small and close to its ring so the scene is not covered */
   .lb-card{max-width:min(212px,60vw);padding:10px 12px 12px;gap:2px 8px;border-radius:13px;--gap:32px}
   .lb-card::after{height:22px}
@@ -89,4 +94,4 @@ html[data-v="dive"] .lb-switch [data-for="dive"],html[data-v="scene"] .lb-switch
   .lb-card b{font-size:15px}
   .lb-card span{font-size:12.5px;line-height:1.45}
 }
-@media (prefers-reduced-motion:reduce){.lb-pin > i::after,.lb-cue::after{animation:none}}
+@media (prefers-reduced-motion:reduce){.lb-pin > i::after,.lb-cue::after{animation:none}html[data-v="fly"] .lb{height:100vh}}
