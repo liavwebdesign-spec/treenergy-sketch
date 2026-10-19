@@ -809,7 +809,7 @@ function knTick() {
   knArts.forEach((a, i) => {
     const k = clamp01(1 - Math.abs(knC[i] - f) / knStep), e = k * k * (3 - 2 * k);
     if (Math.abs(knC[i] - f) < Math.abs(knC[best] - f)) best = i;
-    a.style.setProperty("--ks", (0.9 + e * 0.1).toFixed(4));
+    a.style.setProperty("--ks", (0.95 + e * 0.05).toFixed(4));
     a.style.setProperty("--kl", e.toFixed(3));
   });
   if (best !== knI) { knI = best; knCount.textContent = String(best + 1).padStart(2, "0"); }
