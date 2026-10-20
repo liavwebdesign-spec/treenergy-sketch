@@ -675,13 +675,18 @@ function layoutProc() {
     P.forEach((p) => to(p.x, p.y));
     to(inX, mid);
   } else {
-    // in over the heading (not through it) onto the rail, which runs down beside the heading to the first step
-    const x0 = P[0].x, yl = Math.max(P[P.length - 1].y + 40, H - 24), d = 200;
-    const yS = $(".proc-head", proc).getBoundingClientRect().top - r.top - 72;
+    // in above the label and onto the rail with a round corner that is already upright before the label starts, down
+    // beside the words, and a round corner off the left in the gap under the last step, clear of the next heading
+    const x0 = P[0].x, R = 52, k = R * 0.5523, last = steps[steps.length - 1].getBoundingClientRect().bottom - r.top;
+    const yS = $(".kick", proc).getBoundingClientRect().top - r.top - R - 36;
+    const nh = proc.nextElementSibling && $("h2", proc.nextElementSibling);
+    const yE = nh ? (last + nh.getBoundingClientRect().top - r.top) / 2 : last + R + 40, yl = Math.max(last + 8, yE - R);
     procTop = yS;
-    segs.push(["C", inX, yS, (inX + x0) / 2, yS, x0, yS + 60, x0, yS + 130]);
-    segs.push(["L", x0, yS + 130, x0, yl]);
-    segs.push(["C", x0, yl, x0, yl + d * 0.5, (inX + x0) / 2, yl + d, inX, yl + d]);
+    segs.push(["L", inX, yS, x0 - R, yS]);
+    segs.push(["C", x0 - R, yS, x0 - R + k, yS, x0, yS + R - k, x0, yS + R]);
+    segs.push(["L", x0, yS + R, x0, yl]);
+    segs.push(["C", x0, yl, x0, yl + k, x0 - R + k, yl + R, x0 - R, yl + R]);
+    segs.push(["L", x0 - R, yl + R, inX, yl + R]);
   }
   if (!rl) segs.forEach((g) => { for (let i = 1; i < g.length; i += 2) g[i] = W - g[i]; });
   procRibbon.setPath(segs);
