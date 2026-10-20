@@ -241,7 +241,7 @@ if (hasGsap && !reduce && window.Lenis) {
 
 /* ---------- the journey: globe + trail + the opening leaving ---------- */
 const journey = $(".journey"), stage = $("#globe"), heroEl = $(".hero");
-const dom = $("#domains"), domOn = !scenePage, shots = domOn ? $$(".shot", dom) : [], nums = $$(".sc-n", dom);
+const dom = $("#domains"), domOn = !scenePage, shots = domOn ? $$(".shot", dom) : [];
 // every machine is there twice: dimmed in the night, and lit, uncovered from the top down by the trail's head line, so
 // it is lit exactly as far as the energy has come. A ring of three fibres wraps it, drawn as the head passes: the back
 // halves (behind the machine) first, then the front ones over it
@@ -280,7 +280,6 @@ function setScan(i, pw) {
   w.f.style.setProperty("--rf", clamp01(r * 2 - 1).toFixed(4));
   w.f.classList.toggle("is-scan", pw > 0.004 && pw < 0.98);
   w.f.classList.toggle("is-lit", pw >= 0.98);
-  nums[i].style.setProperty("--pw", pw.toFixed(4));
 }
 
 // a smooth way down through given points (y only grows): Catmull-Rom tangents, or the tangent a point brings with it
@@ -350,7 +349,7 @@ function measureSeam() {
   seam = null;
   if (wide()) return;
   const r = dom.getBoundingClientRect(), s0 = shots[0].getBoundingClientRect(), amp = trailAmp();
-  const words = [$(".kick", dom), $("h2", dom), $(".dom-lead", dom), ...$$(".sc-n, h3", $(".scene", dom))].filter((e) => e.getBoundingClientRect().top < s0.top);
+  const words = [$("h2", dom), $(".dom-lead", dom), ...$$("h3", $(".scene", dom))].filter((e) => e.getBoundingClientRect().top < s0.top);
   const xL = Math.min(r.width * 0.22, Math.min(...words.map(textLeft)) - r.left - amp * 2.6);
   // the S starts a little under the intro's last line as it stands when the journey ends, and lands on the lane
   // where the domains' heading begins
@@ -837,7 +836,11 @@ function layoutClose() {
   const near = px < W / 2, sx = near ? -r.left - off : doc.clientWidth - r.left + off, d = near ? 1 : -1;
   const segs = [];
   if (wide()) segs.push(["C", sx, py - 280, sx + d * (Math.abs(px - sx) * 0.55), py - 280, px - d * 220, py, px, py]);
-  else { const y1 = Math.max(40, b.top - r.top - 150); segs.push(["C", sx, y1, (sx + px) / 2, y1, px, y1 + (py - y1) * 0.4, px, py]); }
+  // (it comes in under the words, in the gap above the socket: never across the last line of the paragraph, which
+  // drifts a little lower by the time the head gets there; the words are measured without their drift)
+  else {
+    const say = $(".close-say", closeSec), sayB = say.getBoundingClientRect().bottom - r.top - (parseFloat(say.style.getPropertyValue("--dy")) || 0);
+    const y1 = Math.min(py - 60, Math.max(40, sayB + 36, b.top - r.top - 150)); segs.push(["C", sx, y1, (sx + px) / 2, y1, px, y1 + (py - y1) * 0.4, px, py]); }
   closeRibbon.setPath(segs);
 }
 function closeTick() {

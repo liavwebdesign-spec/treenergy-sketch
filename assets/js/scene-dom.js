@@ -40,7 +40,7 @@ function spline(pts) {
 // HEAD: the screen line the head rides; stageH: the scene's height above the section
 export function mountDom({ HEAD, reduce, stageH }) {
   const dom = $("#domains"); if (!dom) return null;
-  const shots = $$(".shot", dom), nums = $$(".sc-n", dom), svg = $(".dom-trail", dom), more = $(".dom-more", dom);
+  const shots = $$(".shot", dom), svg = $(".dom-trail", dom), more = $(".dom-more", dom);
   const wipes = shots.map((f) => ({ f, o: $(".obj", f), pw: -1 }));
   const ribbon = new Ribbon(svg, { ...BAND(), amp: trailAmp, wave: 520, taperStart: 0, taperEnd: 0, sparks: 4, seed: 3 });
   const join = { x: 0, y: 0, dx: 0, dy: 1 };
@@ -77,7 +77,6 @@ export function mountDom({ HEAD, reduce, stageH }) {
     w.f.style.setProperty("--rf", clamp01(r * 2 - 1).toFixed(4));
     w.f.classList.toggle("is-scan", pw > 0.004 && pw < 0.98);
     w.f.classList.toggle("is-lit", pw >= 0.98);
-    nums[i].style.setProperty("--pw", pw.toFixed(4));
   }
 
   // x where the band comes in: wide screens, between the first machine and the middle; phones, the rail on the start
