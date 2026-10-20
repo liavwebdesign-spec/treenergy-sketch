@@ -499,7 +499,7 @@ function initIntro() {
 const domSvg = $(".dom-trail", dom), domMore = $(".dom-more", dom);
 // (the scene page's domains, shown only where the tour can't run, are scene.js's)
 const domRibbon = domOn ? new Ribbon(domSvg, { ...BAND, amp: trailAmp, wave: 520, taperStart: 0, taperEnd: 0, sparks: 4, seed: 3 }) : null;
-let boxes = [];
+let boxes = [], domFoot = 0;
 const KEY_TY = 0.15;
 
 function layoutDom() {
@@ -537,15 +537,34 @@ function layoutDom() {
     const foot = shots[last].closest(".scene").getBoundingClientRect().bottom - r.top;
     if (foot > pts[pts.length - 1].y + 24) pts.push({ x: x0, y: foot, line: true });
     pts.segs0 = segs0;
+    // and on down the rail past the "coming soon" lines and the reasons' heading and figures (below 1024 they all keep
+    // the rail clear), to bend away over the edge just where the reasons' trail swings in from it above the battery's
+    // terminal (layoutWhy): the one goes out as the other comes in on the head's line, so there is a trail on the screen
+    // all the way (as the scene page's trail out of the tour)
+    const cl = $(".cells"), fgs = $(".figs");
+    if (cl && fgs) {
+      const nub = parseFloat(getComputedStyle(cl).getPropertyValue("--nub")) || 12, t = cl.getBoundingClientRect().top - r.top - nub;
+      const yOut = t - Math.max(90, Math.min(240, t - (fgs.getBoundingClientRect().bottom - r.top) - 8));
+      const s = x0 > W / 2 ? 1 : -1, bend = Math.max(120, (s > 0 ? W - xEnd - x0 : x0 - xEnd) * 0.9);
+      if (yOut - bend > pts[pts.length - 1].y + 40) {
+        pts.push({ x: x0, y: yOut - bend });
+        pts.push({ x: s > 0 ? W - xEnd : xEnd, y: yOut, tx: s, ty: 0.6 });
+      }
+    }
   }
+  // wide screens: down through the room between the "coming soon" lines and away by the side just above the first of
+  // the reasons that reaches over there, so it is still going out while the reasons' trail comes in from the other side
+  // and there is a trail on the screen all the way (where there is no such room it leaves above the lines, as before)
+  if (wide()) { const out = wideOut(r, W, amp, pts[pts.length - 1], xEnd); if (out) pts.push(...out); }
   // (on narrow screens the rail runs by the edge, so it drifts off over that edge instead of cutting across the words)
   if (yEnd > pts[pts.length - 1].y + 40) {
     if (wide()) pts.push({ x: xEnd, y: yEnd, tx: -1, ty: 0.22 });
     else { const s = x0 > W / 2 ? 1 : -1; pts.push({ x: s > 0 ? W - xEnd : xEnd, y: yEnd, tx: s, ty: 0.6 }); }
   }
+  domFoot = pts[pts.length - 1].y;
   // wide screens: out of each machine the energy heads for the next one at once, not straight down, so it clears the key
   // under the drawing (straight down it ran through "יחידת קירור" at 1024-1440)
-  if (wide()) for (let i = 1; i < pts.length - 1; i++) { const p = pts[i], q = pts[i + 1]; p.tx = q.x - p.x; p.ty = (q.y - p.y) * KEY_TY; }
+  if (wide()) for (let i = 1; i < pts.length - 1; i++) { const p = pts[i], q = pts[i + 1]; if (!p.keep) { p.tx = q.x - p.x; p.ty = (q.y - p.y) * KEY_TY; } }
   const segs = (pts.segs0 || []).concat(spline(pts));
   domRibbon.o.pinches = [];
   domRibbon.setPath(segs);
@@ -553,10 +572,35 @@ function layoutDom() {
   domRibbon.o.pinches = boxes.map((b) => domRibbon.fracAtY(b.top + b.h * 0.3));
   domRibbon.setPath(segs);
 }
+const lineBoxes = (el) => { const g = document.createRange(); g.selectNodeContents(el); return [...g.getClientRects()].filter((b) => b.width && b.height); };
+function wideOut(r, W, amp, from, xEnd) {
+  const clr = 16 + amp * 1.6;
+  const rows = $$("p", domMore).flatMap(lineBoxes).map((b) => [b.left - r.left, b.right - r.left, b.top - r.top, b.bottom - r.top]);
+  if (!rows.length) return null;
+  const top = Math.min(...rows.map((b) => b[2])), bot = Math.max(...rows.map((b) => b[3]));
+  if (top < from.y + 60) return null;
+  // the room between the lines, clear of their letters (not the margins by the screen's edges); it only goes straight
+  // down through it, so a band's width and a little either side is room enough
+  const gaps = [], side = amp + 16;
+  let x = -Infinity;
+  for (const [a, b] of rows.map((b) => [b[0] - side, b[1] + side]).sort((p, q) => p[0] - q[0])) { if (a > x && x > 0) gaps.push([x, a]); x = Math.max(x, b); }
+  if (!gaps.length) return null;
+  const g = gaps.sort((p, q) => Math.abs(p[0] + p[1] - 2 * from.x) - Math.abs(q[0] + q[1] - 2 * from.x))[0], xM = (g[0] + g[1]) / 2;
+  // the first of the reasons' words that reaches into the way out
+  let block = Infinity;
+  for (const el of $("#why").children) {
+    if (el instanceof SVGElement) continue;
+    for (const b of lineBoxes(el)) if (b.left - r.left < xM + clr && b.top - r.top > bot) block = Math.min(block, b.top - r.top);
+  }
+  const yOut = block - clr - amp;
+  if (!Number.isFinite(block) || yOut < bot + 160) return null;
+  return [{ x: xM, y: (top + bot) / 2, tx: 0, ty: 1, keep: true }, { x: xEnd, y: yOut, tx: -1, ty: 0.22 }];
+}
 function domTick() {
   if (!domOn) return;
   const r = dom.getBoundingClientRect();
-  if (r.top > innerHeight * 1.4 || r.bottom < -innerHeight * 0.2) return;
+  // (on phones the way out runs on past the section, to where the reasons' trail comes in)
+  if (r.top > innerHeight * 1.4 || r.top + Math.max(r.height, domFoot) < -innerHeight * 0.2) return;
   if (reduce) return;
   // the head rides the HEAD line of the screen; it took over from the globe's trail on that line
   const headY = innerHeight * HEAD - r.top;
@@ -590,7 +634,7 @@ const battery = $(".cells"), cells = $$(".cell", battery);
 const across = () => innerWidth >= 1280;
 const whySec = $("#why"), whySvg = $(".why-trail", whySec);
 const whyRibbon = new Ribbon(whySvg, { ...BAND, amp: trailAmp, wave: 480, taperStart: 0, taperEnd: 0, sparks: 4, seed: 9 });
-let whyIn = 0, whyOut = 1, cellBox = [], rtl = true;
+let whyIn = 0, whyOut = 1, cellBox = [], rtl = true, whyEy = 0, whyRise = 0, whyVis = 0;
 function charge(i, c) {
   const el = cells[i], v = c.toFixed(3);
   if (el._c === v) return; el._c = v;
@@ -613,6 +657,7 @@ function layoutWhy() {
     segs.push(["C", m(W + off), y - rise, m(W + off - k1), y - rise, m(xIn + k1), y, m(xIn), y]);
     segs.push(["L", m(xIn), y, m(L), y]);
     segs.push(["C", m(L), y, m(L - k2), y, m(-off + k2), y + rise, m(-off), y + rise]);
+    whyEy = y - rise; whyRise = rise;
   } else {
     const cx = (b.left + b.right) / 2 - r.left, top = T - nub, fg = $(".figs", whySec).getBoundingClientRect().bottom - r.top;
     const rise = Math.max(90, Math.min(240, top - fg - 8)), sx = rtl ? W + off : -off, ex = rtl ? -off : W + off;
@@ -622,6 +667,9 @@ function layoutWhy() {
   }
   whyRibbon.setPath(segs);
   whyIn = whyRibbon.marks[1] / whyRibbon.L; whyOut = whyRibbon.marks[2] / whyRibbon.L;
+  // how far along the way in it comes over the screen's edge
+  const p0 = whyRibbon.pts.find((p) => (rtl ? p.x < W - 2 : p.x > 2));
+  whyVis = p0 ? Math.min(whyIn, p0.s / whyRibbon.L) : 0;
   // inside the casing (from the terminal's face to the far wall) the energy is out of sight
   whyRibbon.setGaps([[whyIn, whyOut]]);
 }
@@ -635,7 +683,10 @@ function whyTick() {
   if (across()) {
     // in while the battery comes up into view, through it while it crosses the middle, out as it rises past it
     const t = clamp01((ih * 0.98 - (br.top + br.height / 2)) / (ih * 0.62));
-    f = t < 0.2 ? whyIn * t / 0.2 : t < 0.8 ? whyIn + (whyOut - whyIn) * (t - 0.2) / 0.6 : whyOut + (1 - whyOut) * (t - 0.8) / 0.2;
+    // the way in starts as soon as its level comes up over the foot of the screen, while the domains' trail is still
+    // going out by the other side, and shows at the edge at once; it reaches the terminal when it always did
+    const u = clamp01((ih - (r.top + whyEy)) / (ih * 0.144 + whyRise));
+    f = t < 0.2 ? (u > 0 ? whyVis + (whyIn - whyVis) * u : 0) : t < 0.8 ? whyIn + (whyOut - whyIn) * (t - 0.2) / 0.6 : whyOut + (1 - whyOut) * (t - 0.8) / 0.2;
   } else f = whyRibbon.fracAtY(ih * HEAD - r.top);
   whyRibbon.draw(f);
   const h = whyRibbon.head(), down = !across();

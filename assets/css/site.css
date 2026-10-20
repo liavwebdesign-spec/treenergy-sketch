@@ -1021,6 +1021,8 @@ html.lenis,html.lenis body{height:auto}
   .fig{grid-template-columns:auto minmax(0,1fr);align-items:end;column-gap:20px;padding:clamp(14px,2.2vh,24px) 0 0}
   .fig dd{padding-bottom:.55em}
   .fig-v{font-size:clamp(68px,19vw,140px)}
+  /* the domains' trail runs on down the rail beside the readout (site.js layoutDom): its small word stays readable on the glow */
+  .fig-v small{color:var(--ink)}
   .cell h3{font-size:clamp(28px,7.4vw,44px)}
 
   .proc-head{padding-inline-start:var(--rail-pad)}
