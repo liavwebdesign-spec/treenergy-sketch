@@ -505,14 +505,15 @@ function goStop(i) {
 }
 // the domains' ids move from their articles (hidden while the tour runs) to a point in the tour, a little into each
 // place's stop: an in-page link centres a point (site.js), so the point lies half a screen below the stop's scroll
-// position, and the css places it (scene.css: .lb-at), so it is right at every size without a measure
+// position, and the css places it (scene.css: .lb-at), so it is right at every size without a measure. The data
+// center has no node on the header's wire: its point is a gap there, so at its stop "charging" is no longer lit
 const AT = { sol: "dom-solar", sto: "dom-storage", chg: "dom-charge" };
 function placeAnchors() {
   set.tour.stops.forEach((st, i) => {
-    const id = AT[st.k], art = id && document.getElementById(id); if (!art) return;
-    art.removeAttribute("id");
+    const id = AT[st.k], art = id && document.getElementById(id); if (id && !art) return;
     const at = document.createElement("span");
-    at.className = "lb-at"; at.id = id; at.setAttribute("aria-hidden", "true");
+    at.className = "lb-at"; at.setAttribute("aria-hidden", "true");
+    if (art) { art.removeAttribute("id"); at.id = id; } else at.dataset.hdGap = "";
     at.style.setProperty("--p", (TT.t0 + i * SEG + TT.tr + 0.03).toFixed(4));
     sec.appendChild(at);
   });

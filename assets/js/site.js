@@ -28,7 +28,9 @@ if (doc.hasAttribute("data-bg-cmp")) import("./bg-compare.js").then((m) => m.mou
 // The wire's nodes are the stations of this page. The fill reaches node i exactly when the page reaches station i,
 // so the line is a map of the journey, not just a progress bar.
 const hd = $("#hd"), hdNodes = $$(".hd-node", hd), hdCta = $(".hd-cta", hd);
-let stations = [], here = -1;
+// A place on the page with no node of its own (the scene page's fourth stop, scene.js) is a gap: from there on to the
+// next node, no node is lit, so the one before it doesn't seem to be where the visitor is.
+let stations = [], gaps = [], here = -1;
 function measureStations() {
   const maxProbe = doc.scrollHeight - innerHeight * 0.5, n = hdNodes.length;
   stations = hdNodes.map((a, i) => {
@@ -36,6 +38,7 @@ function measureStations() {
     const y = t ? t.getBoundingClientRect().top + scrollY : maxProbe;
     return Math.min(y, maxProbe - (n - i) * 2);
   });
+  gaps = $$("[data-hd-gap]").map((e) => e.getBoundingClientRect().top + scrollY);
 }
 function headerTick() {
   const y = scrollY, n = hdNodes.length, probe = y + innerHeight * 0.5;
@@ -48,6 +51,7 @@ function headerTick() {
   hd.style.setProperty("--hp", f.toFixed(4));
   let h = -1;
   hdNodes.forEach((a, i) => { const past = probe >= stations[i]; a.classList.toggle("is-past", past); if (past) h = i; });
+  if (h >= 0 && gaps.some((g) => g > stations[h] && probe >= g && (h === n - 1 || g < stations[h + 1]))) h = -1;
   if (h !== here) {
     here = h;
     hdNodes.forEach((a, i) => { a.classList.toggle("is-here", i === h); if (i === h) a.setAttribute("aria-current", "location"); else a.removeAttribute("aria-current"); });
