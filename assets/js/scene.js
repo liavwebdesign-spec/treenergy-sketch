@@ -306,7 +306,7 @@ function blank(gl, unit) {
 let W = 1, H = 1, dpr = 1, set = null, ctx = null;
 const pins = $$(".lb-pin").map((el) => ({ el, k: el.dataset.k, card: $(".lb-card", el) }));
 // the tour's words, one block for each place (tourOn: the tour runs, with WebGL and with motion)
-const arts = $$(".lb-stop").map((el, i) => ({ el, i, n: $(".n", el), on: false, box: null }));
+const arts = $$(".lb-stop").map((el, i) => ({ el, i, h: $("h2", el), on: false, box: null }));
 let tourOn = false;
 
 // the camera over the picture: how much of it shows and around which point
@@ -477,10 +477,10 @@ function measureStops() {
   const sr = stage.getBoundingClientRect();
   for (const a of arts) {
     const r = a.el.getBoundingClientRect();
-    a.box = { l: r.left - sr.left, r: r.right - sr.left, t: r.top - sr.top, b: r.bottom - sr.top, nY: r.top - sr.top + a.n.offsetTop + a.n.offsetHeight * 0.56 };
+    a.box = { l: r.left - sr.left, r: r.right - sr.left, t: r.top - sr.top, b: r.bottom - sr.top, nY: r.top - sr.top + a.h.offsetTop + parseFloat(getComputedStyle(a.h).fontSize) * 0.55 };
   }
 }
-// the leader line: from the ring's end on the words' side, a short level step, then on to the numeral; on a tall
+// the leader line: from the ring's end on the words' side, a short level step, then on to the heading's first line; on a tall
 // screen down from the ring's front to just over the words, then along to their start
 function leadOf(g, s, b, tall) {
   const a = (g.rot * Math.PI) / 180, c = Math.cos(a), sn = Math.sin(a);
@@ -577,7 +577,7 @@ function tourDraw(v, time, pinA) {
   TU.spd = fl * (st.from >= 0 ? 0.5 : 0.35);
   TU.mist = fl * (st.from >= 0 ? 1 : 0.75);
   TU.mistP = st.to + st.e;
-  // the words: in as the camera arrives (each line after the one before), out as it leaves; the numeral fills with
+  // the words: in as the camera arrives (each line after the one before), out as it leaves; the current tick fills with
   // the stop
   for (const a of arts) {
     const on = presence(st, a.i, 0.4) > 0.5;

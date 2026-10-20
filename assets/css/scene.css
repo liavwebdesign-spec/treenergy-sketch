@@ -52,8 +52,9 @@ html.open-anim:not(.no-gl) .lb{height:var(--lbh)}
 .lb-pin:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:50%}
 
 .lb-cue{position:absolute;z-index:4;bottom:28px;left:50%;margin:0;transform:translateX(-50%);font-size:13px;letter-spacing:.14em;color:var(--muted);opacity:var(--co,1)} /* qa-allow: physical, centred or placed in screen pixels, the same in both directions */
-.lb-cue::after{content:"";display:block;width:1px;height:34px;margin:10px auto 0;background:linear-gradient(var(--accent),transparent);animation:lb-cue 2.2s var(--ease) infinite;transform-origin:top}
-@keyframes lb-cue{0%{transform:scaleY(0)}50%{transform:scaleY(1)}100%{transform:scaleY(1);opacity:0}}
+/* the word alone breathes (no drawn line under it: the cards' stems are the opening's one line) */
+.lb-cue span{display:block;animation:lb-cue 2.4s var(--ease) infinite}
+@keyframes lb-cue{0%,100%{opacity:.55}50%{opacity:1}}
 
 /* ---------- the tour ----------
    it runs with WebGL and with motion, and then takes the place of the domains section; otherwise the section stays */
@@ -91,11 +92,6 @@ html.open-anim:not(.no-gl) .lb-pin > i{opacity:0}
 .lb-stop.is-on{pointer-events:auto}
 .lb-stop.is-on > *{opacity:1;transform:none;transition:opacity .6s var(--ease),transform .8s var(--ease);transition-delay:calc(var(--i,0) * 80ms)}
 .lb-stop > :nth-child(2){--i:1}.lb-stop > :nth-child(3){--i:2}.lb-stop > :nth-child(4){--i:3}.lb-stop > :nth-child(5){--i:4}.lb-stop > :nth-child(6){--i:5}
-/* the numeral is a battery, as in the domains: it fills with green through the stop */
-.lb-stop .n{display:block;font-family:var(--display);font-weight:400;font-size:clamp(64px,6.4vw,150px);line-height:1;padding-top:.14em;margin:-.14em 0 -4px;
-  color:transparent;text-shadow:none;letter-spacing:-.01em;
-  background:linear-gradient(to top,var(--accent) calc(var(--pw,0) * 100%),rgba(243,246,252,.16) calc(var(--pw,0) * 100%));-webkit-background-clip:text;background-clip:text;
-  filter:drop-shadow(0 0 calc(var(--pw,0) * 22px) rgba(48,247,123,.35))}
 .lb-stop h2{font-family:var(--display);font-weight:400;font-size:clamp(34px,3.3vw,76px);line-height:1.04;letter-spacing:-.012em}
 .lb-stop-p{font-size:var(--fs-body);line-height:1.6;color:var(--ink-soft);max-width:34ch}
 .lb-ticks{display:flex;gap:6px;padding:0;list-style:none}
@@ -105,7 +101,6 @@ html.open-anim:not(.no-gl) .lb-pin > i{opacity:0}
 .lb-ticks li.now{background:linear-gradient(to left,var(--accent) calc(var(--pw,0) * 100%),rgba(243,246,252,.2) calc(var(--pw,0) * 100%))}
 /* a tall screen: the words under the place, over the night comparison's switch (?bg) */
 .lb-stage[data-fmt="tall"] .lb-stop{top:auto;bottom:calc(84px + env(safe-area-inset-bottom));inset-inline:var(--gutter);width:auto;translate:none;gap:8px}
-.lb-stage[data-fmt="tall"] .lb-stop .n{font-size:clamp(48px,13vw,84px)}
 .lb-stage[data-fmt="tall"] .lb-stop h2{font-size:clamp(28px,7.4vw,52px)}
 .lb-stage[data-fmt="tall"] .lb-stop-p{font-size:clamp(16px,2.2vw,19px);line-height:1.55}
 
@@ -119,5 +114,5 @@ html.open-anim:not(.no-gl) .lb-pin > i{opacity:0}
   .lb-card b{font-size:15px}
   .lb-card span{font-size:12.5px;line-height:1.45}
 }
-@media (prefers-reduced-motion:reduce){.lb-pin > i::after,.lb-cue::after{animation:none}}
-.ax-still .lb-pin > i::after,.ax-still .lb-cue::after{animation:none}
+@media (prefers-reduced-motion:reduce){.lb-pin > i::after,.lb-cue span{animation:none}}
+.ax-still .lb-pin > i::after,.ax-still .lb-cue span{animation:none}
