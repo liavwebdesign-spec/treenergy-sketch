@@ -430,10 +430,15 @@ function fitTop() {
   if (hi < 0.999) heroEl.style.setProperty("--fs-top", (fs * hi).toFixed(1) + "px");
 }
 
+let diveV = "";
 function setJourney(p) {
   if (!journey) return;
   jp = p;
   if (globe) globe.setProgress(p);
+  // the dive: the words' side darkens and the Earth melts away higher up (round 6). Only an opacity and a mask, so
+  // reduced motion keeps it too
+  const dv = smooth(0.18, 0.62, p).toFixed(3);
+  if (dv !== diveV) { diveV = dv; stage.style.setProperty("--dive", dv); }
   if (!reduce) {
     heroEl.style.setProperty("--hero-o", (1 - smooth(0.03, 0.3, p)).toFixed(3));
     heroEl.style.setProperty("--hero-y", (-p * 120).toFixed(1) + "px");

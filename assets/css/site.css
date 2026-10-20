@@ -335,12 +335,20 @@ html.lenis,html.lenis body{height:auto}
 @media (max-width:1023px){.gl-stage{overflow-x:clip;overflow-y:visible;clip-path:inset(0 0 -48px 0)}}
 .gl-stage > *{position:absolute;inset:0;width:100%;height:100%}
 .gl-canvas{opacity:0;transition:opacity 1.2s var(--ease);
-  -webkit-mask-image:linear-gradient(to bottom,#000 60%,rgba(0,0,0,.55) 80%,transparent);mask-image:linear-gradient(to bottom,#000 60%,rgba(0,0,0,.55) 80%,transparent)}
+  /* round 6: as the camera dives (--dive, 0..1, set by the scroll) the melt starts higher and runs longer, so when the
+     stage leaves there is no line where the bright Earth stops, only night */
+  --m0:60%;--m1:80%;--ma:.55;--d:var(--dive,0);
+  -webkit-mask-image:linear-gradient(to bottom,#000 calc(var(--m0) * (1 - var(--d)) + 40% * var(--d)),rgba(0,0,0,var(--ma)) calc(var(--m1) * (1 - var(--d)) + 62% * var(--d)),rgba(0,0,0,calc(var(--ma) * .3 * var(--d))) calc(100% - 14% * var(--d)),transparent);
+  mask-image:linear-gradient(to bottom,#000 calc(var(--m0) * (1 - var(--d)) + 40% * var(--d)),rgba(0,0,0,var(--ma)) calc(var(--m1) * (1 - var(--d)) + 62% * var(--d)),rgba(0,0,0,calc(var(--ma) * .3 * var(--d))) calc(100% - 14% * var(--d)),transparent)}
 .gl-on .gl-canvas{opacity:1}
 /* the globe melts into the living night at the stage foot, so when the stage leaves there is no edge, only the trail */
 /* readability: the words sit over the far side of the scene, never over the bright source */
 .gl-stage::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(to top,rgba(var(--n0),.82) 0%,rgba(var(--n0),.35) 26%,rgba(var(--n0),0) 46%);opacity:var(--scrim,1)}
+/* the dive: a quiet night on the words' side (the start side, or the foot on portrait screens), as the tour keeps its
+   words over the dark part of its picture */
+.gl-veil{opacity:var(--dive,0);background:linear-gradient(to left,rgba(var(--n0),.8) 0%,rgba(var(--n0),.62) 24%,rgba(var(--n0),.26) 46%,rgba(var(--n0),0) 64%)}
+.gl-stage.is-tall .gl-veil{background:linear-gradient(to top,rgba(var(--n0),.84) 0%,rgba(var(--n0),.6) 36%,rgba(var(--n0),0) 68%)}
 .gl-trail{overflow:visible}
 /* the trail and the links ride above the shade, so the trail meets the domains at full brightness */
 .gl-trail,.gl-pins{z-index:1}
@@ -387,7 +395,7 @@ html.lenis,html.lenis body{height:auto}
 .hero.is-top h1{font-size:var(--fs-top,var(--fs-hero));max-width:6.4em}
 .hero.is-top .hero-side{margin-top:clamp(24px,4vh,48px);max-width:36vw}
 .gl-stage.has-top::after{background:linear-gradient(to top,rgba(var(--n0),.6) 0%,rgba(var(--n0),.2) 22%,rgba(var(--n0),0) 38%)}
-.has-top .gl-canvas{-webkit-mask-image:linear-gradient(to bottom,#000 72%,rgba(0,0,0,.6) 88%,transparent);mask-image:linear-gradient(to bottom,#000 72%,rgba(0,0,0,.6) 88%,transparent)}
+.has-top .gl-canvas{--m0:72%;--m1:88%;--ma:.6}
 .route{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:0 6px;font-size:16px;font-weight:400;color:var(--ink);text-decoration:none;
   transition:color .3s var(--ease)}
 .route i{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);flex:none}

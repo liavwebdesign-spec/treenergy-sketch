@@ -91,6 +91,7 @@ uniform sampler2D uColor, uLights, uMask;
 uniform vec3 uMoon, uSun, uHub;
 uniform vec3 uSites[5];
 uniform float uTime, uDim, uOn, uReveal, uSunAmt;
+uniform vec2 uFocus; uniform float uDof, uDofR, uZoom;
 varying vec3 vN; varying vec3 vV; varying vec3 vObj;
 ${NOISE}
 float fbm(vec3 p){ float a = 0.5, s = 0.0; for (int i = 0; i < 4; i++){ s += a * snoise(p); p = p * 2.07 + vec3(3.1, 1.7, 5.3); a *= 0.5; } return s; }
@@ -100,10 +101,24 @@ void main(){
   vec2 uv = vec2(atan(p.x, p.z) * 0.15915494 + 0.5, asin(clamp(p.y, -1.0, 1.0)) * 0.31830989 + 0.5);
   // the seam of the map (the date line) must not pick a tiny mip level
   vec2 dx = dFdx(uv), dy = dFdy(uv); dx.x -= floor(dx.x + 0.5); dy.x -= floor(dy.x + 0.5);
+  // round 6: the dive has a depth of field, as the tour's pictures have. The ground round the sites in view stays sharp
+  // and the rest of the screen goes soft (the words' side most), so the close Earth reads as a lens, not a soft map
+  float soft = uDof * smoothstep(0.5, 1.45, length(gl_FragCoord.xy - uFocus) / uDofR);
+  float bl = 1.0 + soft * 6.0;
+  dx *= bl; dy *= bl;
   vec3 alb = lin(textureGrad(uColor, uv, dx, dy).rgb);
   float land = textureGrad(uMask, uv, dx, dy).r;
   float city = textureGrad(uLights, uv, dx, dy).r;
   float cityGlow = textureGrad(uLights, uv, dx * 9.0, dy * 9.0).r;
+  // close up the maps are softer than the screen: where the ground is in focus it gets a fine relief of its own, and the
+  // cities break into points of light instead of soft blots
+  float zk = smoothstep(0.75, 1.7, uZoom) * (1.0 - soft);
+  if (zk > 0.01) {
+    float det = snoise(p * 230.0) * 0.6 + snoise(p * 540.0) * 0.4;
+    alb *= 1.0 + det * 0.3 * zk * land;
+    city = clamp(city * (1.0 + det * 0.85 * zk) - 0.04 * zk, 0.0, 1.0);
+    cityGlow *= 1.0 - 0.45 * zk;
+  }
   vec3 N = normalize(vN), V = normalize(vV);
   float facing = clamp(dot(N, V), 0.0, 1.0);
   float lm = max(dot(N, uMoon), 0.0), ls = max(dot(N, uSun), 0.0);
@@ -118,6 +133,9 @@ void main(){
   float veg = smoothstep(0.0, 0.03, alb.g - max(alb.r * 0.9, alb.b));
   vec3 g = mix(vec3(lum) * vec3(0.9, 0.9, 1.0), alb, 0.4);
   g = mix(g, alb * vec3(0.55, 1.35, 0.75) * 1.9, veg * 0.9);
+  // the bright deserts are pressed down further (close up they turned to grey sand under the words), so the lights
+  // and the grid own the night
+  g *= 1.0 - smoothstep(0.16, 0.5, lum) * (1.0 - veg) * 0.3;
   g = pow(g, vec3(0.8));
   vec3 landC = g * 0.11 * (vec3(0.5, 0.62, 0.9) * 0.34 + vec3(0.68, 0.78, 1.0) * lm * 0.95);
   // the sea: a deep brand blue, lighter over the shallow shelves
@@ -242,9 +260,16 @@ const poolTexture = () => radial([[0, "rgba(48,247,123,.55)"], [0.4, "rgba(48,24
 // the glowing green frame round a site's footprint (the client's picture has one round its solar farm)
 const frameTexture = () => canvasTex(256, (g, s) => {
   const r = (x, y, w, h, k) => { g.beginPath(); g.moveTo(x + k, y); g.arcTo(x + w, y, x + w, y + h, k); g.arcTo(x + w, y + h, x, y + h, k); g.arcTo(x, y + h, x, y, k); g.arcTo(x, y, x + w, y, k); g.closePath(); };
-  g.shadowColor = "rgba(48,247,123,1)"; g.shadowBlur = 22; g.strokeStyle = "rgba(48,247,123,.9)"; g.lineWidth = 7;
-  r(s * 0.17, s * 0.17, s * 0.66, s * 0.66, 10); g.stroke();
-  g.shadowBlur = 0; g.strokeStyle = "rgba(225,255,236,.95)"; g.lineWidth = 2.2; r(s * 0.17, s * 0.17, s * 0.66, s * 0.66, 10); g.stroke();
+  // round 6: a finer line with a tighter glow (the thick one read as a sticker)
+  g.shadowColor = "rgba(48,247,123,1)"; g.shadowBlur = 14; g.strokeStyle = "rgba(48,247,123,.75)"; g.lineWidth = 4;
+  r(s * 0.17, s * 0.17, s * 0.66, s * 0.66, 8); g.stroke();
+  g.shadowBlur = 0; g.strokeStyle = "rgba(225,255,236,.9)"; g.lineWidth = 1.4; r(s * 0.17, s * 0.17, s * 0.66, s * 0.66, 8); g.stroke();
+});
+// the soft shadow a building leaves on the ground: a dark rounded square, blurred (drawn off the canvas, its shadow on it)
+const shadowTexture = () => canvasTex(128, (g, s) => {
+  const o = s * 4, k = s * 0.24, w = s * 0.52;
+  g.shadowColor = "rgba(0,3,14,1)"; g.shadowBlur = 16; g.shadowOffsetX = o; g.fillStyle = "#000";
+  g.beginPath(); g.roundRect ? g.roundRect(k - o, k, w, w, 10) : g.rect(k - o, k, w, w); g.fill();
 });
 // the sun's first light over the limb: a white core, a cool halo and a long thin streak along the horizon
 const sunTexture = () => canvasTex(256, (g, s) => {
@@ -259,42 +284,85 @@ const sunTexture = () => canvasTex(256, (g, s) => {
 });
 
 // ---- the sites: small lit models of the company's work ----
-// Model units: x east, y up, z south; one unit is S of the globe's radius. Faces are shaded by a fixed sky light
-// baked into vertex colours (no scene lights: the models stay crisp and cheap), edges are fine pale lines, and
-// everything green is light that the energy switches on.
+// Model units: x east, y up, z south; one unit is S of the globe's radius. No scene lights (the models stay crisp and
+// cheap): the light is baked into vertex colours. Round 6 (20.10, Liav: "far more professional and tight"): the models
+// are lit like the night they stand in, not like a diagram. The moon over the visitor's shoulder lights the roofs and
+// the walls fall darker toward their foot; a soft shadow grounds every building; only the roof edges catch a fine line
+// of light (no more wire edges round every box); the solar glass catches the sky toward its raised edge; and once the
+// energy reaches a site, its green light spills up the walls from the ground. Everything green is light the energy
+// switches on.
 const SKY = new THREE.Vector3(-0.42, 1, 0.62).normalize();
-function shade(g, hex, amb = 0.4, dif = 0.66) {
-  const c = new THREE.Color(hex), nr = g.attributes.normal, col = new Float32Array(nr.count * 3);
-  for (let i = 0; i < nr.count; i++) {
-    const k = amb + dif * Math.max(0, nr.getX(i) * SKY.x + nr.getY(i) * SKY.y + nr.getZ(i) * SKY.z);
+const SPILL = 0.06;                                   // how high (model units) the green light climbs a wall
+// each face: ambient + moon, and a wall falls darker toward its foot (tops keep their light). at: the height the
+// geometry's foot stands at in its part, so the green spill is measured from the ground
+function shade(g, hex, at = 0, amb = 0.24, dif = 0.88, foot = 0.5) {
+  const c = new THREE.Color(hex), nr = g.attributes.normal, ps = g.attributes.position, n = nr.count;
+  g.computeBoundingBox();
+  const y0 = g.boundingBox.min.y, hh = Math.max(1e-6, g.boundingBox.max.y - y0);
+  const col = new Float32Array(n * 3), low = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const ny = nr.getY(i), y = ps.getY(i);
+    const k = (amb + dif * Math.max(0, nr.getX(i) * SKY.x + ny * SKY.y + nr.getZ(i) * SKY.z)) * (ny > 0.9 ? 1 : foot + (1 - foot) * ((y - y0) / hh));
     col[i * 3] = c.r * k; col[i * 3 + 1] = c.g * k; col[i * 3 + 2] = c.b * k;
+    low[i] = ny > 0.9 ? 0 : Math.max(0, 1 - (at + y) / SPILL);
   }
-  g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  g.setAttribute("aCol", new THREE.BufferAttribute(col, 3));
+  g.setAttribute("aLow", new THREE.BufferAttribute(low, 1));
   return g;
 }
+// the solar glass: deep blue at its low edge, catching the sky toward its raised one; the frame's sides pale metal
+const GLASS_LO = new THREE.Color("#07173f"), GLASS_HI = new THREE.Color("#2f63cc"), GLASS_RIM = new THREE.Color("#5d709a");
+function shadeGlass(g, d) {
+  const nr = g.attributes.normal, ps = g.attributes.position, n = nr.count, c = new THREE.Color(), col = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    if (nr.getY(i) > 0.9) { const t = Math.min(1, Math.max(0, 0.5 - ps.getZ(i) / d)); c.copy(GLASS_LO).lerp(GLASS_HI, t * t); }
+    else c.copy(GLASS_RIM);
+    col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+  }
+  g.setAttribute("aCol", new THREE.BufferAttribute(col, 3));
+  g.setAttribute("aLow", new THREE.BufferAttribute(new Float32Array(n), 1));
+  return g;
+}
+// the models' material: the baked light, and the green spill from the ground once the site has power
+const FILL_VS = /* glsl */`
+attribute vec3 aCol; attribute float aLow;
+varying vec3 vC; varying float vL;
+void main(){ vC = aCol; vL = aLow; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
+const FILL_FS = /* glsl */`
+uniform vec3 uGlow;
+varying vec3 vC; varying float vL;
+void main(){
+  gl_FragColor = vec4(vC + uGlow * vL * vL, 1.0);
+  #include <colorspace_fragment>
+}`;
 function lineGeo(a) { const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(a, 3)); return g; }
 
-function buildSites(tex, pool, frameTex) {
-  const fill = new THREE.MeshBasicMaterial({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
-  const edge = new THREE.LineBasicMaterial({ color: 0xd6e4ff, transparent: true, opacity: 0.6 });
-  const fine = new THREE.LineBasicMaterial({ color: 0xa9c2ff, transparent: true, opacity: 0.32 });
-  const cell = new THREE.LineBasicMaterial({ color: 0x6d8fe0, transparent: true, opacity: 0.36 });
-  const ground = new THREE.LineBasicMaterial({ color: 0xcfe0ff, transparent: true, opacity: 0.2 });
-  const NAVY = "#24478f", PANEL = "#0f2d6e", STEEL = "#6a82b6", WHITE = "#eef3ff", ROOF = "#b9c8e6";
-
-  const block = (w, h, d, hex, withEdge = true) => {
-    const g = shade(new THREE.BoxGeometry(w, h, d).translate(0, h / 2, 0), hex);
-    const m = new THREE.Mesh(g, fill);
-    if (withEdge) m.add(new THREE.LineSegments(new THREE.EdgesGeometry(g), edge));
+function buildSites(tex, pool, frameTex, shadowTex) {
+  const rim = new THREE.LineBasicMaterial({ color: 0xdce8ff, transparent: true, opacity: 0.42 });
+  const fine = new THREE.LineBasicMaterial({ color: 0xa9c2ff, transparent: true, opacity: 0.26 });
+  const cell = new THREE.LineBasicMaterial({ color: 0x86a6ee, transparent: true, opacity: 0.3 });
+  const ground = new THREE.LineBasicMaterial({ color: 0xcfe0ff, transparent: true, opacity: 0.16 });
+  const seam = new THREE.LineBasicMaterial({ color: 0x0a1630, transparent: true, opacity: 0.6 });
+  // the night palette: moonlit steel and the brand navy; only the turbines and the chargers are pale
+  const NAVY = "#203f80", STEEL = "#566da0", HALL = "#6f84b2", PALE = "#c3cfe8", TURB = "#dde5f5", DARK = "#1b2c54";
+  const fillMat = () => new THREE.ShaderMaterial({ vertexShader: FILL_VS, fragmentShader: FILL_FS,
+    uniforms: { uGlow: { value: new THREE.Color(0, 0, 0) } }, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+  let cur = null;                                     // the site being built (its material carries its own spill)
+  // the outline of a box's top: the one edge that catches the light
+  const top = (w, y, d) => lineGeo([-w / 2, y, -d / 2, w / 2, y, -d / 2, w / 2, y, -d / 2, w / 2, y, d / 2, w / 2, y, d / 2, -w / 2, y, d / 2, -w / 2, y, d / 2, -w / 2, y, -d / 2]);
+  const block = (w, h, d, hex, withRim = true, at = 0) => {
+    const m = new THREE.Mesh(shade(new THREE.BoxGeometry(w, h, d).translate(0, h / 2, 0), hex, at), cur.fill);
+    if (withRim) m.add(new THREE.LineSegments(top(w, h + 0.0003, d), rim));
     return m;
   };
-  // a row of solar panels: a thin plate tilted to the south, its cells drawn on top
+  // a row of solar panels: a thin plate of glass tilted to the south, its cells drawn on it, a fine metal frame
   const panel = (w, d, nx, nz, tilt) => {
-    const p = block(w, 0.006, d, PANEL);
-    const a = [], y = 0.0066;
+    const p = new THREE.Mesh(shadeGlass(new THREE.BoxGeometry(w, 0.006, d).translate(0, 0.003, 0), d), cur.fill);
+    const a = [], y = 0.0064;
     for (let i = 1; i < nx; i++) { const x = -w / 2 + (w * i) / nx; a.push(x, y, -d / 2, x, y, d / 2); }
     for (let j = 1; j < nz; j++) { const z = -d / 2 + (d * j) / nz; a.push(-w / 2, y, z, w / 2, y, z); }
     p.add(new THREE.LineSegments(lineGeo(a), cell));
+    p.add(new THREE.LineSegments(top(w, y, d), rim));
     p.rotation.x = tilt * DEG;
     return p;
   };
@@ -308,16 +376,20 @@ function buildSites(tex, pool, frameTex) {
     const pad = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2),
       new THREE.MeshBasicMaterial({ map: pool, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0 }));
     pad.position.y = 0.002; pad.scale.setScalar(r * 2); s.model.add(pad);
-    const ring = new THREE.Mesh(new THREE.RingGeometry(0.95, 1, 72).rotateX(-Math.PI / 2),
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.97, 1, 96).rotateX(-Math.PI / 2),
       new THREE.MeshBasicMaterial({ color: GREEN, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0, side: THREE.DoubleSide }));
     ring.position.y = 0.003; s.model.add(ring);
     s.pad = pad; s.ring = ring; s.ringR = r;
   };
   // a part stands on the ground at (x, z) and leans toward the viewer as one piece (see lean() in mountGlobe);
-  // ex, ez: the half size of its footprint; k: how much of the lean it takes (a field lies lower than a building)
+  // ex, ez: the half size of its footprint; k: how much of the lean it takes (a field lies lower than a building).
+  // Its shadow stays flat on the ground (it does not lean) and darkens as the part comes up
   const part = (s, x, z, ex, ez, t, k = 1) => {
     const o = new THREE.Group(); o.position.set(x, 0, z);
-    s.model.add(o); s.parts.push({ o, base: new THREE.Vector3(x, 0, z), ex, ez, t, k });
+    const sh = new THREE.Mesh(new THREE.PlaneGeometry(ex * 3.7, ez * 3.7).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false, opacity: 0 }));
+    sh.position.set(x, 0.0015, z); sh.renderOrder = -1;
+    s.model.add(sh, o); s.parts.push({ o, sh, base: new THREE.Vector3(x, 0, z), ex, ez, t, k });
     return o;
   };
   // the glowing frame round a footprint, on the part's own ground
@@ -326,20 +398,20 @@ function buildSites(tex, pool, frameTex) {
       new THREE.MeshBasicMaterial({ map: frameTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0 }));
     m.position.y = 0.003; o.add(m); s.glows.push(m);
   };
-  const site = () => ({ model: new THREE.Group(), parts: [], lights: [], bars: [], rotors: [], glows: [], cool: [], green: greenMat() });
+  const site = () => (cur = { model: new THREE.Group(), parts: [], lights: [], bars: [], rotors: [], glows: [], cool: [], green: greenMat(), fill: fillMat() });
 
   // --- Israel: a charging station under a solar canopy, its screens lit ---
   const chg = site();
   {
     const c = part(chg, 0, 0, 0.17, 0.09, 1.5);
     for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
-      const post = block(0.008, 0.13, 0.008, WHITE, false); post.position.set(x * 0.15, 0, z * 0.07); c.add(post);
+      const post = block(0.008, 0.13, 0.008, STEEL, false); post.position.set(x * 0.15, 0, z * 0.07); c.add(post);
     }
-    const roof = block(0.34, 0.012, 0.18, ROOF); roof.position.y = 0.13; c.add(roof);
+    const roof = block(0.34, 0.012, 0.18, STEEL, true, 0.13); roof.position.y = 0.13; c.add(roof);
     for (let r = 0; r < 2; r++) { const p = panel(0.32, 0.075, 10, 2, 8); p.position.set(0, 0.146, -0.04 + r * 0.08); c.add(p); }
     for (let i = 0; i < 4; i++) {
       const x = -0.12 + i * 0.08;
-      const pl = block(0.022, 0.075, 0.018, WHITE, false); pl.position.set(x, 0, -0.03); c.add(pl);
+      const pl = block(0.022, 0.075, 0.018, PALE); pl.position.set(x, 0, -0.03); c.add(pl);
       const scr = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.022, 0.003), chg.green); scr.position.set(x, 0.05, -0.0195); c.add(scr);
       spark(c, x, 0.05, -0.015, 0.06, chg.lights);
     }
@@ -362,7 +434,7 @@ function buildSites(tex, pool, frameTex) {
       legs.push(x - 0.1, 0, z, x - 0.1, 0.016, z, x + 0.1, 0, z, x + 0.1, 0.016, z);
     }
     f.add(new THREE.LineSegments(lineGeo(legs), ground));
-    const inv = block(0.04, 0.03, 0.03, WHITE); inv.position.set(0.27, 0, 0.16); f.add(inv);
+    const inv = block(0.04, 0.03, 0.03, PALE); inv.position.set(0.27, 0, 0.16); f.add(inv);
     spark(f, 0.27, 0.035, 0.16, 0.05, sol.lights);
     frame(sol, f, 0.6, 0.36);
     hubLight(sol, 0.3);
@@ -375,9 +447,12 @@ function buildSites(tex, pool, frameTex) {
     const b = part(sto, 0, 0, 0.22, 0.08, 1.35);
     const barGeo = new THREE.BoxGeometry(0.046, 0.066, 0.004).translate(0, 0.033, 0);
     const track = new THREE.MeshBasicMaterial({ color: 0x0a1a3a });
+    // the door frames and the vent strip on each container's face
+    const doors = lineGeo([-0.03, 0.006, 0.0653, -0.03, 0.092, 0.0653, 0.03, 0.006, 0.0653, 0.03, 0.092, 0.0653, -0.03, 0.088, 0.0653, 0.03, 0.088, 0.0653]);
     for (let i = 0; i < 5; i++) {
       const c = new THREE.Group(); c.position.set(-0.17 + i * 0.085, 0, 0);
-      c.add(block(0.072, 0.1, 0.13, STEEL));
+      c.add(block(0.072, 0.1, 0.13, HALL));
+      c.add(new THREE.LineSegments(doors, seam));
       const tr = new THREE.Mesh(barGeo, track); tr.position.set(0, 0.016, 0.0655); c.add(tr);
       const bar = new THREE.Mesh(barGeo, sto.green); bar.position.set(0, 0.016, 0.0675); c.add(bar);
       sto.bars.push({ m: bar, ph: i * 1.7 });
@@ -393,21 +468,21 @@ function buildSites(tex, pool, frameTex) {
     sto.anchor = [b, new THREE.Vector3(0, 0.06, 0)]; sto.hit = 0.52;
   }
 
-  // --- northern Europe: a server farm, two long white halls with their light strips, cooling on the roofs ---
+  // --- northern Europe: a server farm, two long halls with their light strips, cooling on the roofs ---
   const srv = site();
   {
     const cool = new THREE.MeshBasicMaterial({ color: 0x9cc4ff, transparent: true, opacity: 0.25 });
     srv.cool.push(cool);
     const hall = (o, w, d, x, z) => {
       const h = 0.07;
-      const m = block(w, h, d, WHITE); m.position.set(x, 0, z); o.add(m);
+      const m = block(w, h, d, HALL); m.position.set(x, 0, z); o.add(m);
       // the strips: rows of light along the long faces
       const sg = new THREE.PlaneGeometry(w * 0.9, 0.007);
       for (const y of [0.022, 0.044]) {
         const a = new THREE.Mesh(sg, cool); a.position.set(x, y, z + d / 2 + 0.0008); o.add(a);
       }
       // cooling units on the roof
-      for (let i = 0; i < 6; i++) { const u = block(0.026, 0.012, 0.026, ROOF, false); u.position.set(x - w / 2 + 0.04 + i * (w - 0.08) / 5, h, z); o.add(u); }
+      for (let i = 0; i < 6; i++) { const u = block(0.026, 0.012, 0.026, DARK, false, h); u.position.set(x - w / 2 + 0.04 + i * (w - 0.08) / 5, h, z); o.add(u); }
     };
     const s1 = part(srv, 0, 0, 0.22, 0.13, 1.25);
     hall(s1, 0.38, 0.1, 0, -0.06);
@@ -418,7 +493,7 @@ function buildSites(tex, pool, frameTex) {
     srv.anchor = [s1, new THREE.Vector3(0, 0.05, 0)]; srv.hit = 0.5;
   }
 
-  // --- the European site: a solar field, and wind turbines behind it (unchanged) ---
+  // --- the European site: a solar field, and wind turbines behind it (its place and layout unchanged) ---
   const eur = site();
   {
     const fd = part(eur, 0.16, -0.2, 0.245, 0.12, 1.0);
@@ -429,17 +504,17 @@ function buildSites(tex, pool, frameTex) {
       legs.push(x, 0, z, x, 0.026, z);
     }
     fd.add(new THREE.LineSegments(lineGeo(legs), ground));
-    const towerGeo = shade(new THREE.CylinderGeometry(0.0055, 0.011, 0.42, 10).translate(0, 0.21, 0), WHITE, 0.55, 0.5);
-    const bladeGeo = shade(new THREE.BoxGeometry(0.011, 0.15, 0.003).translate(0, 0.075, 0), WHITE, 0.6, 0.45);
-    const hubGeo = shade(new THREE.SphereGeometry(0.009, 10, 8), WHITE);
+    const towerGeo = shade(new THREE.CylinderGeometry(0.0055, 0.011, 0.42, 10).translate(0, 0.21, 0), TURB, 0, 0.5, 0.55, 0.72);
+    const bladeGeo = shade(new THREE.BoxGeometry(0.011, 0.15, 0.003).translate(0, 0.075, 0), TURB, 0.42, 0.58, 0.45, 1);
+    const hubGeo = shade(new THREE.SphereGeometry(0.009, 10, 8), TURB, 0.42);
     const wind = [];
     for (let i = 0; i < 3; i++) {
       const t = part(eur, -0.5 + (i % 2) * 0.07, -0.26 + i * 0.16, 0.012, 0.012, 1.15 + i * 0.12);
-      t.add(new THREE.Mesh(towerGeo, fill));
-      const nac = block(0.02, 0.02, 0.05, WHITE, false); nac.position.set(0, 0.415, -0.008); t.add(nac);
+      t.add(new THREE.Mesh(towerGeo, eur.fill));
+      const nac = block(0.02, 0.02, 0.05, TURB, false, 0.415); nac.position.set(0, 0.415, -0.008); t.add(nac);
       const rotor = new THREE.Group(); rotor.position.set(0, 0.425, 0.02);
-      rotor.add(new THREE.Mesh(hubGeo, fill));
-      for (let k = 0; k < 3; k++) { const bl = new THREE.Mesh(bladeGeo, fill); bl.rotation.z = (k * 2 * Math.PI) / 3; rotor.add(bl); }
+      rotor.add(new THREE.Mesh(hubGeo, eur.fill));
+      for (let k = 0; k < 3; k++) { const bl = new THREE.Mesh(bladeGeo, eur.fill); bl.rotation.z = (k * 2 * Math.PI) / 3; rotor.add(bl); }
       rotor.rotation.z = i * 0.9;
       t.add(rotor); eur.rotors.push(rotor); wind.push(t);
       spark(t, 0, 0.43, 0.03, 0.05, eur.lights);
@@ -515,18 +590,19 @@ function frame(W, H, low) {
   const tall = W / H < 1.05;
   if (tall) {
     const R = Math.min(0.8 * W, 0.42 * H);
-    return { tall, S: 0.24,
+    return { tall, S: 0.2,
       a: { R, cx: W - R - 14, cy: Math.max(0.355 * H, R * 0.96), lat: 26, lon: 2 },
-      b: { R: Math.min(1.9 * W, 0.95 * H), hx: 0.52 * W, hy: 0.2 * H, lat: ISR.lat - 5, lon: ISR.lon - 7 } };
+      b: { R: Math.min(1.72 * W, 0.86 * H), hx: 0.52 * W, hy: 0.2 * H, lat: ISR.lat - 5, lon: ISR.lon - 7 } };
   }
   const R = low ? Math.min(0.8 * H, 0.48 * W) : Math.min(0.78 * H, 0.46 * W);
-  const b = { R: Math.min(0.95 * W, 1.7 * H), hx: 0.21 * W, hy: 0.37 * H, lat: ISR.lat - 10, lon: ISR.lon - 12 };
-  if (low) return { tall, S: 0.2, a: { R, cx: 0.23 * W, cy: 0.65 * H, lat: 22, lon: 18 }, b };
+  // round 6: the dive stops short of where the maps go soft (it went to 1.7 screen heights)
+  const b = { R: Math.min(0.72 * W, 1.28 * H), hx: 0.21 * W, hy: 0.37 * H, lat: ISR.lat - 10, lon: ISR.lon - 12 };
+  if (low) return { tall, S: 0.17, a: { R, cx: 0.23 * W, cy: 0.65 * H, lat: 22, lon: 18 }, b };
   // the line stands high on the start side: down to the middle of the screen its last 40% stays clear of the rim.
   // On narrower screens the globe slides further out on the end side and turns east by as much, so the sites stay put
   const cy = 0.74 * H, d = cy - 0.5 * H, hc = Math.sqrt(Math.max(0, R * R - d * d));
   const cx = Math.min(0.2 * W, 0.6 * W - hc - 0.06 * R - 14), turn = Math.asin(Math.min(1, (0.2 * W - cx) / R)) * 180 / Math.PI;
-  return { tall, S: 0.2, a: { R, cx, cy, lat: 22, lon: 18 - turn }, b };
+  return { tall, S: 0.17, a: { R, cx, cy, lat: 22, lon: 18 - turn }, b };
 }
 
 export async function mountGlobe(stage, opt = {}) {
@@ -562,7 +638,7 @@ export async function mountGlobe(stage, opt = {}) {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(24, 1, 0.3, 50);
   const globe = new THREE.Group(); globe.rotation.order = "XYZ"; scene.add(globe);
-  const hubV = ll2v(ISR.lat, ISR.lon);
+  const hubV = ll2v(ISR.lat, ISR.lon), FOCUS = ll2v(29.6, 39.5);
   // the rim's light (kept from the sketch the client liked), the moon over the visitor's shoulder, the sun behind the
   // end-side limb
   const rimL = new THREE.Vector3(0.55, 0.5, 0.45).normalize();
@@ -575,6 +651,7 @@ export async function mountGlobe(stage, opt = {}) {
     uHub: { value: hubV }, uRimL: { value: rimL }, uMoon: { value: moon }, uSun: { value: sun }, uSunAmt: { value: sunAmt },
     uColor: { value: mapC }, uLights: { value: mapL }, uMask: { value: mapM },
     uSites: { value: Object.values(LL).map(([a, b]) => ll2v(a, b)) },
+    uFocus: { value: new THREE.Vector2() }, uDof: { value: 0 }, uDofR: { value: 1 }, uZoom: { value: 1 },
   };
 
   globe.add(new THREE.Mesh(new THREE.SphereGeometry(1, 160, 112),
@@ -588,7 +665,7 @@ export async function mountGlobe(stage, opt = {}) {
 
   // ---- the sites ----
   const tex = glowTexture();
-  const sites = buildSites(tex, poolTexture(), frameTexture());
+  const sites = buildSites(tex, poolTexture(), frameTexture(), shadowTexture());
   const { chg, eur } = sites;
   for (const [key, s] of Object.entries(sites)) {
     const n = ll2v(...LL[key]), east = new THREE.Vector3(0, 1, 0).cross(n).normalize(), south = n.clone().cross(east).negate();
@@ -601,6 +678,9 @@ export async function mountGlobe(stage, opt = {}) {
     // the models are drawn in a second pass, over the globe: a part that leans toward the viewer may dip below the
     // ground on its far side, and the Earth must not cut it
     s.model.traverse((o) => o.layers.set(1));
+    // the light and the shadow on the ground are drawn before the models, under them: a leaning part dips below the
+    // ground on its far side, and the green pool must not tint its roof (nor the shadow darken it)
+    for (const o of [s.pad, s.ring, ...s.parts.map((p) => p.sh)]) o.layers.set(2);
   }
   const dimGreen = new THREE.Color("#0c3b2a");
 
@@ -742,7 +822,7 @@ export async function mountGlobe(stage, opt = {}) {
     resolve(F.a); resolve(F.b);
     stage.classList.toggle("is-tall", F.tall);
     // phones: the station the energy arrives at is drawn a little larger than the rest
-    for (const s of Object.values(sites)) s.big = F.tall && s === chg ? 1.3 : 1;
+    for (const s of Object.values(sites)) s.big = F.tall && s === chg ? 1.15 : 1;
     for (const u of Object.values(netU)) u.uPx.value = (F.tall ? 7 : 9) * dpr;
     if (trailSvg) trailSvg.setAttribute("viewBox", `0 0 ${W} ${H}`);
     railX = opt.railX ? opt.railX() : W * 0.6;
@@ -896,8 +976,8 @@ export async function mountGlobe(stage, opt = {}) {
     rollT += dt * roll;
     const rollLon = 4 * Math.sin((rollT * 2 * Math.PI) / 46 + 0.6), rollLat = 1.8 * Math.sin((rollT * 2 * Math.PI) / 61 + 2.1);
     view.R = lerp(a.R, b.R, p) * aim.z; view.cx = lerp(a.cx, b.cx, p); view.cy = lerp(a.cy, b.cy, p);
-    // the models grow less than the Earth as the camera dives (they would turn into toys)
-    const ms = F.S * Math.pow(a.R / view.R, 0.45);
+    // the models grow far less than the Earth as the camera dives (they would turn into toys)
+    const ms = F.S * Math.pow(a.R / view.R, 0.6);
     for (const s of Object.values(sites)) s.model.scale.setScalar(ms * s.big);
     if (aim.set) {
       const k = reduce ? 1 : Math.min(1, dt * 3.2);
@@ -909,6 +989,16 @@ export async function mountGlobe(stage, opt = {}) {
     globe.rotation.set(view.lat * DEG, -view.lon * DEG, 0);
     place(view.R, view.cx, view.cy);
     U.uDim.value = lerp(1, 0.5, smooth(0.3, 0.75, progress));
+    // the dive's depth of field: in focus round Israel and the storage site beside it, soft toward the screen's edges
+    // (gl_FragCoord: device pixels, from the bottom); how far the 4k maps are blown up on screen
+    U.uDof.value = reduce ? 0 : smooth(0.12, 0.6, progress);
+    if (U.uDof.value > 0) {
+      globe.updateMatrixWorld(true);
+      tmpW.copy(FOCUS).applyMatrix4(globe.matrixWorld); projectW(tmpW, tmpN.copy(tmpW).normalize(), sp);
+      U.uFocus.value.set(sp.x * dpr, (H - sp.y) * dpr);
+      U.uDofR.value = (F.tall ? 0.62 * W : 0.5 * Math.min(W, H * 1.2)) * dpr;
+    }
+    U.uZoom.value = (view.R * dpr) / (sharp ? 652 : 326);
     // the grid keeps the same width on screen through the dive
     for (const u of Object.values(netU)) u.uHW.value = (F.tall ? 4.6 : 5.6) / view.R;
 
@@ -917,8 +1007,8 @@ export async function mountGlobe(stage, opt = {}) {
       const d = camera.position.z, rr = Math.sqrt(1 - 1 / (d * d)), sl = Math.hypot(sun.x, sun.y);
       sunSprite.position.set((sun.x / sl) * rr, (sun.y / sl) * rr, 1 / d);
       sunSprite.material.rotation = Math.atan2(sun.y, sun.x) + Math.PI / 2;
-      sunSprite.scale.setScalar(F.tall ? 0.95 : 0.8);
-      sunSprite.material.opacity = 0.42 * U.uOn.value * U.uDim.value * sunAmt;
+      sunSprite.scale.setScalar(F.tall ? 0.85 : 0.68);
+      sunSprite.material.opacity = 0.36 * U.uOn.value * U.uDim.value * sunAmt;
     }
 
     // the trail first (it tells Israel and the European site when the energy has reached them)
@@ -938,6 +1028,7 @@ export async function mountGlobe(stage, opt = {}) {
       for (const part of s.parts) {
         const g = reduce ? 1 : easeOut(clamp01((time - part.t) / 0.9));
         part.o.scale.y = Math.max(0.001, g); part.o.visible = g > 0.002;
+        part.sh.material.opacity = 0.62 * g * U.uOn.value;
       }
       const on = s.netAt ? Object.entries(s.netAt).some(([src, at]) => sites[src].grow >= at - 0.01) : head >= s.f - 0.004;
       const target = reduce || on ? 1 : 0;
@@ -945,6 +1036,7 @@ export async function mountGlobe(stage, opt = {}) {
       s.hotT += ((s.hot ? 1 : 0) - s.hotT) * Math.min(1, dt * 6);
       const pw = s.power, ht = s.hotT;
       s.green.color.copy(dimGreen).lerp(GREEN, pw);
+      s.fill.uniforms.uGlow.value.copy(GREEN).multiplyScalar((0.13 + 0.1 * ht) * pw);
       for (const l of s.lights) l.material.opacity = pw * (0.75 + 0.25 * Math.sin(time * 2.1 + l.position.x * 40));
       for (const bar of s.bars) bar.m.scale.y = Math.max(0.04, pw * (0.62 + 0.3 * Math.sin(time * 0.45 + bar.ph)));
       for (const r of s.rotors) r.rotation.z -= reduce ? 0 : dt * (0.35 + 1.5 * pw);
@@ -963,6 +1055,7 @@ export async function mountGlobe(stage, opt = {}) {
     globe.updateMatrixWorld(true);
     camera.layers.set(0); renderer.autoClear = true; renderer.render(scene, camera);
     renderer.autoClear = false; renderer.clearDepth();
+    camera.layers.set(2); renderer.render(scene, camera);
     camera.layers.set(1); renderer.render(scene, camera);
 
     // the links ride on their models; they come in once Israel has power and leave as soon as the camera starts to
