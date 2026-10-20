@@ -13,6 +13,7 @@
 // The rest of the page is the home page's own (site.js: the night, the header, the menu, Lenis, every section below).
 import { mountDom } from "./scene-dom.js";
 import { mountMarks } from "./scene-marks.js";
+import { mountTrail } from "./scene-trail.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -587,6 +588,16 @@ function tourDraw(v, time, pinA) {
   if (cur >= 0) arts[cur].el.style.setProperty("--pw", (st.mode === "at" ? st.dw : cur === st.to ? 0 : 1).toFixed(3));
 }
 
+// the end: from e0 the scene rises (and the site's trail comes out of the city); once the stage lets go it keeps rising
+// slower than the page (LIFT_K), so the visitor goes down past it. liftEnd: how far it has risen when the stage lets go,
+// so the two speeds meet there
+const LIFT_K = 0.45;
+const endAt = () => TT.t0 + set.tour.stops.length * SEG + 0.035;
+const liftEnd = () => { const e0 = endAt(); return (1 - LIFT_K) * (1 - e0) * (sec.offsetHeight - H) / H / 2; };
+// where the city stands on the stage the moment it lets go: the whole scene, risen by liftEnd
+function cityEnd() { const [x, y] = toScreen(view(1, set.base), set.src); return [x, y - liftEnd() * H]; }
+let trail = null;
+
 // ---- the timeline ----
 const t0 = performance.now(); let tReady = -1, lastPin = -1;
 function frame(now) {
@@ -621,10 +632,9 @@ function frame(now) {
     st.u = u; TS = st;
     // the end: the camera back over the whole scene, which stays (Liav 19.10: "אין צורך לעשות FADE לגמרי על כדור
     // הארץ אלא להשאיר אותו ... שירגיש כאילו הוא עולה ואנחנו יורדים"). It starts to rise, and once the stage lets go
-    // it keeps rising slower than the page (K), so the visitor goes down past it; the two speeds meet at the release
-    const end = TT.t0 + set.tour.stops.length * SEG, e0 = end + 0.035, s = clamp01((p - e0) / (1 - e0)), K = 0.45;
-    const lEnd = (1 - K) * (1 - e0) * (sec.offsetHeight - H) / H / 2;
-    F.lift = lEnd * s * s - K * outY; F.sink = 0.2 * s + 0.15 * outY; F.head = [0.5, 0.5];
+    // it keeps rising slower than the page (LIFT_K), so the visitor goes down past it; the two speeds meet at the release
+    const e0 = endAt(), s = clamp01((p - e0) / (1 - e0));
+    F.lift = liftEnd() * s * s - LIFT_K * outY; F.sink = 0.2 * s + 0.15 * outY; F.head = [0.5, 0.5];
     titleA = 1 - smooth(0.004, 0.02, p);
     pinA = smooth(2.6, 3.4, since) * (1 - smooth(0, 0.016, p));
   } else {
@@ -641,6 +651,8 @@ function frame(now) {
   }
   const v = view(zoom, center); v.zoom = zoom;
   if (tourOn && marks) tourDraw(v, time, pinA);
+  // the site's trail out of the city (its tail stays on the city as the scene rises)
+  if (trail) { const c = screenOf(v, set.src); trail.tick(prog, endAt(), [c[0], c[1] - F.lift * H], sec.offsetHeight - H); }
 
   const { gl, U } = ctx;
   gl.uniform2f(U.uRes, cv.width, cv.height); gl.uniform2f(U.uImg, set.w, set.h);
@@ -688,12 +700,14 @@ if (tourOn) {
   placeAnchors();
   marks = mountMarks($(".lb-tour"), arts.length);
   measureStops();
+  trail = mountTrail({ stage, sec, HEAD, cityEnd });
+  if (trail) trail.layout();
   // a place pointed at in the opening, or a link in a place's words reached by the keyboard, takes the tour there
   for (const p of pins) p.el.addEventListener("click", (e) => { if (e.defaultPrevented) return; e.preventDefault(); goStop(arts.findIndex((a) => a.el.dataset.k === p.k)); });
   for (const a of arts) a.el.addEventListener("focusin", () => { if (!a.on) goStop(a.i); });
   if (lenis) lenis.on("scroll", () => { clearTimeout(idleT); idleT = setTimeout(settle, 220); });
 }
-const relayout = () => { resize(); readScroll(); for (const p of pins) p.cw = 0; if (dom) dom.layout(); if (tourOn) measureStops(); };
+const relayout = () => { resize(); readScroll(); for (const p of pins) p.cw = 0; if (dom) dom.layout(); if (tourOn) measureStops(); if (trail) trail.layout(); };
 let rz = 0;
 addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(relayout, 120); });
 addEventListener("load", relayout);

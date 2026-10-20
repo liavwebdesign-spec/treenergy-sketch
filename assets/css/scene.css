@@ -14,6 +14,8 @@ html.open-anim:not(.no-gl) .lb{height:var(--lbh)}
 .lb-at{position:absolute;inset-inline-start:0;width:1px;height:0;top:calc(var(--p,0) * (var(--lbh) - 100svh) + 50svh);pointer-events:none}
 /* the scene sinks into the page's own night, so the stage has none of its own */
 .lb-stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden}
+/* the frame of the site's trail out of the city (scene-trail.js); the trail itself is painted on the page's trail canvas */
+.lb-trail{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .lb-scene,.lb-still{position:absolute;inset:0;width:100%;height:100%}
 .lb-scene{display:block;opacity:0}
 .lb-still{object-fit:cover;opacity:0}
