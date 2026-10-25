@@ -88,11 +88,17 @@ export function mountDom({ HEAD, reduce, stageH }) {
     return W - (g + rp) / 2;
   }
   // where the band starts, in the domains' frame: on the head's line at the moment the scene above has gone by (the
-  // domains' top is then its foot)
-  const jointY = () => innerHeight * HEAD - stageH();
+  // domains' top is then its foot); never through the opening's second line (round 6), it starts under it instead
+  const sub = document.querySelector(".lb-sub");
+  function jointY(x0, r) {
+    const J = innerHeight * HEAD - stageH();
+    if (!sub || x0 === undefined) return J;
+    const b = sub.getBoundingClientRect();
+    return x0 > b.left - 40 && x0 < b.right + 40 ? Math.max(J, b.bottom - r.top + 24) : J;
+  }
 
   function layout() {
-    const r = dom.getBoundingClientRect(), W = r.width, H = r.height, x0 = railX(), J = jointY();
+    const r = dom.getBoundingClientRect(), W = r.width, H = r.height, x0 = railX(), J = jointY(x0, r);
     join.x = x0;
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
     wipes.forEach(ringPaths);

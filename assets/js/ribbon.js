@@ -75,7 +75,9 @@ function painter() {
 function paint(now) {
   const moving = !still();
   // at rest (stop motion), only paint when something changed: a trail, or where the page is
-  if (scrollY !== P.sy) { P.sy = scrollY; P.dirty = true; }
+  // the scroll from Lenis when it drives the page (a number it keeps, no layout read)
+  const sy = window.__lenis ? window.__lenis.animatedScroll : scrollY;
+  if (sy !== P.sy) { P.sy = sy; P.dirty = true; }
   if (!moving && !P.dirty) return;
   P.dirty = false;
   const ctx = P.ctx, t = moving ? (now - P.t0) / 1000 : 0;

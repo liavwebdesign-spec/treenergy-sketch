@@ -25,17 +25,18 @@
   (function (d) { var bg = new URLSearchParams(location.search).get("bg"); if (bg === null) return;
     d.setAttribute("data-bg-cmp", ""); if (bg === "mid" || bg === "brand") d.setAttribute("data-bg", bg); })(document.documentElement);
 </script>
-<link rel="stylesheet" href="assets/css/site.css">
-<link rel="stylesheet" href="assets/css/scene.css">
+<link rel="stylesheet" href="assets/css/site.css?v=r6">
+<link rel="stylesheet" href="assets/css/scene.css?v=r6">
 <link rel="preload" href="assets/img/scene/wide-on.webp" as="image" media="(min-aspect-ratio:9/10)">
 <link rel="preload" href="assets/img/scene/tall-on.webp" as="image" media="(max-aspect-ratio:9/10)">
-<script type="importmap">{"imports":{"three":"./vendor/three/three.module.min.js"}}</script>
+<!-- the page's own files carry the round (?v=), so a visitor never gets this round's code with pieces of the last one from the cache -->
+<script type="importmap">{"imports":{"three":"./vendor/three/three.module.min.js","./assets/js/ribbon.js":"./assets/js/ribbon.js?v=r6","./assets/js/sky.js":"./assets/js/sky.js?v=r6","./assets/js/scene-dom.js":"./assets/js/scene-dom.js?v=r6","./assets/js/scene-marks.js":"./assets/js/scene-marks.js?v=r6","./assets/js/scene-trail.js":"./assets/js/scene-trail.js?v=r6","./assets/js/globe.js":"./assets/js/globe.js?v=r6","./assets/js/menu-dots.js":"./assets/js/menu-dots.js?v=r6","./assets/js/bg-compare.js":"./assets/js/bg-compare.js?v=r6"}}</script>
 <script defer src="vendor/gsap/gsap.min.js"></script>
 <script defer src="vendor/gsap/ScrollTrigger.min.js"></script>
 <script defer src="vendor/gsap/SplitText.min.js"></script>
 <script defer src="vendor/lenis/lenis.min.js"></script>
-<script type="module" src="assets/js/site.js"></script>
-<script type="module" src="assets/js/scene.js"></script>
+<script type="module" src="assets/js/site.js?v=r6"></script>
+<script type="module" src="assets/js/scene.js?v=r6"></script>
 </head>
 <body>
 <!-- the living night: one field behind the whole page -->
@@ -105,12 +106,15 @@
     <canvas class="lb-scene" aria-hidden="true"></canvas>
     <img class="lb-still" src="assets/img/scene/wide-on.webp" alt="" aria-hidden="true">
     <h1 id="lb-h" class="lb-h"><span>העתיד של האנרגיה</span><span>מתחיל <span class="gword">כאן</span></span></h1>
-    <!-- the places in the scene: a card opens on the one pointed at -->
+    <!-- round 6: a small second line in the dark corner across from the title (the client 25.10: "זה גם סוגר את
+         הקומפוזיציה"); the words are the draft's own, waiting for Liav's approval -->
+    <p class="lb-sub"><span>טרינרג'י מקבוצת רמי לוי נדל"ן</span> <span>מרכזת עבורכם את כל הפתרונות במקום אחד</span></p>
+    <!-- the places in the scene: the one pointed at shows its name, and a click takes the tour there -->
     <div class="lb-pins">
-      <a class="lb-pin" href="#dom-solar" data-k="sol"><i></i><span class="lb-card"><b>אנרגיה סולארית</b><span>ייזום, תכנון והקמת מערכות סולאריות על שלל תשתיות ואלמנטים</span></span></a>
-      <a class="lb-pin" href="#dom-storage" data-k="sto"><i></i><span class="lb-card"><b>אגירת אנרגיה</b><span>ייזום, תכנון והקמת מערכות אגירת אנרגיה בשילוב סולארי, לצריכה עצמית ולייצור חשמל</span></span></a>
-      <a class="lb-pin" href="#dom-charge" data-k="chg"><i></i><span class="lb-card"><b>טעינת רכבים</b><span>הפעלת רשת טעינת רכבים אולטרה מהירה בפריסה ארצית</span></span></a>
-      <a class="lb-pin" href="#contact" data-k="srv"><i></i><span class="lb-card"><b>חוות שרתים ותחנות כוח</b><span>תחומים חדשים שאנחנו מפתחים עכשיו, בארץ ובאירופה</span></span></a>
+      <a class="lb-pin" href="#dom-solar" data-k="sol"><i></i><span class="lb-card"><b>אנרגיה סולארית</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></span></a>
+      <a class="lb-pin" href="#dom-storage" data-k="sto"><i></i><span class="lb-card"><b>אגירת אנרגיה</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></span></a>
+      <a class="lb-pin" href="#dom-charge" data-k="chg"><i></i><span class="lb-card"><b>טעינת רכבים</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></span></a>
+      <a class="lb-pin" href="#contact" data-k="srv"><i></i><span class="lb-card"><b>חוות שרתים ותחנות כוח</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></span></a>
     </div>
     <!-- the tour: the camera stops at each place; the scene thins out on the side across from it and its words open there -->
     <div class="lb-tour">

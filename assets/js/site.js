@@ -27,12 +27,13 @@ if (doc.hasAttribute("data-bg-cmp")) import("./bg-compare.js").then((m) => m.mou
 /* ---------- header: the power line ---------- */
 // The wire's nodes are the stations of this page. The fill reaches node i exactly when the page reaches station i,
 // so the line is a map of the journey, not just a progress bar.
-const hd = $("#hd"), hdNodes = $$(".hd-node", hd), hdCta = $(".hd-cta", hd);
+const hd = $("#hd"), hdNodes = $$(".hd-node", hd), hdCta = $(".hd-cta", hd), hdFill = $(".hd-fill", hd);
 // A place on the page with no node of its own (the scene page's fourth stop, scene.js) is a gap: from there on to the
 // next node, no node is lit, so the one before it doesn't seem to be where the visitor is.
-let stations = [], gaps = [], here = -1;
+let stations = [], gaps = [], here = -1, docH = 0;
 function measureStations() {
-  const maxProbe = doc.scrollHeight - innerHeight * 0.5, n = hdNodes.length;
+  docH = doc.scrollHeight;
+  const maxProbe = docH - innerHeight * 0.5, n = hdNodes.length;
   stations = hdNodes.map((a, i) => {
     const t = $(a.getAttribute("href"));
     const y = t ? t.getBoundingClientRect().top + scrollY : maxProbe;
@@ -40,15 +41,18 @@ function measureStations() {
   });
   gaps = $$("[data-hd-gap]").map((e) => e.getBoundingClientRect().top + scrollY);
 }
-function headerTick() {
-  const y = scrollY, n = hdNodes.length, probe = y + innerHeight * 0.5;
+// y: the page's scroll, read by the frame before anything was written. It only writes: the fill takes its own --hp, so a
+// frame restyles the one line and not the whole header (round 6)
+function headerTick(y = scrollY) {
+  const n = hdNodes.length, probe = y + innerHeight * 0.5;
   hd.classList.toggle("is-scrolled", y > 24);
   if (!stations.length) return;
-  const xs = [innerHeight * 0.5, ...stations, doc.scrollHeight - innerHeight * 0.5];
+  const xs = [innerHeight * 0.5, ...stations, (docH || doc.scrollHeight) - innerHeight * 0.5];
   const fs = [0, ...hdNodes.map((_, i) => (i + 0.5) / n), 1];
   let f = probe >= xs[xs.length - 1] ? 1 : 0;
   for (let i = 0; i < xs.length - 1 && !f; i++) if (probe < xs[i + 1]) { f = fs[i] + (fs[i + 1] - fs[i]) * clamp01((probe - xs[i]) / ((xs[i + 1] - xs[i]) || 1)); break; }
-  hd.style.setProperty("--hp", f.toFixed(4));
+  const hp = f.toFixed(4), fillEl = hdFill || hd;
+  if (fillEl._hp !== hp) { fillEl._hp = hp; fillEl.style.setProperty("--hp", hp); }
   let h = -1;
   hdNodes.forEach((a, i) => { const past = probe >= stations[i]; a.classList.toggle("is-past", past); if (past) h = i; });
   if (h >= 0 && gaps.some((g) => g > stations[h] && probe >= g && (h === n - 1 || g < stations[h + 1]))) h = -1;
@@ -59,37 +63,28 @@ function headerTick() {
   hdCta.classList.toggle("is-lit", f > 0.985);
 }
 
-/* ---------- the menu: the list, and the Earth of the opening beside it ---------- */
+/* ---------- the menu: the list, and an Earth of white points beside it ---------- */
 // Round 5 (Idan and Liav 18.10: the list on the right, the Earth on the left as on the home page, simpler on phones).
-// The night fades over the page; the list rises on the start side and the opening's Earth comes up on the end side
-// with the sites on it, turned to the place the visitor is at. Pointing at (or focusing) an item turns the Earth to
-// its site and lights it; the hand can turn it too. Where WebGL can't run, the list is the whole menu.
+// Round 6 (the client 25.10): the realistic Earth was heavy here; the menu's Earth is now the sketch's first one, white
+// points (menu-dots.js, no library), with no places marked on it and no trail. It turns slowly; pointing at (or
+// focusing) an item gives it a soft push. Where WebGL can't run, the list is the whole menu.
 const mn = $("#mn"), mnBtn = $(".mn-btn", hd), mnClose = $(".mn-close", mn), mnIn = $(".mn-in", mn);
 const mnLinks = $$(".mn-list a", mn);
 let mnOpen = false, mnLast = null;
 const mnBall = $(".mn-ball", mn);
-const ballOk = "WebGL2RenderingContext" in window;
-let ball = null, ballLoad = null, ballLL = null;
+const ballOk = "WebGLRenderingContext" in window;
+let ball = null, ballLoad = null;
 if (ballOk) mn.classList.add("has-ball");
-// each item's site on the Earth; the places that are not a domain look at the whole network, Israel at its heart
-const MN_SITE = { "#dom-solar": "sol", "#dom-storage": "sto", "#dom-charge": "chg", "#contact": "chg" };
-function aimAt(k) {
-  if (!ball || !ballLL) return;
-  const key = k >= 0 ? MN_SITE[mnLinks[k].getAttribute("href")] : null;
-  if (key) ball.aim(ballLL[key][0] + 4, ballLL[key][1], key); else ball.aim(26, 26, null);
-}
-function openBall(k) {
-  // the frame: the Earth centred in its box, its air inside it
-  const frameM = (W, H) => { const R = Math.min(W, H) * 0.37; return { tall: false, S: 0.2, a: { R, cx: W / 2, cy: H / 2, lat: 26, lon: 26 }, b: { R, cx: W / 2, cy: H / 2, lat: 26, lon: 26 } }; };
-  ballLoad ||= import("./globe.js")
-    .then(({ mountGlobe, LL }) => { ballLL = LL; return mountGlobe(mnBall, { frame: frameM, drag: wide() ? true : "x", pointer: false, sharp: false, pace: 1.5, lean: 1.14 }); })
+function openBall() {
+  ballLoad ||= import("./menu-dots.js")
+    .then(({ mountDots }) => mountDots(mnBall))
     .catch(() => null)
     .then((b) => { if (!b) mn.classList.remove("has-ball"); return b; });
-  ballLoad.then((b) => { ball = b; if (!b) return; if (mnOpen) { b.hold(false); b.replay(); aimAt(k); } else b.hold(true); });
+  ballLoad.then((b) => { ball = b; if (!b) return; if (mnOpen) { b.hold(false); b.replay(); } else b.hold(true); });
 }
-mnLinks.forEach((a, k) => {
-  a.addEventListener("pointerenter", () => aimAt(k));
-  a.addEventListener("focus", () => aimAt(k));
+mnLinks.forEach((a) => {
+  a.addEventListener("pointerenter", () => ball && ball.nudge());
+  a.addEventListener("focus", () => ball && ball.nudge());
 });
 $$(".mn-it", mn).forEach((li, i) => li.style.setProperty("--i", i));
 mnIn.inert = true;
@@ -97,8 +92,6 @@ mnIn.inert = true;
 const markHere = (a) => mnLinks.forEach((l) => l.classList.toggle("is-on", l === a));
 // the item for where the visitor is on the page
 const restLink = () => (here >= 0 ? mnLinks.find((l) => l.getAttribute("href") === hdNodes[here].getAttribute("href")) : null) || null;
-// the pointer leaves the list: the Earth goes back to where the visitor is
-$(".mn-list", mn).addEventListener("pointerleave", () => aimAt(mnLinks.indexOf(restLink())));
 
 function setMenu(open) {
   if (open === mnOpen) return; mnOpen = open;
@@ -107,7 +100,7 @@ function setMenu(open) {
     const a = restLink();
     markHere(a);
     // the Earth is for desktops (round 6: phones and tablets get the list and the call)
-    if (ballOk && wide()) openBall(mnLinks.indexOf(a));
+    if (ballOk && wide()) openBall();
   } else if (ball) ball.hold(true);
   // the opening's Earth rests while the menu has the screen
   if (globe) globe.hold(open);
@@ -678,9 +671,9 @@ function layoutWhy() {
 }
 function whyTick() {
   if (reduce) return;
-  const ih = innerHeight, fr = figs.getBoundingClientRect();
+  // all three read before the numbers roll (a read after a write lays the page out again)
+  const ih = innerHeight, fr = figs.getBoundingClientRect(), br = battery.getBoundingClientRect(), r = whySec.getBoundingClientRect();
   if (fr.top < ih * 1.1 && fr.bottom > -ih * 0.2) rollTo(clamp01((ih * 0.95 - fr.top) / (ih * 0.5)));
-  const br = battery.getBoundingClientRect(), r = whySec.getBoundingClientRect();
   if (br.top > ih * 1.4 || br.bottom < -ih * 0.4) return;
   let f;
   if (across()) {
@@ -1021,35 +1014,72 @@ function ftTick() {
   if (ft._p !== p) { ft._p = p; ft.style.setProperty("--fp", p); }
 }
 // the headings drift against the page while they cross the screen: data-drift is how far, top edge to bottom edge
-const drifts = $$("[data-drift]").map((el) => ({ el, k: +el.dataset.drift || 0, dy: 0 }));
-function driftTick() {
+const drifts = $$("[data-drift]").map((el) => ({ el, k: +el.dataset.drift || 0, dy: 0, to: 0 }));
+// read all of them, then move them: the frame reads the page once (round 6)
+function driftRead() {
   if (reduce) return;
   const ih = innerHeight;
   for (const d of drifts) {
+    d.to = d.dy;
+    if (!near(d.el)) continue;
     const r = d.el.getBoundingClientRect(), top = r.top - d.dy;
     if (top > ih + 200 || top + r.height < -200) continue;
-    const dy = Math.round(((top + r.height / 2) / ih - 0.5) * d.k * 2) / 2;
-    if (dy !== d.dy) { d.dy = dy; d.el.style.setProperty("--dy", dy + "px"); }
+    d.to = Math.round(((top + r.height / 2) / ih - 0.5) * d.k * 2) / 2;
   }
+}
+function driftWrite() {
+  for (const d of drifts) if (d.to !== d.dy) { d.dy = d.to; d.el.style.setProperty("--dy", d.dy + "px"); }
 }
 // the bar comes in once the opening's own button has left the screen, and steps aside where the same action is on
 // screen (the close), over the footer, and while a field has focus (the keyboard is up)
 const mbar = $("[data-mbar]"), ctaOrigin = $("[data-cta-origin]"), ctaEnds = $$("[data-cta-end]");
 let typing = false;
-function mbarTick() {
-  if (wide()) { if (mbar.classList.contains("is-on")) { mbar.classList.remove("is-on"); mbar.inert = true; doc.classList.remove("mbar-on"); } return; }
+// what the page says about the bar (null on a wide screen), then the bar itself
+function mbarRead() {
+  if (wide()) return null;
   const ih = innerHeight, past = ctaOrigin.getBoundingClientRect().bottom < 8;
   const atEnd = ctaEnds.some((el) => { const r = el.getBoundingClientRect(); return r.top < ih * 0.7 && r.bottom > ih * 0.1; }) || ft.getBoundingClientRect().top < ih;
-  const on = past && !atEnd && !typing && !mnOpen;
+  return past && !atEnd;
+}
+function mbarSet(seen) {
+  if (seen === null) { if (mbar.classList.contains("is-on")) { mbar.classList.remove("is-on"); mbar.inert = true; doc.classList.remove("mbar-on"); } return; }
+  const on = seen && !typing && !mnOpen;
   if (on !== mbar.classList.contains("is-on")) { mbar.classList.toggle("is-on", on); mbar.inert = !on; doc.classList.toggle("mbar-on", on); }
 }
+function mbarTick() { mbarSet(mbarRead()); }
 addEventListener("focusin", (e) => { if (e.target.matches("input:not([type=radio]):not([type=checkbox]):not([type=range]),textarea,select")) { typing = true; mbarTick(); } });
 addEventListener("focusout", (e) => { if (e.target.matches("input,textarea,select")) { typing = false; setTimeout(mbarTick, 160); } });
 
 /* ---------- one frame loop for everything the scroll drives ---------- */
+// Round 6 (smooth on every phone): a section more than two screens from the screen is neither read nor written, so a
+// frame no longer lays the whole page out once for each section on the way. Each tick already did nothing that far
+// out; until the browser first answers, every section counts as near
+const nearMap = new Map();
+const nearIO = "IntersectionObserver" in window ? new IntersectionObserver((es) => es.forEach((e) => nearMap.set(e.target, e.isIntersecting)), { rootMargin: "200% 0px" }) : null;
+const near = (...els) => !nearIO || els.some((el) => el && nearMap.get(el) !== false);
+if (nearIO) [dom, whySec, procRun, worksSec, sayWall, kn, closeSec, ft, ...drifts.map((d) => d.el)].forEach((el) => el && nearIO.observe(el));
+// The page is read first (the scroll, the drifting headings, the phone bar's marks), then each section reads and
+// writes its own, and the header and the headings are written last. With Lenis the frame runs from its scroll, right
+// after it has moved the page and before the scene's own frame writes anything (scene.js), so those reads find the
+// page already laid out
 let ticking = false;
-function tick() { ticking = false; headerTick(); domTick(); whyTick(); procTick(); worksTick(); saysTick(); flowTick(); knTick(); knTrailTick(); closeTick(); ftTick(); driftTick(); mbarTick(); }
-addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(tick); } }, { passive: true });
+function tick() {
+  ticking = false;
+  const y = scrollY, bar = mbarRead();
+  driftRead();
+  if (near(dom)) domTick();
+  if (near(whySec)) whyTick();
+  if (near(procRun)) procTick();
+  if (near(worksSec)) worksTick();
+  if (near(sayWall)) saysTick();
+  if (near(worksSec, sayWall)) flowTick();
+  if (near(kn)) { knTick(); knTrailTick(); }
+  if (near(closeSec)) closeTick();
+  if (near(ft)) ftTick();
+  driftWrite(); mbarSet(bar); headerTick(y);
+}
+if (lenis) lenis.on("scroll", tick);
+else addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(tick); } }, { passive: true });
 
 function relayout() {
   layoutHero();

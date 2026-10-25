@@ -123,13 +123,14 @@ export function mountTrail({ stage, sec, HEAD, cityEnd }) {
     iB = lo;
   }
 
-  // p: the tour's progress, pB: where the trail is born, C: the city on the stage now, span: the tour's scroll length
-  function tick(p, pB, C, span) {
+  // p: the tour's progress, pB: where the trail is born, C: the city on the stage now, span: the tour's scroll length,
+  // top and bottom: the stage on the screen (read by the scene once a frame, before anything is written)
+  function tick(p, pB, C, span, top, bottom) {
     if (!E) return;
     if (p <= pB) { ribbon.draw(0); return; }
     // the screen's height changed (a phone's bars): the hand-over moves with the head's line
     if (Math.abs(innerHeight * HEAD - E[1]) > 0.5) layout();
-    const sr = stage.getBoundingClientRect();
+    const sr = top === undefined ? stage.getBoundingClientRect() : { top, bottom };
     // the city is followed while the stage is on the screen (a phone's slow drift would rebuild it forever after)
     if (sr.bottom > -40 || !C0) C0 = C;
     // on the rail the city closes in on the hand-over as the scene rises slower than the page, so the way down from it

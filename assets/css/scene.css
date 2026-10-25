@@ -10,8 +10,9 @@
 @media (min-width:1024px){.lb{--lbh:760vh}}
 html.open-anim:not(.no-gl) .lb{height:var(--lbh)}
 /* the domains' places in the tour (scene.js moves their ids here): a point a little into each stop, half a screen
-   below the stop's scroll position, since an in-page link centres the point it goes to */
-.lb-at{position:absolute;inset-inline-start:0;width:1px;height:0;top:calc(var(--p,0) * (var(--lbh) - 100svh) + 50svh);pointer-events:none}
+   below the stop's scroll position, since an in-page link centres the point it goes to. A few pixels tall: centred, its
+   top is just over the middle of the screen, where the header lights a node, so the link lands with its node lit */
+.lb-at{position:absolute;inset-inline-start:0;width:1px;height:6px;top:calc(var(--p,0) * (var(--lbh) - 100svh) + 50svh);pointer-events:none}
 /* the scene sinks into the page's own night, so the stage has none of its own */
 .lb-stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden}
 /* the frame of the site's trail out of the city (scene-trail.js); the trail itself is painted on the page's trail canvas */
@@ -19,12 +20,17 @@ html.open-anim:not(.no-gl) .lb{height:var(--lbh)}
 .lb-scene,.lb-still{position:absolute;inset:0;width:100%;height:100%}
 .lb-scene{display:block;opacity:0}
 .lb-still{object-fit:cover;opacity:0}
-/* no WebGL: the picture itself, network on */
-.no-gl .lb-still{opacity:1}
+/* no WebGL: the picture itself, lowered under the title as the scene is (scene.js: --lb-drop); the lit copy over the
+   dark one at the scene's quiet light (uGlow) */
+.no-gl .lb-still{opacity:1;transform:translateY(var(--lb-drop,0px));
+  -webkit-mask-image:linear-gradient(transparent,#000 48px);mask-image:linear-gradient(transparent,#000 48px)}
+.no-gl .lb-still.is-lit{opacity:.42}
 .no-gl .lb-scene{display:none}
 
-.lb-h{position:absolute;z-index:4;inset-inline-start:var(--gutter);top:clamp(96px,15vh,170px);margin:0;display:grid;
-  font-family:var(--display);font-weight:400;font-size:clamp(40px,6.4vw,128px);line-height:1.02;letter-spacing:-.005em;text-align:start;
+/* round 6 (the client 25.10): the title smaller and higher, in the dark at the top of the start side, with room between
+   it and the land (scene.js lowers the picture under it); a small second line in the dark corner across from it */
+.lb-h{position:absolute;z-index:4;inset-inline-start:var(--gutter);top:clamp(86px,11.5vh,140px);margin:0;display:grid;
+  font-family:var(--display);font-weight:400;font-size:clamp(34px,3.7vw,76px);line-height:1.04;letter-spacing:-.005em;text-align:start;
   text-shadow:0 2px 30px rgba(var(--n0),.6);opacity:var(--ho,1);transform:translateY(calc((1 - var(--ho,1)) * -18px));pointer-events:none}
 .lb-h .gword{padding-bottom:.08em;text-shadow:none}
 /* the opening comes in (Liav 25.10: "אין אנימציות כניסה לאלמנטים בהירו"): once the scene is ready its two lines rise out of
@@ -33,30 +39,41 @@ html.open-anim .lb-h > span{opacity:0;transform:translateY(.32em);filter:blur(10
 html.open-anim .lb-h.is-in > span{animation:none;opacity:1;transform:none;filter:none;transition:opacity 1.1s var(--ease),transform 1.5s var(--ease-out),filter 1.2s var(--ease);transition-delay:.3s}
 html.open-anim .lb-h.is-in > span + span{transition-delay:.48s}
 @keyframes lb-in{to{opacity:1;transform:none;filter:none}}
+.lb-sub{position:absolute;z-index:4;inset-inline-end:var(--gutter);bottom:clamp(76px,10vh,112px);margin:0;
+  font-family:var(--display);font-weight:400;font-size:clamp(17px,1.3vw,26px);line-height:1.34;color:rgba(243,246,252,.88);text-align:end;
+  text-shadow:0 2px 24px rgba(var(--n0),.95),0 0 2px rgba(var(--n0),.6);opacity:var(--ho,1);pointer-events:none}
+/* two lines, the company and what it does; the name never breaks */
+.lb-sub > span{display:block;white-space:nowrap}
+/* a soft pool of night under the words, so they read over the lit city on any screen */
+.lb-sub::before{content:"";position:absolute;inset:-90px -160px -80px;z-index:-1;pointer-events:none;
+  background:radial-gradient(closest-side,rgba(var(--n0),.8),rgba(var(--n0),.66) 50%,rgba(var(--n0),.3) 78%,rgba(var(--n0),0))}
+html.open-anim .lb-sub{opacity:0;animation:lb-in 0s 3.4s forwards}
+html.open-anim .lb-sub.is-in{animation:none;opacity:var(--ho,1);transition:opacity 1.2s var(--ease) .9s}
 
-/* the places: a breathing ring on the site, the card above it on a thin stem (the reference's callout). The card is a quiet
-   plate of night with the words alone, no glowing frame and no icon (Liav 25.10: "נראה כמו עיצוב שמאוד מאפיין AI") */
+/* the places: a small still point of light on each (no ring and no pulse: the client 25.10, "בלי העיגול", "יותר מדי
+   רעש"). The place pointed at shows its name alone on a short stem, a small plate that reads as a button, with the
+   way-on arrow (Idan 25.10: "כמו כפתור... בלי יותר מדי הסבר"); a click on it takes the tour there */
 .lb-pins{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:var(--po,0);transition:opacity .2s linear}
 .lb-pin{position:absolute;left:0;top:0;width:44px;height:44px;translate:-50% -50%;display:grid;place-items:center;text-decoration:none; /* qa-allow: physical, centred or placed in screen pixels, the same in both directions */
   pointer-events:auto;transform:translate3d(var(--x,-200px),var(--y,-200px),0)}
-.lb-pin > i{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--accent);background:rgba(48,247,123,.25);
-  box-shadow:0 0 0 4px rgba(48,247,123,.12),0 0 18px 4px rgba(48,247,123,.55)}
-.lb-pin > i::after{content:"";position:absolute;left:50%; /* qa-allow: physical, centred */top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;border:1px solid rgba(48,247,123,.7);animation:lb-ring 2.6s var(--ease) infinite}
-@keyframes lb-ring{from{transform:scale(1);opacity:.9}to{transform:scale(3.2);opacity:0}}
-.lb-card{--gap:54px;position:absolute;bottom:calc(100% + var(--gap));left:50%;display:grid;gap:4px;width:max-content;max-width:min(270px,72vw); /* qa-allow: physical, centred or placed in screen pixels, the same in both directions */
-  padding:13px 16px 15px;border-radius:8px;background:rgba(0,11,36,.8);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
-  box-shadow:0 18px 40px -14px rgba(0,5,22,.7);text-align:start;
-  transform:translate(calc(-50% + var(--cx,0px)),8px) scale(.97);opacity:0;visibility:hidden;transition:opacity .35s var(--ease),transform .45s var(--ease),visibility 0s .45s}
-/* the stem from the card down to the ring */
-.lb-card::after{content:"";position:absolute;top:100%;left:calc(50% - var(--cx,0px)); /* qa-allow: physical, the stem follows the pin, which is placed in screen pixels */width:1px;height:40px;background:linear-gradient(rgba(243,246,252,.5),rgba(243,246,252,.08))}
-/* no room above (a place near the top of the screen): the card opens under the ring, the stem goes up to it */
+.lb-pin > i{width:7px;height:7px;border-radius:50%;background:rgba(243,246,252,.8);box-shadow:0 0 0 3px rgba(243,246,252,.07),0 0 10px rgba(243,246,252,.3);
+  transition:background .35s var(--ease),box-shadow .35s var(--ease),transform .35s var(--ease)}
+.lb-pin.is-on > i,.lb-pin:hover > i{background:var(--accent);transform:scale(1.3);box-shadow:0 0 0 4px rgba(48,247,123,.12),0 0 12px rgba(48,247,123,.55)}
+.lb-card{--gap:12px;position:absolute;bottom:calc(100% + var(--gap));left:50%;display:flex;align-items:center;gap:9px;width:max-content; /* qa-allow: physical, centred or placed in screen pixels, the same in both directions */
+  padding-block:8px 9px;padding-inline:15px 12px;border-radius:999px;background:rgba(0,11,36,.72);box-shadow:inset 0 0 0 1px rgba(243,246,252,.16),0 12px 28px -14px rgba(0,5,22,.85);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  transform:translate(calc(-50% + var(--cx,0px)),6px) scale(.96);opacity:0;visibility:hidden;transition:opacity .3s var(--ease),transform .4s var(--ease),visibility 0s .4s}
+/* the stem from the label down to the point */
+.lb-card::after{content:"";position:absolute;top:100%;left:calc(50% - var(--cx,0px)); /* qa-allow: physical, the stem follows the pin, which is placed in screen pixels */width:1px;height:26px;background:linear-gradient(rgba(243,246,252,.45),rgba(243,246,252,.06))}
+/* no room above (a place near the top of the screen): the label opens under the point, the stem goes up to it */
 .lb-pin.is-below .lb-card{bottom:auto;top:calc(100% + var(--gap))}
-.lb-pin.is-below .lb-card::after{top:auto;bottom:100%;background:linear-gradient(rgba(243,246,252,.08),rgba(243,246,252,.5))}
-.lb-card em{font-style:normal;font-size:12px;letter-spacing:.06em;color:var(--accent)}
-.lb-card b{font-weight:500;font-size:17px;line-height:1.3;color:var(--ink)}
-.lb-card span{font-size:13.5px;line-height:1.5;color:var(--ink-soft)}
-.lb-pin.is-on .lb-card{opacity:1;visibility:visible;transform:translate(calc(-50% + var(--cx,0px)),0) scale(1);transition:opacity .35s var(--ease),transform .45s var(--ease),visibility 0s}
-.lb-pin:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:50%}
+.lb-pin.is-below .lb-card::after{top:auto;bottom:100%;background:linear-gradient(rgba(243,246,252,.06),rgba(243,246,252,.45))}
+.lb-card b{font-weight:500;font-size:15px;line-height:1.2;color:var(--ink);white-space:nowrap}
+.lb-card svg{flex:none;width:16px;height:16px;color:var(--accent);transition:transform .45s var(--ease)}
+.lb-pin.is-on .lb-card,.lb-pin:hover .lb-card,.lb-pin:focus-visible .lb-card{opacity:1;visibility:visible;transform:translate(calc(-50% + var(--cx,0px)),0) scale(1);transition:opacity .3s var(--ease),transform .4s var(--ease),visibility 0s}
+.lb-pin.is-on .lb-card svg{transform:translateX(-3px)}
+.lb-pin:focus-visible{outline:none}
+.lb-pin:focus-visible .lb-card{box-shadow:inset 0 0 0 2px var(--accent),0 12px 28px -14px rgba(0,5,22,.85)}
 
 .lb-cue{position:absolute;z-index:4;bottom:28px;left:50%;margin:0;transform:translateX(-50%);font-size:13px;letter-spacing:.14em;color:var(--muted);opacity:var(--co,1)} /* qa-allow: physical, centred or placed in screen pixels, the same in both directions */
 /* the word alone breathes (no drawn line under it: the cards' stems are the opening's one line) */
@@ -68,26 +85,11 @@ html.open-anim .lb-h.is-in > span + span{transition-delay:.48s}
 .lb-tour{position:absolute;inset:0;z-index:6;pointer-events:none;display:none}
 html.open-anim:not(.no-gl) .lb-tour{display:block}
 html.open-anim:not(.no-gl) #domains{display:none}
-/* in the tour the rings on the ground mark the places; the old dot steps back, its card stays for the opening */
-html.open-anim:not(.no-gl) .lb-pin > i{opacity:0}
+/* at a stop the place has a small point of light and a thin line out to its words, a dot where it meets them */
 .lb-marks{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.lb-marks .mk-back,.lb-marks .mk-front,.lb-marks .mk-front-w,.lb-marks .mk-lead{fill:none;stroke-dasharray:1 1;stroke-dashoffset:1}
-.lb-marks .mk-back{stroke:rgba(48,247,123,.4);stroke-width:1}
-.lb-marks .mk-front-w{stroke:rgba(48,247,123,.16);stroke-width:9;stroke-linecap:round}
-.lb-marks .mk-front{stroke:#8DFFBC;stroke-width:1.6;stroke-linecap:round}
-.lb-marks .mk-in{fill:none;stroke:rgba(48,247,123,.38);stroke-width:1;stroke-dasharray:2 9;animation:mk-turn 16s linear infinite}
-@keyframes mk-turn{to{stroke-dashoffset:-220}}
-.lb-marks .mk-core{fill:var(--accent);filter:drop-shadow(0 0 6px rgba(48,247,123,.9))}
-.lb-marks .mk-spark{fill:#EFFFF5}
-.lb-marks .mk-halo{fill:rgba(48,247,123,.28)}
-.lb-marks .mk-lead{stroke:rgba(48,247,123,.75);stroke-width:1}
-.lb-marks .mk-dot{fill:var(--accent)}
-.lb-marks .mk-wave{fill:none;stroke:#8DFFBC;filter:drop-shadow(0 0 5px rgba(48,247,123,.8))}
-/* the beam of light rising from the ground at the place */
-.lb-beams{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-.lb-beams i{position:absolute;left:0;top:0;opacity:0;transform-origin:50% 100%; /* qa-allow: physical, placed in screen pixels, the same in both directions */
-  background:linear-gradient(to top,rgba(48,247,123,.34),rgba(48,247,123,.1) 45%,rgba(48,247,123,0));
-  -webkit-mask-image:linear-gradient(to right,transparent,#000 38%,#000 62%,transparent);mask-image:linear-gradient(to right,transparent,#000 38%,#000 62%,transparent)}
+.lb-marks .mk-lead{fill:none;stroke-dasharray:1 1;stroke-dashoffset:1;stroke:rgba(243,246,252,.42);stroke-width:1}
+.lb-marks .mk-core{fill:#EFFFF5;filter:drop-shadow(0 0 5px rgba(48,247,123,.6))}
+.lb-marks .mk-dot{fill:rgba(243,246,252,.8)}
 
 /* a place's words: on the side of the screen across from it (the picture sets the side, so it is physical), under it
    on a tall screen. They come in line after line as the camera arrives, and go as it leaves */
@@ -112,16 +114,15 @@ html.open-anim:not(.no-gl) .lb-pin > i{opacity:0}
 .lb-stage[data-fmt="tall"] .lb-stop-p{font-size:clamp(16px,2.2vw,19px);line-height:1.55}
 
 @media (max-width:767px){
-  .lb-h{top:clamp(92px,13vh,120px);font-size:clamp(36px,10.4vw,52px)}
+  .lb-h{top:clamp(84px,11vh,112px);font-size:clamp(30px,8.6vw,44px)}
+  .lb-sub{bottom:clamp(64px,9vh,96px);max-width:min(30ch,78vw);font-size:16px}
+  .lb-sub > span + span{white-space:normal;text-wrap:balance}
   .lb-cue{display:none}
-  /* a phone's card stays small and close to its ring so the scene is not covered */
-  .lb-card{max-width:min(212px,60vw);padding:10px 12px 12px;gap:2px;border-radius:7px;--gap:32px}
-  .lb-card::after{height:22px}
-  .lb-card b{font-size:15px}
-  .lb-card span{font-size:12.5px;line-height:1.45}
+  .lb-card{padding-block:7px 8px;padding-inline:13px 10px;gap:7px}
+  .lb-card b{font-size:14px}
 }
-@media (prefers-reduced-motion:reduce){.lb-pin > i::after,.lb-cue span{animation:none}}
-.ax-still .lb-pin > i::after,.ax-still .lb-cue span{animation:none}
+@media (prefers-reduced-motion:reduce){.lb-cue span{animation:none}}
+.ax-still .lb-cue span{animation:none}
 
 /* the battery's signs (scene.html only): a neon tube over each title, dark glass until the charge front reaches it,
    then it strikes up with a stutter and keeps a faint hum */

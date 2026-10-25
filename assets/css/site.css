@@ -273,8 +273,8 @@ html.lenis,html.lenis body{height:auto}
 }
 
 /* ---------- the Earth (when the browser can draw it; otherwise the list above is the whole menu) ----------
-   Round 5: the list on the start side, the opening's Earth on the end side with the sites on it, turned to the item
-   pointed at. Phones: the list, and the Earth small under it. */
+   Round 5: the list on the start side, the Earth on the end side. Round 6: the Earth is white points (menu-dots.js),
+   no places on it, a soft push when an item is pointed at; desktops only. */
 .mn-ball{display:none}
 .mn.has-ball .mn-ball{grid-area:ball;display:block;position:relative;justify-self:center;align-self:center;aspect-ratio:1;
   width:min(100%,calc(100svh - var(--hd-h) - clamp(32px,6vh,80px)));

@@ -10,6 +10,10 @@
 // sends a ripple over the ground and a front of energy out from the place. After the last place nothing new plays
 // (Liav 19.10: "אנימציות מיותרות של עיגולי רדיוס"): the camera pulls back and the scene stays, rising slower than the
 // page as the visitor goes on down (Liav 19.10: "להשאיר אותו ... שירגיש כאילו הוא עולה ואנחנו יורדים").
+// Round 6 (the client 25.10: "מדי ירוק", "יותר מדי שובלים", "בלי העיגול"): the scene at rest is quiet. The network glows
+// at a fraction of its light and nothing runs on it by itself; the stars, the city and the sunrise barely breathe. A place
+// pointed at in the opening shows its name and comes alive (its lines at full light with the energy running, its own
+// life), and a click takes the tour there; at a stop only that place is lit. No rings, beams or ripples on the places.
 // The rest of the page is the home page's own (site.js: the night, the header, the menu, Lenis, every section below).
 import { mountDom } from "./scene-dom.js";
 import { mountMarks } from "./scene-marks.js";
@@ -25,7 +29,7 @@ const root = document.documentElement;
 // __still: the visitor stopped motion in the accessibility panel (as in site.js)
 const reduce = !!window.__still || matchMedia("(prefers-reduced-motion: reduce)").matches;
 const fine = matchMedia("(hover:hover) and (pointer:fine)").matches;
-const sec = $(".lb"), stage = $(".lb-stage"), cv = $(".lb-scene"), h1 = $(".lb-h"), pinsEl = $(".lb-pins"), cue = $(".lb-cue");
+const sec = $(".lb"), stage = $(".lb-stage"), cv = $(".lb-scene"), h1 = $(".lb-h"), sub = $(".lb-sub"), pinsEl = $(".lb-pins"), cue = $(".lb-cue");
 const HEAD = 0.72; // the screen line the trail's head rides, as on the home page
 
 // the two pictures and their places (image fractions, y down): the city is where the energy starts; the cards of the
@@ -81,7 +85,11 @@ uniform vec4 uPR[4];
 uniform mat2 uFxM;
 uniform vec2 uRes, uImg, uCenter, uPar, uSrc, uSun, uFoe, uHeadS, uFoc, uFxO, uFxC, uEnO;
 uniform float uZoom, uReveal, uTime, uAlpha, uHorizon, uStill, uM, uLow, uLift, uSink, uDim, uFly, uOut;
-uniform float uPK, uFocR, uFocA, uPanS, uPanA, uFx, uFxK, uFxT, uEnR, uEnK, uRoll, uSpd, uMist, uMistP, uCalm;
+uniform float uPK, uFocR, uFocA, uPanS, uPanA, uFx, uFxK, uFxT, uEnR, uEnK, uRoll, uSpd, uMist, uMistP;
+// round 6 (the client 25.10: "מדי ירוק", "יותר מדי שובלים"): the network's light at rest (uGlow), the place pointed at or
+// stood at (uHov: where, how much; uHovR: its reach), and the energy running on the lines near it (uRun, the hover only)
+uniform vec3 uHov;
+uniform float uGlow, uGlowQ, uHovR, uRun;
 float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
 float noise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
   return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
@@ -114,15 +122,17 @@ void main(){
     for (int i = 0; i < 4; i++){ vs = uFoe + (v - uFoe) * (1. - uM * n) + vec2(0., uLow * n); n = texture(tNear, c + (vs - .5) * s).r; }
   }
   vec2 uv = c + (vs - .5) * s;
+  // the opening lowers the picture under its title (uLift below 0): above the picture's top edge is the page's night
+  float topK = smoothstep(0., .05, uv.y);
   // depth under the pointer: the sky far, the land nearer the lower it lies
   float d = smoothstep(uHorizon - .04, 1., uv.y);
   uv += uPar * (.004 + d * .012) / uZoom;
-  // the clouds roil: low-saturation, light pixels drift a little in a slow field
-  vec3 probe = texture(tOff, uv).rgb;
-  float sat = max(probe.r, max(probe.g, probe.b)) - min(probe.r, min(probe.g, probe.b));
-  float cloud = smoothstep(.22, .45, lum(probe)) * (1. - smoothstep(.06, .16, sat)) * step(uHorizon, uv.y) * (1. - uStill);
-  vec2 flow = vec2(fbm(uv * 6. + uTime * .05), fbm(uv * 6. - uTime * .04 + 7.)) - .5;
-  uv += flow * cloud * .006;
+  // the clouds roil: low-saturation, light pixels drift a little in a slow field (the field is worked out only on them)
+  if (uStill < .5 && uv.y > uHorizon) {
+    vec3 probe = texture(tOff, uv).rgb;
+    float cloud = smoothstep(.22, .45, lum(probe)) * (1. - smoothstep(.06, .16, satf(probe)));
+    if (cloud > .001) uv += (vec2(fbm(uv * 6. + uTime * .05), fbm(uv * 6. - uTime * .04 + 7.)) - .5) * cloud * .006;
+  }
   uv = clamp(uv, vec2(.0005), vec2(.9995));
 
   vec3 on = texture(tOn, uv).rgb, off = texture(tOff, uv).rgb;
@@ -167,30 +177,40 @@ void main(){
   vec2 dd = (uv - uSrc) * vec2(ia, 1.);
   float r = length(dd), R = uReveal * 1.9;
   float lit = 1. - smoothstep(R - .1, R, r);
-  // while the camera chases its one line, the rest of the network steps back
-  vec3 col = mix(off, on, lit * (1. - uDim * .6 * m));
+  // at rest the network glows at a fraction of the picture's light (round 6: "פחות ירוק"); the place pointed at, or the
+  // one the camera stands at, has its own lines back at full light
+  vec2 hv = (uv - uHov.xy) * vec2(ia, 1.);
+  float hm = exp(-dot(hv, hv) / (uHovR * uHovR)), hk = uHov.z * hm;
+  vec3 col = mix(off, on, lit * mix(uGlow, 1., hk) * (1. - uDim * .6 * m));
+  // the bright green the dark picture keeps by itself (the rim round the solar farm, Idan: "ההילה הירוקה") goes quiet
+  // too, the trees' dark green untouched; the place pointed at keeps its colour
+  float ng = smoothstep(.06, .2, greenness(col)) * smoothstep(.14, .3, lum(col)) * step(uHorizon - .02, uv.y);
+  col = mix(col, mix(vec3(lum(col)), col, .4) * .9, ng * (1. - hk) * uGlowQ);
   vec3 G = vec3(.19, .97, .48);
-  // the front itself, bright where it crosses a line
+  // the front itself, soft where it crosses a line
   float front = exp(-pow((r - R) / .028, 2.)) * step(uReveal, .999);
-  col += G * m * front * 1.8;
-  // energy keeps running out of the city along the lines, and the lines breathe (softer on the tour, where the
-  // places have their own light: Liav 19.10, "עומס של שובלים... לעדן את זה ממש מעט")
-  float pulse = pow(.5 + .5 * sin(r * 46. - uTime * 2.4), 14.) * (1. - uStill) * (1. - .4 * uCalm);
-  col += G * m * lit * (pulse * .9 + .12 * sin(uTime * 1.3 + r * 4.) * (1. - uStill)) * (1. - uDim * .75);
-  // the city lights flicker, the stars twinkle (each on its own cell)
+  col += G * m * front * .55;
+  // energy runs along the lines only near the place pointed at (the client: no lines running by themselves)
+  if (uRun > .001) {
+    float pulse = pow(.5 + .5 * sin(r * 46. - uTime * 2.4), 14.);
+    col += G * m * lit * (pulse * .75 + .1 * sin(uTime * 1.3 + r * 4.)) * uRun * hm;
+  }
+  // the city lights flicker a little, the stars twinkle faintly (each on its own cell)
   vec2 cell = floor(uv * uImg / 3.);
   float tw = hash(cell);
   float warm = smoothstep(.45, .75, on.r) * smoothstep(.05, .2, on.r - on.b) * step(uHorizon, uv.y);
-  col *= 1. + warm * .14 * sin(uTime * (1.5 + tw * 3.) + tw * 40.) * (1. - uStill);
-  // a star is a point brighter than the sky around it (the sunrise and the air are not stars)
-  vec2 px = 5. / uImg;
-  float around = (lum(texture(tOff, uv + vec2(px.x, 0.)).rgb) + lum(texture(tOff, uv - vec2(px.x, 0.)).rgb)
-    + lum(texture(tOff, uv + vec2(0., px.y)).rgb) + lum(texture(tOff, uv - vec2(0., px.y)).rgb)) * .25;
-  float star = smoothstep(.12, .3, lum(off) - around) * (1. - step(uHorizon - .03, uv.y));
-  col += star * .35 * sin(uTime * (1. + tw * 2.5) + tw * 60.) * (1. - uStill);
-  // the sunrise breathes, and a thin streak runs along the horizon from it
+  col *= 1. + warm * .05 * sin(uTime * (1.5 + tw * 3.) + tw * 40.) * (1. - uStill);
+  // a star is a point brighter than the sky around it (the sunrise and the air are not stars); only the sky is looked at
+  if (uv.y < uHorizon - .03 && uStill < .5) {
+    vec2 px = 5. / uImg;
+    float around = (lum(texture(tOff, uv + vec2(px.x, 0.)).rgb) + lum(texture(tOff, uv - vec2(px.x, 0.)).rgb)
+      + lum(texture(tOff, uv + vec2(0., px.y)).rgb) + lum(texture(tOff, uv - vec2(0., px.y)).rgb)) * .25;
+    float star = smoothstep(.12, .3, lum(off) - around);
+    col += star * .22 * sin(uTime * (1. + tw * 2.5) + tw * 60.);
+  }
+  // the sunrise breathes slowly, and a thin streak runs along the horizon from it
   vec2 sv = (uv - uSun) * vec2(ia, 1.);
-  float sunG = exp(-dot(sv, sv) * 260.) * (.22 + .1 * sin(uTime * .7));
+  float sunG = exp(-dot(sv, sv) * 260.) * (.24 + .04 * sin(uTime * .7));
   float streak = exp(-abs(sv.y) * 260.) * exp(-abs(sv.x) * 3.2) * .18;
   col += vec3(1., .82, .58) * (sunG + streak);
   // the tour: the place the camera stands at comes alive, on its own ground (a = along A, b = along B)
@@ -230,8 +250,8 @@ void main(){
       col += G * exp(-rr * rr * 900.) * uFxK * .3;
     }
   }
-  // on the way from one place to the next, a front of energy runs out along the lines from the place before
-  if (uEnK > 0.) col += G * m * exp(-pow((length((uv - uEnO) * vec2(ia, 1.)) - uEnR) / .02, 2.)) * uEnK * 1.7;
+  // on the way from one place to the next, a soft front of energy runs out along the lines from the place before
+  if (uEnK > 0.) col += G * m * exp(-pow((length((uv - uEnO) * vec2(ia, 1.)) - uEnR) / .02, 2.)) * uEnK * .8;
   // on a flight thin mist streams past the lens: three veils, each coming at the camera from where it flies and
   // opening out past the edges, the middle kept clear (uMistP moves with the scroll, so the mist stops when it does)
   if (uMist > 0.) {
@@ -249,11 +269,11 @@ void main(){
   vec2 q = vUv - .5;
   col *= 1. - dot(q, q) * .55;
   vec3 night = vec3(0., 11., 38.) / 255.;
-  float foot = smoothstep(.86, 1., v.y);
+  float foot = smoothstep(.86, 1., max(v.y, vUv.y));
   // the tour's end: as the stage scrolls away the scene stays, so its bottom edge melts into the night under it
   foot = max(foot, smoothstep(.78, 1., vUv.y) * clamp(uOut * 4., 0., 1.));
   col = mix(col, night, foot * .92 * (1. - uFly));
-  float a = uAlpha * (1. - foot * uFly);
+  float a = uAlpha * (1. - foot * uFly) * topK;
   // the tour: out of the focus the scene steps back, and on the words' side it thins out into the page's night
   col *= 1. - uFocA * smoothstep(uFocR, uFocR * 2.8, fd) * .3;
   col = mix(col, night, pan * .4);
@@ -267,7 +287,7 @@ void main(){
 
 const UNIFORMS = ["tOn", "tOff", "tNear", "uRes", "uImg", "uCenter", "uPar", "uSrc", "uSun", "uFoe", "uHeadS", "uZoom", "uReveal", "uTime", "uAlpha", "uHorizon", "uStill", "uM", "uLow", "uLift", "uSink", "uDim", "uFly", "uOut",
   "tP0", "tP1", "tP2", "tP3", "uPR", "uPK", "uFoc", "uFocR", "uFocA", "uPanS", "uPanA", "uFx", "uFxK", "uFxT", "uFxO", "uFxM", "uFxC", "uEnO", "uEnR", "uEnK",
-  "uRoll", "uSpd", "uMist", "uMistP", "uCalm"];
+  "uRoll", "uSpd", "uMist", "uMistP", "uGlow", "uGlowQ", "uHov", "uHovR", "uRun"];
 function setupGL() {
   const gl = cv.getContext("webgl2", { premultipliedAlpha: true, alpha: true, antialias: false });
   if (!gl) return null;
@@ -325,7 +345,7 @@ function centerFor(zoom, u, x, y) {
 }
 
 function resize() {
-  W = stage.clientWidth; H = stage.clientHeight; dpr = Math.min(devicePixelRatio || 1, 2);
+  W = stage.clientWidth; H = stage.clientHeight; dpr = Math.min(devicePixelRatio || 1, Q.cap);
   const next = W / H < 0.9 ? SETS.tall : SETS.wide;
   if (next !== set && ctx) { set = next; loadSet(); } else set = next;
   // the tour's words: beside the place on a wide screen, under it on a tall one
@@ -375,11 +395,19 @@ async function loadSet() {
 // ---- the scroll ----
 // the tour reads the page as it is (the page's own Lenis smooths the wheel)
 let target = 0, prog = 0, outY = 0;
+// The section's place on the page is measured on a layout; between layouts its place on the screen comes from Lenis's
+// own scroll, so the frame asks nothing of the layout (round 6: a read after the page's writes would lay it out again)
+let secTop = 0, secH = 0, stageTop = 0;
 function readScroll() {
-  const r = sec.getBoundingClientRect(), vh = H || innerHeight, span = r.height - vh;
-  target = span > 0 ? clamp01(-r.top / span) : 0;
+  const vh = H || innerHeight;
+  let top;
+  if (lenis && secH) top = secTop - lenis.animatedScroll;
+  else { const r = sec.getBoundingClientRect(); top = r.top; secH = r.height; secTop = r.top + scrollY; }
+  const bottom = top + secH, span = secH - vh;
+  target = span > 0 ? clamp01(-top / span) : 0;
   // how far the stage has gone up past its end, in screens (the tour's end keeps the scene and lets it rise)
-  outY = clamp01((vh - r.bottom) / vh);
+  outY = clamp01((vh - bottom) / vh);
+  stageTop = Math.min(Math.max(top, 0), bottom - vh);
 }
 addEventListener("scroll", readScroll, { passive: true });
 // the page's own smooth scroll (site.js, which also follows a desktop wheel more softly here, with the longer way in
@@ -391,50 +419,81 @@ const lenis = reduce ? null : window.__lenis || null;
 const par = { x: 0, y: 0, tx: 0, ty: 0 };
 if (fine && !reduce) addEventListener("pointermove", (e) => { par.tx = (e.clientX / innerWidth - 0.5) * -2; par.ty = (e.clientY / innerHeight - 0.5) * -2; }, { passive: true });
 
-// ---- the cards ----
-let hot = null, touched = false, cycleAt = 0, cycleI = 0;
-const order = ["sol", "chg", "srv", "sto"];
-function show(k) { hot = k; for (const p of pins) p.el.classList.toggle("is-on", p.k === k); }
+// ---- the places in the opening ----
+// round 6 (the client 25.10): a place pointed at shows its name alone, as a small label that reads as a button ("בלי
+// יותר מדי הסבר"), and comes alive by itself; pointing at it or clicking takes the tour there. The pointer finds a place
+// anywhere on its ground (the ellipse its ring used to draw, now unseen), not only on its point. Nothing opens by itself
+let hot = null, lastV = null, pinOn = 0;
+function show(k) { if (k === hot) return; hot = k; for (const p of pins) p.el.classList.toggle("is-on", p.k === k); }
 for (const p of pins) {
-  p.el.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") { touched = true; show(p.k); } });
-  p.el.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse") show(null); });
-  p.el.addEventListener("focus", () => { touched = true; show(p.k); });
+  p.el.addEventListener("focus", () => show(p.k));
   p.el.addEventListener("blur", () => show(null));
-  p.el.addEventListener("click", (e) => { if (!fine && hot !== p.k) { e.preventDefault(); touched = true; show(p.k); } });
 }
+// the place under a stage point: on its point, or inside its ground's ellipse (the nearest middle when two overlap)
+function pick(x, y) {
+  if (!lastV || !set || pinOn < 0.5) return null;
+  let best = null, bd = 1;
+  for (const s of set.tour.stops) {
+    const [px, py] = screenOf(lastV, s.u);
+    if (Math.hypot(x - px, y - py) < 24) return s.k;
+    const [cx, cy] = screenOf(lastV, s.ring), rx = (s.ring[2] * W) / lastV.sx, ry = rx * s.ring[3];
+    const d = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2;
+    if (d < bd) { bd = d; best = s.k; }
+  }
+  return best;
+}
+const stagePt = (e) => { const r = stage.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+// a style written only when it changed: the frame runs at the screen's rate, and most of what it sets stands still
+const put = (el, k, val) => {
+  const c = el.__put || (el.__put = {});
+  if (c[k] === val) return;
+  c[k] = val;
+  if (k[0] === "-") el.style.setProperty(k, val); else el.style[k] = val;
+};
 function placePins(v, alpha) {
-  pinsEl.style.setProperty("--po", alpha.toFixed(3));
-  pinsEl.style.pointerEvents = alpha > 0.5 ? "" : "none";
+  // hidden (the tour has started), they stay as they were
+  const po = alpha.toFixed(3);
+  if (po === "0.000" && pinsEl.__put && pinsEl.__put["--po"] === po) return;
+  put(pinsEl, "--po", po);
+  put(pinsEl, "pointerEvents", alpha > 0.5 ? "" : "none");
   for (const p of pins) {
-    const u = set.pins[p.k]; let [x, y] = toScreen(v, u);
-    x -= par.x * (0.004 + smooth(set.horizon, 1, u[1]) * 0.012) / v.zoom / v.sx * W;
-    y -= par.y * (0.004 + smooth(set.horizon, 1, u[1]) * 0.012) / v.zoom / v.sy * H;
-    p.el.style.setProperty("--x", x.toFixed(1) + "px"); p.el.style.setProperty("--y", y.toFixed(1) + "px");
-    // a place that has left the screen (the landing zoom) has no ring and no card
+    const [x, y] = screenOf(v, set.pins[p.k]);
+    put(p.el, "--x", x.toFixed(1) + "px"); put(p.el, "--y", y.toFixed(1) + "px");
+    // a place that has left the screen has no point and no label
     const off = x < 10 || x > W - 10 || y < 10 || y > H - 10;
-    p.el.style.display = off ? "none" : "";
-    // the card keeps inside the screen: it slides sideways on its stem, and opens under the ring when there is no room above
+    put(p.el, "display", off ? "none" : "");
+    // the label keeps inside the screen: it slides sideways on its stem, and opens under the point when there is no room above
     if (off) continue;
     if (!p.cw) { p.cw = p.card.offsetWidth; p.ch = p.card.offsetHeight; p.gap = parseFloat(getComputedStyle(p.card).getPropertyValue("--gap")) || 54; }
     const half = p.cw / 2, pad = 14, gap = p.gap;
     const shift = Math.max(pad + half - x, Math.min(0, W - pad - half - x));
-    p.card.style.setProperty("--cx", shift.toFixed(0) + "px");
-    // it opens under the ring too when above it would cover the opening's words, if there is room below
+    put(p.card, "--cx", shift.toFixed(0) + "px");
+    // it opens under the point too when above it would cover the opening's words, if there is room below
     const l = x + shift - half, r = x + shift + half, top = y - gap - p.ch;
     const onTitle = r > titleBox.l && l < titleBox.r && top < titleBox.b && y - gap > titleBox.t;
-    p.el.classList.toggle("is-below", top < pad + 64 || (onTitle && y + gap + p.ch < H - pad));
+    const below = top < pad + 64 || (onTitle && y + gap + p.ch < H - pad);
+    if (below !== p.below) { p.below = below; p.el.classList.toggle("is-below", below); }
   }
 }
-// the opening's words in the stage (the cards keep off them); set on every layout, before the title's own fade
+// the opening's words in the stage (the labels keep off them); set on every layout, before the title's own fade
 const titleBox = { l: 0, r: 0, t: 0, b: 0 };
-function measureTitle() { titleBox.l = h1.offsetLeft - 12; titleBox.r = h1.offsetLeft + h1.offsetWidth + 12; titleBox.t = h1.offsetTop; titleBox.b = h1.offsetTop + h1.offsetHeight + 8; }
+// the opening lowers the picture (DROP, a fraction of the screen) so its land starts under the title with a little
+// room between them (Idan 25.10: "שהכותרת לא יושבת על הכדור עצמו... שיהיה טיפה מרווח"); the first flight takes it back
+let DROP = 0;
+function measureTitle() {
+  titleBox.l = h1.offsetLeft - 12; titleBox.r = h1.offsetLeft + h1.offsetWidth + 12; titleBox.t = h1.offsetTop; titleBox.b = h1.offsetTop + h1.offsetHeight + 8;
+  if (!set) return;
+  const v = view(1, set.base), hy = ((set.horizon - v.cy) / v.sy + 0.5) * H;
+  DROP = Math.min(0.24, Math.max(0, (titleBox.b + Math.max(24, H * 0.035) - hy) / H));
+  stage.style.setProperty("--lb-drop", (DROP * H).toFixed(1) + "px");
+}
 
 // where a point of the picture shows, with the flight applied (the shader's mapping, run forwards), in stage pixels
 const F = { m: 0, low: 0, lift: 0, sink: 0, roll: 0, foe: [0.5, 0.46], head: [0.5, 0.5] };
 function project(v, u) {
   const n = nearAt(u), k = 1 / (1 - F.m * n);
   const x0 = (u[0] - v.cx) / v.sx + 0.5, y0 = (u[1] - v.cy) / v.sy + 0.5;
-  let x = F.foe[0] + (x0 - F.foe[0]) * k, y = F.foe[1] + (y0 - F.foe[1] - F.low * n) * k;
+  let x = F.foe[0] + (x0 - F.foe[0]) * k, y = F.foe[1] + (y0 - F.foe[1] - F.low * n) * k - F.lift;
   // the bank (the tour's turns): the screen turned about its middle, as the shader turns it
   if (F.roll) {
     const sa = W / H, px = (x - 0.5) * sa, py = y - 0.5, c = Math.cos(F.roll), s = Math.sin(F.roll);
@@ -487,16 +546,15 @@ function measureStops() {
     a.box = { l: r.left - sr.left, r: r.right - sr.left, t: r.top - sr.top, b: r.bottom - sr.top, nY: r.top - sr.top + a.h.offsetTop + parseFloat(getComputedStyle(a.h).fontSize) * 0.55 };
   }
 }
-// the leader line: from the ring's end on the words' side, a short level step, then on to the heading's first line; on a tall
-// screen down from the ring's front to just over the words, then along to their start
-function leadOf(g, s, b, tall) {
-  const a = (g.rot * Math.PI) / 180, c = Math.cos(a), sn = Math.sin(a);
+// the leader line: from just off the place's point towards its words, a short level step, then on to the heading's first
+// line; on a tall screen down from the point to just over the words, then along to their start
+function leadOf(x, y, s, b, tall) {
   if (tall) {
-    const P0 = [g.x - g.ry * sn, g.y + g.ry * c], y1 = b.t - 18;
+    const P0 = [x, y + 9], y1 = b.t - 18;
     if (y1 < P0[1] + 16) return null;
     return [P0, [P0[0], y1], [b.r - 6, y1]];
   }
-  const side = s.side, P0 = [g.x + side * g.rx * c, g.y + side * g.rx * sn], edge = side > 0 ? b.l - 18 : b.r + 18;
+  const side = s.side, P0 = [x + side * 9, y], edge = side > 0 ? b.l - 18 : b.r + 18;
   if ((edge - P0[0]) * side < 60) return null;
   return [P0, [P0[0] + side * 26, P0[1]], [edge, b.nY]];
 }
@@ -521,7 +579,8 @@ function placeAnchors() {
     const at = document.createElement("span");
     at.className = "lb-at"; at.setAttribute("aria-hidden", "true");
     if (art) { art.removeAttribute("id"); at.id = id; } else at.dataset.hdGap = "";
-    at.style.setProperty("--p", (TT.t0 + i * SEG + TT.tr + 0.03).toFixed(4));
+    // a hair before where a flight lands (goStop: + 0.012), so the header lights the place the camera has come down on
+    at.style.setProperty("--p", (TT.t0 + i * SEG + TT.tr + 0.008).toFixed(4));
     sec.appendChild(at);
   });
 }
@@ -535,50 +594,56 @@ function settle() {
 }
 // what the tour shows this frame: the marks, the words, and the shader's focus, frost, life and energy front
 const TU = { foc: [0.5, 0.5], focR: 1, focA: 0, panS: 1, panA: 0, fx: 0, fxK: 0, fxT: 0, fxO: [0, 0], fxM: [1, 0, 0, 1], fxC: [0, 0], enO: [0, 0], enR: 0, enK: 0,
-  spd: 0, mist: 0, mistP: 0 };
+  spd: 0, mist: 0, mistP: 0, hov: [0, 0, 0], hovR: 0.2, run: 0 };
 let marks = null;
-// the landing: the moment the camera comes down on a place from a flight (by the clock, so it plays out once)
-const arr = { i: -1, t: -9, prev: "ov" };
-const LAND_S = 1.5;
-function tourDraw(v, time, pinA) {
+// the place pointed at in the opening (i, how much: k, since when: t0); it eases in, and out before another comes
+const HV = { i: -1, k: 0, t0: 0, last: 0 };
+function hoverStep(time) {
+  const dt = Math.min(0.05, Math.max(0, time - HV.last)); HV.last = time;
+  const want = hot && pinOn > 0.5 ? set.tour.stops.findIndex((s) => s.k === hot) : -1;
+  if (want !== HV.i) { HV.k = Math.max(0, HV.k - dt / 0.3); if (HV.k === 0) { HV.i = want; HV.t0 = time; } }
+  else if (want >= 0) HV.k = Math.min(1, HV.k + dt / 0.45);
+}
+function tourDraw(v, time) {
   const st = TS, S = set.tour.stops, n = S.length, tall = set === SETS.tall, ia = set.w / set.h;
   const ringR = (i) => (i < 0 ? 1 : (S[i].ring[2] * W) / v.sx / H * 1.05);
-  if (st.mode === "at") { if (arr.i !== st.to) { arr.i = st.to; arr.t = arr.prev === "go" ? time : -9; } }
-  else arr.i = -1;
-  arr.prev = st.mode;
-  const land = clamp01((time - arr.t) / LAND_S), landing = arr.i >= 0 && land < 1;
-  // the place's beam leaps up as the camera lands, and settles
-  const surge = landing ? Math.pow(Math.sin(Math.PI * smooth(0, 0.55, land)), 2) * 0.55 : 0;
+  // only the place the camera stands at has a mark: its point, and the line out to its words
   for (let i = 0; i < n; i++) {
-    const s = S[i], k = presence(st, i), [x, y] = screenOf(v, s.ring), rx = (s.ring[2] * W) / v.sx;
-    const g = { x, y, rx, ry: rx * s.ring[3], rot: s.ring[4] + (F.roll * 180) / Math.PI };
-    // in the opening all four rings lie faint on their places; on the tour only the place the camera is at
-    const idle = pinA * 0.55, lead = k > 0.01 && arts[i].box ? leadOf(g, s, arts[i].box, tall) : null;
-    const o = Math.max(idle, Math.min(1, k * 1.6)), d = idle > 0.01 ? 1 : k, at = i === arr.i && landing;
-    marks.draw(i, { ...g, o, d, beam: at ? k * (1 + surge) : k, wave: at ? land : -1, lead, leadK: smooth(0.55, 1, k) });
+    const s = S[i], k = presence(st, i), [x, y] = screenOf(v, s.u);
+    const lead = k > 0.01 && arts[i].box ? leadOf(x, y, s, arts[i].box, tall) : null;
+    marks.draw(i, { x, y, o: Math.min(1, k * 1.6), lead, leadK: smooth(0.55, 1, k) });
   }
   // the place in focus, and the words: the place the camera leaves until half way, then the one it is going to
   const cur = st.mode === "go" && st.raw >= 0.5 ? st.to : st.from;
   TU.foc = [screenOf(v, st.u)[0] / W, screenOf(v, st.u)[1] / H];
   TU.focR = lerp(ringR(st.from), ringR(st.to < 0 ? st.from : st.to), st.e);
   TU.focA = st.mode === "at" ? 1 : st.mode === "go" ? (st.from < 0 ? smooth(0.3, 1, st.raw) : 1 - 0.8 * Math.sin(Math.PI * st.raw)) : st.mode === "out" ? 1 - smooth(0, 0.5, st.raw) : 0;
-  if (cur >= 0) {
-    const s = S[cur], k = presence(st, cur, 0.4);
-    TU.panS = tall ? 0 : s.side; TU.panA = k;
-    TU.fx = s.fx; TU.fxK = presence(st, cur, 0.45); TU.fxC = s.u;
-    TU.fxT = st.mode === "at" ? 0.1 + 0.86 * smooth(0, 0.9, st.dw) : cur === st.to ? 0.1 : 0.96;
+  // a place's life (as at its stop, a little quieter: "נוריד את הווליום"); in the opening the place pointed at has it
+  const life = (s, k, t) => {
+    TU.fx = s.fx; TU.fxK = k * 0.75; TU.fxC = s.u; TU.fxT = t;
     if (s.O) {
       const [ax, ay] = s.A, [bx, by] = s.B, det = ax * by - ay * bx;
       TU.fxO = s.O; TU.fxM = [by / det, -ay / det, -bx / det, ax / det];
     }
-  } else { TU.panA = 0; TU.fxK = 0; }
-  // the energy front, on the way between places (out of the city on the way to the first); as the camera lands, a
-  // short one out from the place along its lines
+  };
+  // the network back at full light around the place the camera is at, or the one pointed at; the energy runs on its
+  // lines only while a place is pointed at
+  TU.run = 0;
+  if (cur >= 0) {
+    const s = S[cur], k = presence(st, cur, 0.4);
+    TU.panS = tall ? 0 : s.side; TU.panA = k;
+    life(s, presence(st, cur, 0.45), st.mode === "at" ? 0.1 + 0.86 * smooth(0, 0.9, st.dw) : cur === st.to ? 0.1 : 0.96);
+    TU.hov = [s.u[0], s.u[1], presence(st, cur, 0.45)]; TU.hovR = s.ring[2] * ia * 1.15;
+  } else if (HV.i >= 0 && HV.k > 0) {
+    const s = S[HV.i], k = smooth(0, 1, HV.k);
+    TU.panA = 0;
+    life(s, k, 0.1 + 0.86 * smooth(0, 2.2, time - HV.t0));
+    TU.hov = [s.u[0], s.u[1], k]; TU.hovR = s.ring[2] * ia * 1.15; TU.run = k * 0.8;
+  } else { TU.panA = 0; TU.fxK = 0; TU.hov[2] = 0; }
+  // the energy front, softly, on the way between places (out of the city on the way to the first)
   if (st.mode === "go") {
     const o = st.from >= 0 ? S[st.from].u : set.src, t = S[st.to].u;
     TU.enO = o; TU.enR = 0.02 + st.raw * Math.hypot((t[0] - o[0]) * ia, t[1] - o[1]) * 1.08; TU.enK = Math.sin(Math.PI * st.raw);
-  } else if (landing) {
-    TU.enO = S[arr.i].u; TU.enR = 0.01 + (1 - Math.pow(1 - land, 2)) * 0.26; TU.enK = Math.pow(1 - land, 1.3) * 0.8;
   } else TU.enK = 0;
   // on a flight the edges streak and mist streams past
   const fl = st.mode === "go" ? Math.sin(Math.PI * st.raw) : 0;
@@ -591,7 +656,7 @@ function tourDraw(v, time, pinA) {
     const on = presence(st, a.i, 0.4) > 0.5;
     if (on !== a.on) { a.on = on; a.el.classList.toggle("is-on", on); }
   }
-  if (cur >= 0) arts[cur].el.style.setProperty("--pw", (st.mode === "at" ? st.dw : cur === st.to ? 0 : 1).toFixed(3));
+  if (cur >= 0) put(arts[cur].el, "--pw", (st.mode === "at" ? st.dw : cur === st.to ? 0 : 1).toFixed(3));
 }
 
 // the end: from e0 the scene rises (and the site's trail comes out of the city); once the stage lets go it keeps rising
@@ -599,15 +664,25 @@ function tourDraw(v, time, pinA) {
 // so the two speeds meet there
 const LIFT_K = 0.45;
 const endAt = () => TT.t0 + set.tour.stops.length * SEG + 0.035;
-const liftEnd = () => { const e0 = endAt(); return (1 - LIFT_K) * (1 - e0) * (sec.offsetHeight - H) / H / 2; };
+const liftEnd = () => { const e0 = endAt(); return (1 - LIFT_K) * (1 - e0) * ((secH || sec.offsetHeight) - H) / H / 2; };
 // where the city stands on the stage the moment it lets go: the whole scene, risen by liftEnd
 function cityEnd() { const [x, y] = toScreen(view(1, set.base), set.src); return [x, y - liftEnd() * H]; }
 let trail = null;
 
 // ---- the timeline ----
-const t0 = performance.now(); let tReady = -1, lastPin = -1;
+const t0 = performance.now(); let tReady = -1;
+// round 6 ("שירוץ חלק בכל המכשירים"): the scene draws only what shows. Once the stage has gone up past the screen it
+// does not draw at all; at rest (nothing scrolled or pointed at, no place alive, the opening over) it draws every other
+// frame, and the still picture of reduced motion only when its camera moves; and a screen of 2x or more whose frames
+// keep coming late (a weak phone's graphics) draws its canvas at 1.5x from then on
+const Q = { cap: 2, last: 0, n: 0, slow: 0, drew: false, tg: -1, t: 0, odd: false, key: "" };
 function frame(now) {
   requestAnimationFrame(frame);
+  const dt = now - Q.last; Q.last = now;
+  if (Q.drew && Q.cap > 1.5 && devicePixelRatio > 1.5 && dt < 120 && tReady >= 0 && (now - t0) / 1000 - tReady > 3) {
+    Q.n++; if (dt > 24) Q.slow++;
+    if (Q.n >= 90) { if (Q.slow * 2 > Q.n) { Q.cap = 1.5; resize(); } Q.n = Q.slow = 0; }
+  }
   readScroll();
   if (dom) dom.tick();
   const time = (now - t0) / 1000;
@@ -615,7 +690,7 @@ function frame(now) {
   par.x += (par.tx - par.x) * 0.05; par.y += (par.ty - par.y) * 0.05;
   if (!fine && !reduce) { par.x = Math.sin(time * 0.21) * 0.5; par.y = Math.cos(time * 0.17) * 0.3; }
   if (!set || !set.ready || !ctx) return;
-  if (tReady < 0) { tReady = time; h1.classList.add("is-in"); }
+  if (tReady < 0) { tReady = time; h1.classList.add("is-in"); if (sub) sub.classList.add("is-in"); }
   const since = time - tReady;
 
   let alpha, zoom, reveal, titleA, pinA, center = null;
@@ -640,7 +715,7 @@ function frame(now) {
     // הארץ אלא להשאיר אותו ... שירגיש כאילו הוא עולה ואנחנו יורדים"). It starts to rise, and once the stage lets go
     // it keeps rising slower than the page (LIFT_K), so the visitor goes down past it; the two speeds meet at the release
     const e0 = endAt(), s = clamp01((p - e0) / (1 - e0));
-    F.lift = liftEnd() * s * s - LIFT_K * outY; F.sink = 0.2 * s + 0.15 * outY; F.head = [0.5, 0.5];
+    F.lift = liftEnd() * s * s - LIFT_K * outY - DROP * (1 - smooth(TT.t0 * 0.4, TT.t0 + TT.tr * 0.7, p)); F.sink = 0.2 * s + 0.15 * outY; F.head = [0.5, 0.5];
     titleA = 1 - smooth(0.004, 0.02, p);
     pinA = smooth(2.6, 3.4, since) * (1 - smooth(0, 0.016, p));
   } else {
@@ -648,6 +723,7 @@ function frame(now) {
     zoom = reduce ? 1 : lerp(1.18, 1, 1 - Math.pow(1 - smooth(0, 2.6, since), 3)) * lerp(1, 1.1, prog);
     reveal = reduce ? 1 : smooth(0.6, 3.4, since);
     titleA = 1; pinA = reduce ? 1 : smooth(2.6, 3.4, since);
+    F.lift = -DROP;
   }
   if (!center) {
     // where the camera looks: from the city (where the Earth's point lands) out to the whole picture
@@ -656,9 +732,21 @@ function frame(now) {
     center = [lerp(home[0], focus[0], k), lerp(home[1], focus[1], k)];
   }
   const v = view(zoom, center); v.zoom = zoom;
-  if (tourOn && marks) tourDraw(v, time, pinA);
+  lastV = v; pinOn = pinA;
+  if (tourOn) hoverStep(time);
   // the site's trail out of the city (its tail stays on the city as the scene rises)
-  if (trail) { const c = screenOf(v, set.src); trail.tick(prog, endAt(), [c[0], c[1] - F.lift * H], sec.offsetHeight - H); }
+  if (trail) trail.tick(prog, endAt(), screenOf(v, set.src), secH - H, stageTop, stageTop + H);
+  // the stage gone up past the screen: nothing of it to draw until the page comes back to it
+  if (outY >= 1) { Q.drew = false; return; }
+  if (tourOn && marks) tourDraw(v, time);
+  // at rest, every other frame: what still moves then is slow (the lights, the clouds, the sun's glow)
+  if (target !== Q.tg || (fine && Math.abs(par.tx - par.x) + Math.abs(par.ty - par.y) > 0.001)) { Q.tg = target; Q.t = now; }
+  if (reduce) {
+    const k = [cv.width, cv.height, set.name, v.cx, v.cy, zoom, F.lift].join();
+    if (k === Q.key) { Q.drew = false; return; }
+    Q.key = k;
+  } else if (since > 4 && now - Q.t > 600 && !(tourOn && (TU.fxK > 0 || HV.k > 0)) && (Q.odd = !Q.odd)) { Q.drew = false; return; }
+  Q.drew = true;
 
   const { gl, U } = ctx;
   gl.uniform2f(U.uRes, cv.width, cv.height); gl.uniform2f(U.uImg, set.w, set.h);
@@ -679,18 +767,17 @@ function frame(now) {
   gl.uniform2f(U.uFxO, T.fxO[0], T.fxO[1]); gl.uniformMatrix2fv(U.uFxM, false, T.fxM); gl.uniform2f(U.uFxC, T.fxC[0], T.fxC[1]);
   gl.uniform2f(U.uEnO, T.enO[0], T.enO[1]); gl.uniform1f(U.uEnR, T.enR); gl.uniform1f(U.uEnK, T.enK * live);
   gl.uniform1f(U.uRoll, F.roll); gl.uniform1f(U.uSpd, T.spd * live); gl.uniform1f(U.uMist, T.mist * live); gl.uniform1f(U.uMistP, T.mistP);
-  gl.uniform1f(U.uCalm, live);
+  // the network at rest at a fraction of its light (round 6: "פחות ירוק"), full around the place pointed at or stood at
+  gl.uniform1f(U.uGlow, 0.42); gl.uniform1f(U.uGlowQ, 0.65); gl.uniform3f(U.uHov, T.hov[0], T.hov[1], T.hov[2] * live); gl.uniform1f(U.uHovR, T.hovR);
+  gl.uniform1f(U.uRun, T.run * live);
   gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.drawArrays(gl.TRIANGLES, 0, 3);
-  cv.style.opacity = 1;
+  put(cv, "opacity", "1");
 
-  h1.style.setProperty("--ho", clamp01(titleA).toFixed(3));
-  if (cue) cue.style.setProperty("--co", ((1 - (tourOn ? smooth(0.002, 0.014, prog) : smooth(0.02, 0.1, prog))) * (reduce ? 1 : smooth(2.4, 3.2, since))).toFixed(3));
+  put(h1, "--ho", clamp01(titleA).toFixed(3));
+  if (sub) put(sub, "--ho", clamp01(titleA).toFixed(3));
+  if (cue) put(cue, "--co", ((1 - (tourOn ? smooth(0.002, 0.014, prog) : smooth(0.02, 0.1, prog))) * (reduce ? 1 : smooth(2.4, 3.2, since))).toFixed(3));
   placePins(v, pinA);
-  // the solar farm's card stands open like the reference; on touch the cards take turns until one is touched
-  if (pinA > 0.9 && lastPin < 0.9 && !touched) { show("sol"); cycleAt = time + 4.5; cycleI = 0; }
-  if (pinA < 0.5 && hot && !touched) show(null);
-  if (!fine && !touched && pinA > 0.9 && time > cycleAt && !reduce) { cycleI = (cycleI + 1) % order.length; show(order[cycleI]); cycleAt = time + 4.5; }
-  lastPin = pinA;
+  if (pinA < 0.5 && hot) { show(null); stage.style.cursor = ""; }
 }
 
 // ---- start ----
@@ -708,12 +795,20 @@ if (tourOn) {
   measureStops();
   trail = mountTrail({ stage, sec, HEAD, cityEnd });
   if (trail) trail.layout();
-  // a place pointed at in the opening, or a link in a place's words reached by the keyboard, takes the tour there
-  for (const p of pins) p.el.addEventListener("click", (e) => { if (e.defaultPrevented) return; e.preventDefault(); goStop(arts.findIndex((a) => a.el.dataset.k === p.k)); });
+  // a place pointed at in the opening shows its name; a click on it (its point, its name or its ground) or a tap takes
+  // the tour there, as does a link in a place's words reached by the keyboard
+  const go = (k) => { show(k); goStop(arts.findIndex((a) => a.el.dataset.k === k)); };
+  for (const p of pins) p.el.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); go(p.k); });
+  stage.addEventListener("pointermove", (e) => {
+    if (e.pointerType !== "mouse") return;
+    const k = pick(...stagePt(e)); show(k); stage.style.cursor = k ? "pointer" : "";
+  });
+  stage.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse") { show(null); stage.style.cursor = ""; } });
+  stage.addEventListener("click", (e) => { if (e.target.closest("a, button")) return; const k = pick(...stagePt(e)); if (k) go(k); });
   for (const a of arts) a.el.addEventListener("focusin", () => { if (!a.on) goStop(a.i); });
   if (lenis) lenis.on("scroll", () => { clearTimeout(idleT); idleT = setTimeout(settle, 220); });
 }
-const relayout = () => { resize(); readScroll(); measureTitle(); for (const p of pins) p.cw = 0; if (dom) dom.layout(); if (tourOn) measureStops(); if (trail) trail.layout(); };
+const relayout = () => { Q.key = ""; secH = 0; resize(); readScroll(); measureTitle(); for (const p of pins) p.cw = 0; if (dom) dom.layout(); if (tourOn) measureStops(); if (trail) trail.layout(); };
 let rz = 0;
 addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(relayout, 120); });
 addEventListener("load", relayout);
@@ -723,8 +818,11 @@ if (ctx) {
   loadSet();
   requestAnimationFrame(frame);
 } else {
-  // no WebGL: the picture is there at once, and so are its words; the domains' trail still runs with the scroll
-  h1.classList.add("is-in");
+  // no WebGL: the picture is there at once, and so are its words; the domains' trail still runs with the scroll.
+  // Its network at the living scene's quiet light (round 6): the lit picture at that light over the dark one
+  const lit = $(".lb-still"), dark = lit.cloneNode();
+  dark.src = set.off; lit.src = set.on; lit.classList.add("is-lit"); lit.before(dark);
+  h1.classList.add("is-in"); if (sub) sub.classList.add("is-in");
   const loop = () => { requestAnimationFrame(loop); if (dom) dom.tick(); };
   requestAnimationFrame(loop);
 }
