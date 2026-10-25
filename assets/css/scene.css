@@ -141,3 +141,14 @@ html.open-anim:not(.no-gl) .lb-pin > i{opacity:0}
 @media (max-width:767px){.cell p{grid-row:3;grid-column:1}}
 @media (prefers-reduced-motion:reduce){.cell.is-on .cell-ic{animation:none}}
 .ax-still .cell.is-on .cell-ic{animation:none}
+
+/* the process numbers (scene.html only): the same neon as the battery's signs. Unlit they keep their grey; when the
+   current reaches a step its number strikes up with a stutter and keeps a faint hum */
+.step.on .step-n{color:#C8FFDE;text-shadow:0 0 2px var(--accent),0 0 10px rgba(48,247,123,.8),0 0 28px rgba(48,247,123,.45),0 0 64px rgba(48,247,123,.2);
+  transition:none;animation:n-strike 1s linear both,ic-hum 5s 1s ease-in-out infinite}
+@keyframes n-strike{
+  0%,9%,15%,31%{color:rgba(243,246,252,.42);text-shadow:none}
+  6%,12%,24%,40%,100%{color:#C8FFDE;text-shadow:0 0 2px var(--accent),0 0 10px rgba(48,247,123,.8),0 0 28px rgba(48,247,123,.45),0 0 64px rgba(48,247,123,.2)}
+  35%{color:rgba(200,255,222,.6);text-shadow:0 0 8px rgba(48,247,123,.4)}
+}
+@media (prefers-reduced-motion:reduce){.step.on .step-n{animation:none}}
