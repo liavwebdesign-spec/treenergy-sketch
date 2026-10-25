@@ -42,7 +42,7 @@
      stations of this page; it charges as the page is travelled and, once the page moves, climbs to the top edge -->
 <header class="hd" id="hd">
   <div class="hd-start">
-    <button class="mn-btn" type="button" aria-expanded="false" aria-controls="mn"><span class="mn-dot" aria-hidden="true"><i></i></span><span class="mn-lbl">תפריט</span></button>
+    <button class="mn-btn" type="button" aria-expanded="false" aria-controls="mn"><span class="mn-ic" aria-hidden="true"><i></i><i></i></span><span class="mn-lbl">תפריט</span></button>
     <a class="hd-tel" href="tel:*6223" aria-label="חייגו 6223*"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg><span class="num">6223*</span></a>
   </div>
   <nav class="hd-rail" aria-label="המסע בעמוד">
@@ -60,7 +60,7 @@
   </div>
 </header>
 
-<!-- the menu: a panel that drops from the header, two groups and the call -->
+<!-- the menu: a quiet room. The night closes over the page and the list rises line by line on hairlines -->
 <div class="mn" id="mn" role="dialog" aria-modal="true" aria-label="תפריט">
   <div class="mn-bg" aria-hidden="true"></div>
   <div class="mn-in">
@@ -69,26 +69,18 @@
       <img class="mn-logo" src="assets/brand/logo-on-dark.svg" alt="" width="507" height="125">
     </div>
     <nav class="mn-nav" aria-label="ניווט ראשי">
-      <div class="mn-grp">
-        <p class="mn-h" id="mn-h1">תחומי פעילות</p>
-        <ul class="mn-list" aria-labelledby="mn-h1">
-          <li class="mn-it"><a href="#dom-solar"><span class="mn-t">אנרגיה סולארית</span></a></li>
-          <li class="mn-it"><a href="#dom-storage"><span class="mn-t">אגירת אנרגיה</span></a></li>
-          <li class="mn-it"><a href="#dom-charge"><span class="mn-t">טעינת רכבים</span></a></li>
-        </ul>
-      </div>
-      <div class="mn-grp">
-        <p class="mn-h" id="mn-h2">החברה</p>
-        <ul class="mn-list" aria-labelledby="mn-h2">
-          <li class="mn-it"><a href="#knowledge"><span class="mn-t">מרכז הידע</span></a></li>
-          <li class="mn-it"><a href="#about"><span class="mn-t">אודות</span></a></li>
-          <li class="mn-it"><a href="#contact"><span class="mn-t">יצירת קשר</span></a></li>
-        </ul>
-      </div>
+      <ol class="mn-list">
+        <li class="mn-it"><a href="#dom-solar"><span class="mn-t">אנרגיה סולארית</span></a></li>
+        <li class="mn-it"><a href="#dom-storage"><span class="mn-t">אגירת אנרגיה</span></a></li>
+        <li class="mn-it"><a href="#dom-charge"><span class="mn-t">טעינת רכבים</span></a></li>
+        <li class="mn-it"><a href="#knowledge"><span class="mn-t">מרכז הידע</span></a></li>
+        <li class="mn-it"><a href="#about"><span class="mn-t">אודות</span></a></li>
+        <li class="mn-it"><a href="#contact"><span class="mn-t">יצירת קשר</span></a></li>
+      </ol>
     </nav>
     <!-- the Earth of the opening, turned to the item the visitor points at (the list is the way for the keyboard and for
          screen readers, so the Earth is hidden from them) -->
-    <div class="mn-ball" aria-hidden="true"><canvas class="gl-canvas"></canvas><span class="mn-cap"></span></div>
+    <div class="mn-ball" aria-hidden="true"><canvas class="gl-canvas"></canvas></div>
     <!-- one way on besides the list (round 5: "simplify it") -->
     <div class="mn-side">
       <div class="mn-contact">

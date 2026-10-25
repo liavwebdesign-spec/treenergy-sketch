@@ -42,7 +42,6 @@ function setMenu(open) {
 }
 mnBtn.addEventListener("click", () => setMenu(true));
 mnClose.addEventListener("click", () => setMenu(false));
-$(".mn-bg", mn).addEventListener("click", () => setMenu(false));
 $$("a", mn).forEach((a) => a.addEventListener("click", () => setMenu(false)));
 addEventListener("keydown", (e) => {
   if (!mnOpen) return;
