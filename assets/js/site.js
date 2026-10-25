@@ -841,6 +841,42 @@ function saysTick() {
   });
 }
 
+/* ---------- a faint thread of the trail through the projects and the voices ---------- */
+// (Liav 25.10: the trail should go with the whole page, "גם אם בצורה מאוד עדינה וקלילה".) After the process the light
+// comes back thinner and dimmer: in from the start side's edge above the projects' heading, round onto a rail down the
+// start side (wide screens, half way through the gutter; phones and tablets, the start rail every section keeps), past
+// the heading, behind the pictures (they stand over it) and beside the voices, and round out by the same edge under
+// the last of them. It never crosses a word: the rail is clear of every line, and the turns lie outside it.
+const thinAmp = () => (wide() ? Math.min(11, (parseFloat(getComputedStyle(says).paddingRight) || 40) * 0.22) : innerWidth < 768 ? 6 : 8);
+const THIN = { strands: 16, amp: thinAmp, taperStart: 0, taperEnd: 0, sparks: 2, dim: 0.55 };
+const worksSec = $("#projects"), flowSvg = $(".flow-trail", worksSec);
+const flowRibbon = new Ribbon(flowSvg, { ...THIN, wave: 460, seed: 7 });
+flowRibbon.headK = 0.55;
+let flowEnd = 0;
+// x of the start side's rail in a frame of width W, built for a right-to-left page (mirrored for a left-to-right one)
+function startRail(W, el) {
+  const g = parseFloat(getComputedStyle(el).paddingRight) || 0, rp = parseFloat(getComputedStyle(doc).getPropertyValue("--rail-pad")) || 28;
+  return W - (wide() ? g : g + rp) / 2;
+}
+function layoutFlow() {
+  const r = worksSec.getBoundingClientRect(), W = r.width;
+  flowSvg.setAttribute("viewBox", `0 0 ${W} ${r.height}`);
+  const x = startRail(W, worksSec), sx = doc.clientWidth - r.left + Math.max(120, trailAmp() * 6), rl = getComputedStyle(worksSec).direction === "rtl";
+  const head = $(".works-head", worksSec).getBoundingClientRect().top - r.top, wall = sayWall.getBoundingClientRect().bottom - r.top;
+  // a long soft swing in (level at the edge, upright on the rail just above the heading), and the same swing out
+  const y0 = head - 170, y1 = head - 10, y2 = wall - 40, y3 = wall + 110, k = (sx - x) * 0.45;
+  const segs = [["C", sx, y0, x + k, y0, x, y0 + (y1 - y0) * 0.55, x, y1], ["L", x, y1, x, y2], ["C", x, y2, x, y2 + (y3 - y2) * 0.45, x + k, y3, sx, y3]];
+  if (!rl) segs.forEach((g) => { for (let i = 1; i < g.length; i += 2) g[i] = W - g[i]; });
+  flowRibbon.setPath(segs);
+  flowEnd = y3;
+}
+function flowTick() {
+  if (reduce) return;
+  const r = flowSvg.getBoundingClientRect(), ih = innerHeight;
+  if (r.top > ih * 1.4 || r.top + flowEnd < -ih * 0.4) return;
+  flowRibbon.draw(flowRibbon.fracAtY(ih * HEAD - r.top));
+}
+
 /* ---------- knowledge: the strip of articles the scroll carries past ---------- */
 // The section holds the screen while the scroll carries the strip sideways, one pixel of strip for every KN_K pixels
 // of scroll (its height is set here so the hold ends with the last article). A focus runs from the first article's
@@ -880,6 +916,48 @@ function knTick() {
     a.style.setProperty("--kl", e.toFixed(3));
   });
   if (best !== knI) { knI = best; knCount.textContent = String(best + 1).padStart(2, "0"); }
+}
+
+// the articles' thread: while the section holds the screen, the trail is the line under the strip. It comes in from
+// the start side's edge in the open band between the strip and the counter (or under the counter, where that band is
+// wider), drops onto the line just past the counter, runs along it as the strip goes by (its head where the dot was),
+// and leaves by the far edge as the section lets go. Without motion there is no hold and no line, and no thread.
+const knPin = $(".kn-pin", kn), knSvg = $(".kn-trail", kn), knLineEl = $(".kn-line", kn), knCountEl = $(".kn-count", kn);
+const knRibbon = new Ribbon(knSvg, { ...THIN, wave: 420, seed: 9, dim: 0.5 });
+knRibbon.headK = 0.5;
+let knFa = 0, knFb = 1;
+function layoutKnTrail() {
+  kn.classList.toggle("has-trail", knOn);
+  if (!knOn) { knRibbon.draw(0); return; }
+  const r = knPin.getBoundingClientRect(), W = r.width, H = r.height, rl = knRtl;
+  knSvg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const L = knLineEl.getBoundingClientRect(), c = knCountEl.getBoundingClientRect(), off = Math.max(120, trailAmp() * 6);
+  // the bar rises into place when the section comes in: measured where it will stand, not where it is on the way
+  const tf = getComputedStyle(knLineEl.parentNode).transform, ty = tf && tf !== "none" ? new DOMMatrix(tf).m42 : 0;
+  // (built for a right-to-left page: the counter and the line's start on the right; mirrored for a left-to-right one)
+  const X = (x) => (rl ? x - r.left : W - (x - r.left));
+  const yL = L.top - ty - r.top + L.height / 2, xS = X(rl ? L.right : L.left), xE = X(rl ? L.left : L.right), xC = X(rl ? c.left : c.right) - 12;
+  // the cards are measured at full size (they grow a little in focus); the band under them, or the one under the counter
+  const cardB = Math.max(...knArts.map((a) => { const b = a.getBoundingClientRect(); return b.bottom + b.height * 0.03; })) - r.top;
+  const cT = c.top - ty - r.top, cB = c.bottom - ty - r.top;
+  const mbarT = innerWidth < 1024 ? H - 84 : H, above = cT - cardB, below = mbarT - cB;
+  const yA = above >= below ? cardB + above / 2 : cB + below / 2;
+  const D = Math.min(110, Math.max(60, (xS - xE) * 0.12)), xLand = Math.min(xS, xC) - D;
+  const segs = [["L", W + off, yA, xC, yA], ["C", xC, yA, xC - D / 2, yA, xC - D / 2, yL, xLand, yL], ["L", xLand, yL, xE, yL], ["L", xE, yL, -off, yL]];
+  if (!rl) segs.forEach((g) => { for (let i = 1; i < g.length; i += 2) g[i] = W - g[i]; });
+  knRibbon.setPath(segs);
+  knFa = knRibbon.nearest(rl ? xLand : W - xLand, yL);
+  knFb = knRibbon.nearest(rl ? xE : W - xE, yL);
+}
+function knTrailTick() {
+  if (!knOn) return;
+  const r = kn.getBoundingClientRect(), ih = innerHeight, run = knRun * KN_K, s = -r.top;
+  if (r.top > ih || r.bottom < -ih * 0.4) return;
+  // in as the hold begins, along the line through it, out as it lets go
+  const s0 = -ih * 0.04, s1 = Math.max(s0 + 60, run * 0.15);
+  const f = s < s1 ? knFa * clamp01((s - s0) / (s1 - s0)) : s < run ? knFa + (knFb - knFa) * clamp01((s - s1) / Math.max(1, run - s1))
+    : knFb + (1 - knFb) * clamp01((s - run) / (ih * 0.3));
+  knRibbon.draw(f);
 }
 
 /* ---------- the close: the last stretch of the trail ends in the button ---------- */
@@ -950,7 +1028,7 @@ addEventListener("focusout", (e) => { if (e.target.matches("input,textarea,selec
 
 /* ---------- one frame loop for everything the scroll drives ---------- */
 let ticking = false;
-function tick() { ticking = false; headerTick(); domTick(); whyTick(); procTick(); worksTick(); saysTick(); knTick(); closeTick(); ftTick(); driftTick(); mbarTick(); }
+function tick() { ticking = false; headerTick(); domTick(); whyTick(); procTick(); worksTick(); saysTick(); flowTick(); knTick(); knTrailTick(); closeTick(); ftTick(); driftTick(); mbarTick(); }
 addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(tick); } }, { passive: true });
 
 function relayout() {
@@ -962,7 +1040,9 @@ function relayout() {
   layoutProc();
   layoutClose();
   layoutWorks();
-  if (reduce) { if (domRibbon) domRibbon.draw(1); whyRibbon.draw(1); procRibbon.draw(1); closeRibbon.draw(1); steps.forEach((s) => s.classList.add("on")); plug.classList.add("is-lit"); }
+  layoutFlow();
+  layoutKnTrail();
+  if (reduce) { if (domRibbon) domRibbon.draw(1); whyRibbon.draw(1); procRibbon.draw(1); flowRibbon.draw(1); closeRibbon.draw(1); steps.forEach((s) => s.classList.add("on")); plug.classList.add("is-lit"); }
   if (globe) { globe.resize(); if (topTitle()) fitTop(); }
   tick();
   if (lenis) requestAnimationFrame(() => lenis.resize());

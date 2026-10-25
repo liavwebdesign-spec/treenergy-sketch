@@ -3,7 +3,8 @@
 // hairlines around them, a soft bloom of green light under all of it, and a dust of sparkles drifting along. The lines
 // part and gather in long slow waves and a flicker of light runs along them towards the head, where they meet in one
 // point; the trail is never still, even when the page is (light-pillar and soft-aurora gave the bloom and the drift).
-// One instance per stretch of the page (the globe, the domains, the reasons, the process, the close).
+// One instance per stretch of the page (the globe, the domains, the reasons, the process, the projects and the voices,
+// the articles, the close).
 // An instance keeps its geometry in the frame of its own <svg> (left empty, it only gives the frame), and every
 // instance is painted by one fixed canvas under the page's words: one canvas, one frame loop, only the part on screen.
 // Geometry is computed from cubic segments in JS (no layout reads), so it can be rebuilt every frame on the globe.
@@ -111,10 +112,11 @@ export class Ribbon {
   // opt: strands (how full the trail is: the lines are fewer than the old band's fibres), amp (px, half the trail's
   // width, or a function), wave (px, the lines' typical wavelength), pinches (fractions 0..1 where the trail gathers:
   // energy passing a node), taperStart / taperEnd (px), sparks, seed, anchor ("end": the waves are counted back from
-  // the last point, so a trail that starts where this one ends, with the same seed, carries every line on)
+  // the last point, so a trail that starts where this one ends, with the same seed, carries every line on), dim (how
+  // bright, 0..1: the light stretches through the projects, the voices and the articles are a faint thread of it)
   constructor(svg, opt = {}) {
     this.svg = svg;
-    this.o = Object.assign({ strands: 16, amp: 24, wave: 520, pinches: [], taperStart: 90, taperEnd: 0, sparks: 4, step: 6, seed: 1 }, opt);
+    this.o = Object.assign({ strands: 16, amp: 24, wave: 520, pinches: [], taperStart: 90, taperEnd: 0, sparks: 4, step: 6, seed: 1, dim: 1 }, opt);
     this.id = ++uid;
     svg.classList.add("rb");
     svg.setAttribute("aria-hidden", "true");
@@ -235,24 +237,24 @@ export class Ribbon {
       for (const [wm, al] of [[2.8, 0.1], [1.2, 0.18]]) {
         l.beginPath();
         for (let j = r0; j <= r1; j++) { const i = j - g.j0, x = (A.xs[i] + B.xs[i]) / 2, y = (A.ys[i] + B.ys[i]) / 2; if (j === r0) l.moveTo(x, y); else l.lineTo(x, y); }
-        l.strokeStyle = `rgba(48,247,123,${al})`; l.lineWidth = Math.max(6, amp * wm); l.stroke();
+        l.strokeStyle = `rgba(48,247,123,${al * this.o.dim})`; l.lineWidth = Math.max(6, amp * wm); l.stroke();
       }
     }
     if (this.p > 0.002 && this.p < 0.998 && !(this.gaps.length && this.inGap(g.h.s))) {
-      const r = 110 * this.headK; l.drawImage(P.glow, g.h.x + ox - r, g.h.y + oy - r, r * 2, r * 2);
+      const r = 110 * this.headK; l.globalAlpha = this.o.dim; l.drawImage(P.glow, g.h.x + ox - r, g.h.y + oy - r, r * 2, r * 2); l.globalAlpha = 1;
     }
   }
 
   paint(ctx, ox, oy, t, g) {
     if (!g.xy) { this.paintHead(ctx, ox, oy, g.h, t); return; }
-    const pts = this.pts, amp = this.amp, hs = g.h.s, step = this.L / (pts.length - 1);
+    const pts = this.pts, amp = this.amp, hs = g.h.s, step = this.L / (pts.length - 1), dim = this.o.dim;
     // the lines, in short runs so the flicker can run along them
     const C = 8;
     for (let k = 0; k < this.ln.length; k++) {
       const ln = this.ln[k], { xs, ys, br } = g.xy[k];
       for (const [r0, r1] of g.runs) {
         for (let c = r0; c < r1; c += C) {
-          const e = Math.min(r1, c + C), i0 = c - g.j0, im = Math.min(e, c + (C >> 1)) - g.j0, al = ln.al * br[im];
+          const e = Math.min(r1, c + C), i0 = c - g.j0, im = Math.min(e, c + (C >> 1)) - g.j0, al = ln.al * br[im] * dim;
           if (al < 0.01) continue;
           ctx.beginPath(); ctx.moveTo(xs[i0], ys[i0]);
           for (let j = c + 1; j <= e; j++) ctx.lineTo(xs[j - g.j0], ys[j - g.j0]);
@@ -268,7 +270,7 @@ export class Ribbon {
       const j = Math.min(pts.length - 1, Math.round(s / step));
       if (j < g.j0 || j > g.j1 || (this.gaps.length && this.inGap(pts[j].s))) continue;
       const q = pts[j], e = this.env[j] * smooth(0, 320, hs - s), off = amp * (0.25 + e) * d.off;
-      const a = (0.35 + 0.65 * Math.abs(Math.sin(t * d.tw + d.tp))) * smooth(0, 160, s) * (0.4 + 0.6 * e);
+      const a = (0.35 + 0.65 * Math.abs(Math.sin(t * d.tw + d.tp))) * smooth(0, 160, s) * (0.4 + 0.6 * e) * dim;
       if (a < 0.04) continue;
       const z = d.z * 3.2;
       ctx.globalAlpha = a; ctx.drawImage(P.spark, q.x + q.nx * off + ox - z / 2, q.y + q.ny * off + oy - z / 2, z, z);
@@ -281,7 +283,7 @@ export class Ribbon {
       if (j < g.j0 || j > g.j1 || (this.gaps.length && this.inGap(pts[j].s))) continue;
       const fade = smooth(0, 120, s) * smooth(hs, hs - 60, s);
       if (fade < 0.02) continue;
-      ctx.globalAlpha = fade; ctx.drawImage(P.spark, xs[j - g.j0] - 9, ys[j - g.j0] - 9, 18, 18); ctx.globalAlpha = 1;
+      ctx.globalAlpha = fade * dim; ctx.drawImage(P.spark, xs[j - g.j0] - 9, ys[j - g.j0] - 9, 18, 18); ctx.globalAlpha = 1;
     }
     this.paintHead(ctx, ox, oy, g.h, t);
   }
@@ -289,7 +291,7 @@ export class Ribbon {
   paintHead(ctx, ox, oy, h, t) {
     if (this.p >= 0.998 || this.p <= 0.002 || (this.gaps.length && this.inGap(h.s))) return;
     const r = 34 * this.headK * (1 + 0.12 * Math.sin(t * 2.4));
-    ctx.drawImage(P.glow, h.x + ox - r, h.y + oy - r, r * 2, r * 2);
+    ctx.globalAlpha = this.o.dim; ctx.drawImage(P.glow, h.x + ox - r, h.y + oy - r, r * 2, r * 2); ctx.globalAlpha = 1;
   }
 
   // the fraction of the trail drawn when its head is at height y (the path must only ever go down, as the page does)
