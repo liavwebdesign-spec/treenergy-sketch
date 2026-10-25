@@ -847,10 +847,18 @@ function saysTick() {
 // start side (wide screens, half way through the gutter; phones and tablets, the start rail every section keeps), past
 // the heading, behind the pictures (they stand over it) and beside the voices, and round out by the same edge under
 // the last of them. It never crosses a word: the rail is clear of every line, and the turns lie outside it.
-const thinAmp = () => (wide() ? Math.min(11, (parseFloat(getComputedStyle(says).paddingRight) || 40) * 0.22) : innerWidth < 768 ? 6 : 8);
+// (Liav 25.10, on the thread: "שירגיש קצת יותר חי ודינמי ופחות ישר ומרובע".) It swims: the whole thread swings from side
+// to side in slow waves that run towards its head, as far as the room between the words and the screen's edge allows
+// (less its own width), and its turns are long bends rather than elbows.
+const gutW = () => parseFloat(getComputedStyle(says).paddingRight) || 40;
+const thinAmp = () => (wide() ? Math.min(9, gutW() * 0.16) : innerWidth < 768 ? 6 : 8);
+const railSway = () => {
+  const room = (wide() ? gutW() : gutW() + (parseFloat(getComputedStyle(doc).getPropertyValue("--rail-pad")) || 28)) / 2;
+  return Math.max(0, Math.min(wide() ? 13 : innerWidth < 768 ? 9 : 12, room - thinAmp() * 1.55 - 4));
+};
 const THIN = { strands: 16, amp: thinAmp, taperStart: 0, taperEnd: 0, sparks: 2, dim: 0.55 };
 const worksSec = $("#projects"), flowSvg = $(".flow-trail", worksSec);
-const flowRibbon = new Ribbon(flowSvg, { ...THIN, wave: 460, seed: 7 });
+const flowRibbon = new Ribbon(flowSvg, { ...THIN, wave: 460, seed: 7, sway: railSway, swayWave: 560 });
 flowRibbon.headK = 0.55;
 let flowEnd = 0;
 // x of the start side's rail in a frame of width W, built for a right-to-left page (mirrored for a left-to-right one)
@@ -863,11 +871,11 @@ function layoutFlow() {
   flowSvg.setAttribute("viewBox", `0 0 ${W} ${r.height}`);
   const x = startRail(W, worksSec), sx = doc.clientWidth - r.left + Math.max(120, trailAmp() * 6), rl = getComputedStyle(worksSec).direction === "rtl";
   const head = $(".works-head", worksSec).getBoundingClientRect().top - r.top, wall = sayWall.getBoundingClientRect().bottom - r.top;
-  // a long soft swing in (level at the edge, upright on the rail just above the heading), and the same swing out
-  const y0 = head - 170, y1 = head - 10, y2 = wall - 40, y3 = wall + 110, k = (sx - x) * 0.45;
-  const segs = [["C", sx, y0, x + k, y0, x, y0 + (y1 - y0) * 0.55, x, y1], ["L", x, y1, x, y2], ["C", x, y2, x, y2 + (y3 - y2) * 0.45, x + k, y3, sx, y3]];
+  // a long soft swing in (sloping down from the edge, upright on the rail just above the heading), and the same swing out
+  const y0 = head - 280, y1 = head - 10, y2 = wall - 60, y3 = wall + 120, k = (sx - x) * 0.55;
+  const segs = [["C", sx, y0, x + k, y0 + 30, x, y0 + (y1 - y0) * 0.4, x, y1], ["L", x, y1, x, y2], ["C", x, y2, x, y2 + (y3 - y2) * 0.6, x + k, y3 - 20, sx, y3]];
   if (!rl) segs.forEach((g) => { for (let i = 1; i < g.length; i += 2) g[i] = W - g[i]; });
-  flowRibbon.setPath(segs);
+  flowRibbon.setPath(segs, null, [0.8, 1, 0.8]);
   flowEnd = y3;
 }
 function flowTick() {
@@ -940,12 +948,24 @@ function layoutKnTrail() {
   // the cards are measured at full size (they grow a little in focus); the band under them, or the one under the counter
   const cardB = Math.max(...knArts.map((a) => { const b = a.getBoundingClientRect(); return b.bottom + b.height * 0.03; })) - r.top;
   const cT = c.top - ty - r.top, cB = c.bottom - ty - r.top;
-  const mbarT = innerWidth < 1024 ? H - 84 : H, above = cT - cardB, below = mbarT - cB;
+  // (under 1024 the call bar's top: 12 under it, 62 tall, on the inset the hold keeps for it at the foot, less 2 to spare)
+  const mbarT = innerWidth < 1024 ? H - (parseFloat(getComputedStyle(knPin).paddingBottom) || 88) + 12 : H, above = cT - cardB, below = mbarT - cB;
   const yA = above >= below ? cardB + above / 2 : cB + below / 2;
-  const D = Math.min(110, Math.max(60, (xS - xE) * 0.12)), xLand = Math.min(xS, xC) - D;
-  const segs = [["L", W + off, yA, xC, yA], ["C", xC, yA, xC - D / 2, yA, xC - D / 2, yL, xLand, yL], ["L", xLand, yL, xE, yL], ["L", xE, yL, -off, yL]];
+  // it swims as the projects' thread does: on the line as far as the open band over it and the room under it allow, on
+  // the way in only as far as its own band allows (the counter and the cards on either side of it)
+  const hair = thinAmp() * 1.55, cap = innerWidth < 768 ? 7 : 10;
+  const swLine = Math.max(0, Math.min(cap, yL - cardB - hair - 8, (wide() ? Infinity : mbarT - yL) - hair - 4));
+  const swIn = Math.max(0, Math.min(swLine, (above >= below ? above : below) / 2 - hair - 4));
+  knRibbon.o.sway = swLine;
+  // in along the band, down onto the line in one long bend, along it, and out past its far end in a bend that falls away
+  // towards the close below (on phones and tablets, only as far as the call bar leaves room)
+  const D = Math.min(170, Math.max(80, (xS - xE) * 0.16)), xLand = Math.min(xS, xC) - D;
+  const drop = wide() ? 110 : Math.max(0, Math.min(110, mbarT - yL - hair - swLine - 6)), xOut = Math.min(xE, D) * 0.5;
+  const segs = [["L", W + off, yA, xC, yA], ["C", xC, yA, xC - D * 0.55, yA, xLand + D * 0.45, yL, xLand, yL], ["L", xLand, yL, xE, yL],
+    ["C", xE, yL, xE - xOut - off * 0.3, yL, -off * 0.5, yL + drop * 0.35, -off, yL + drop]];
   if (!rl) segs.forEach((g) => { for (let i = 1; i < g.length; i += 2) g[i] = W - g[i]; });
-  knRibbon.setPath(segs);
+  const kIn = swLine ? swIn / swLine : 0;
+  knRibbon.setPath(segs, null, [kIn, kIn, 1, 1]);
   knFa = knRibbon.nearest(rl ? xLand : W - xLand, yL);
   knFb = knRibbon.nearest(rl ? xE : W - xE, yL);
 }

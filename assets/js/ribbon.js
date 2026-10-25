@@ -113,10 +113,12 @@ export class Ribbon {
   // width, or a function), wave (px, the lines' typical wavelength), pinches (fractions 0..1 where the trail gathers:
   // energy passing a node), taperStart / taperEnd (px), sparks, seed, anchor ("end": the waves are counted back from
   // the last point, so a trail that starts where this one ends, with the same seed, carries every line on), dim (how
-  // bright, 0..1: the light stretches through the projects, the voices and the articles are a faint thread of it)
+  // bright, 0..1: the light stretches through the projects, the voices and the articles are a faint thread of it), sway
+  // (px, or a function: the whole thread swims from side to side in slow waves that travel towards the head, so a stretch
+  // that runs straight is never a ruled line; Liav 25.10: "יותר חי ודינמי ופחות ישר ומרובע") and swayWave (px, their length)
   constructor(svg, opt = {}) {
     this.svg = svg;
-    this.o = Object.assign({ strands: 16, amp: 24, wave: 520, pinches: [], taperStart: 90, taperEnd: 0, sparks: 4, step: 6, seed: 1, dim: 1 }, opt);
+    this.o = Object.assign({ strands: 16, amp: 24, wave: 520, pinches: [], taperStart: 90, taperEnd: 0, sparks: 4, step: 6, seed: 1, dim: 1, sway: 0, swayWave: 520 }, opt);
     this.id = ++uid;
     svg.classList.add("rb");
     svg.setAttribute("aria-hidden", "true");
@@ -148,18 +150,26 @@ export class Ribbon {
     // the dust: sparkles scattered around the trail, drifting slowly towards the head and twinkling
     this.du = [];
     for (let i = 0; i < 160; i++) { const g = (rnd() + rnd() + rnd() - 1.5) / 1.5; this.du.push({ u: rnd(), off: g * 2.6, z: 0.6 + rnd() * rnd() * 2.2, tw: 1 + rnd() * 3, tp: rnd() * 6.28 }); }
-    this.pts = null; this.L = 1; this.p = -1; this.gaps = []; this.env = null; this.amp = 0;
+    this.pts = null; this.L = 1; this.p = -1; this.gaps = []; this.env = null; this.amp = 0; this.swA = 0; this.swk = null;
+    this.swp = [rnd() * 6.28, rnd() * 6.28];
     this.headK = 1;                              // the head's flare size (the globe makes it small while it rests on Israel)
     this.bx0 = this.by0 = 0; this.bx1 = this.by1 = 0;
     painter(); P.set.add(this);
   }
 
-  // pinchAt: segment indices whose start is a node (besides the fractions in o.pinches)
-  setPath(segs, pinchAt) {
+  // pinchAt: segment indices whose start is a node (besides the fractions in o.pinches); swayK: how far each segment may
+  // sway (a factor of o.sway per segment, eased from one to the next: less where the way between words is narrow)
+  setPath(segs, pinchAt, swayK) {
     const o = this.o, marks = [], pts = sample(segs, o.step, marks);
     this.pts = pts; this.marks = marks; const L = this.L = pts[pts.length - 1].s || 1;
     const pinches = o.pinches.concat((pinchAt || []).filter((i) => i >= 0 && i < marks.length).map((i) => marks[i] / L));
-    this.amp = val(o.amp);
+    this.amp = val(o.amp); this.swA = val(o.sway) || 0;
+    const swk = this.swk = new Float32Array(pts.length), K = (i) => (swayK && swayK[i] != null ? swayK[i] : 1);
+    if (this.swA) for (let j = 0; j < pts.length; j++) {
+      let k = K(0);
+      for (let i = 1; i < marks.length; i++) k += (K(i) - K(i - 1)) * smooth(marks[i] - 90, marks[i] + 90, pts[j].s);
+      swk[j] = k;
+    }
     const env = this.env = new Float32Array(pts.length);
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (let j = 0; j < pts.length; j++) {
@@ -169,7 +179,7 @@ export class Ribbon {
       env[j] = e;
       if (q.x < x0) x0 = q.x; if (q.x > x1) x1 = q.x; if (q.y < y0) y0 = q.y; if (q.y > y1) y1 = q.y;
     }
-    const m = this.amp * 3 + 40;
+    const m = this.amp * 3 + 40 + this.swA;
     this.bx0 = x0 - m; this.bx1 = x1 + m; this.by0 = y0 - m; this.by1 = y1 + m;
     P.dirty = true;
     this.draw(this.p < 0 ? 0 : this.p, true);
@@ -196,9 +206,19 @@ export class Ribbon {
 
   inGap(s) { const f = s / this.L; for (const [a, b] of this.gaps) if (f > a && f < b) return true; return false; }
 
+  // how far the thread swims off its path at point j: two slow waves running towards the head, one long and one short,
+  // so the swing never repeats in an even beat (still, it keeps one gentle bend)
+  sway(j, t) {
+    if (!this.swA) return 0;
+    const s = this.pts[j].s, w = this.o.swayWave, two = 2 * Math.PI;
+    return this.swA * this.swk[j] * (0.66 * Math.sin(two * (s - 34 * t) / w + this.swp[0]) + 0.34 * Math.sin(two * (s - 15 * t) / (w * 0.47) + this.swp[1]));
+  }
+
   // the visible stretch and every line's points on it, shared by the bloom and the lines
   lines(ox, oy, t) {
-    const pts = this.pts, env = this.env, amp = this.amp, h = this.head(), hs = h.s, L = this.L;
+    const pts = this.pts, env = this.env, amp = this.amp, h0 = this.head(), hs = h0.s, L = this.L;
+    // the head swims with the thread (its flare follows the lines' meeting point)
+    const hq = pts[h0.j], hw = this.sway(h0.j, t), h = { ...h0, x: h0.x + hq.nx * hw, y: h0.y + hq.ny * hw };
     let j0 = 0, j1 = h.j;
     const top = -oy - 200, bot = P.H - oy + 200, left = -ox - 200, right = P.W - ox + 200;
     const out = (q) => q.y < top || q.y > bot || q.x < left || q.x > right;
@@ -215,11 +235,13 @@ export class Ribbon {
     }
     // the lines gather into the head: wide behind it, one point at the front
     const two = 2 * Math.PI, s0 = this.o.anchor === "end" ? -L : 0, m = j1 - j0 + 1;
+    const sw = new Float32Array(m);
+    if (this.swA) for (let j = j0; j <= j1; j++) sw[j - j0] = this.sway(j, t);
     const xy = this.ln.map((ln) => {
       const xs = new Float32Array(m), ys = new Float32Array(m), br = new Float32Array(m);
       for (let j = j0; j <= j1; j++) {
         const q = pts[j], s = q.s + s0, e = env[j] * smooth(0, 320, hs - q.s);
-        const off = amp * e * (ln.lane + ln.a * Math.sin(two * (s - ln.v * t) / ln.lam + ln.ph));
+        const off = amp * e * (ln.lane + ln.a * Math.sin(two * (s - ln.v * t) / ln.lam + ln.ph)) + sw[j - j0];
         xs[j - j0] = q.x + q.nx * off + ox; ys[j - j0] = q.y + q.ny * off + oy;
         br[j - j0] = (0.25 + 0.75 * e) * (0.6 + 0.4 * Math.sin(two * (s - ln.fv * t) / (ln.fl * this.o.wave) + ln.fp));
       }
@@ -269,7 +291,7 @@ export class Ribbon {
       if (s > hs) continue;
       const j = Math.min(pts.length - 1, Math.round(s / step));
       if (j < g.j0 || j > g.j1 || (this.gaps.length && this.inGap(pts[j].s))) continue;
-      const q = pts[j], e = this.env[j] * smooth(0, 320, hs - s), off = amp * (0.25 + e) * d.off;
+      const q = pts[j], e = this.env[j] * smooth(0, 320, hs - s), off = amp * (0.25 + e) * d.off + this.sway(j, t);
       const a = (0.35 + 0.65 * Math.abs(Math.sin(t * d.tw + d.tp))) * smooth(0, 160, s) * (0.4 + 0.6 * e) * dim;
       if (a < 0.04) continue;
       const z = d.z * 3.2;
