@@ -67,7 +67,7 @@ function headerTick() {
 const mn = $("#mn"), mnBtn = $(".mn-btn", hd), mnClose = $(".mn-close", mn), mnIn = $(".mn-in", mn);
 const mnLinks = $$(".mn-list a", mn);
 let mnOpen = false, mnLast = null;
-const mnBall = $(".mn-ball", mn);
+const mnBall = $(".mn-ball", mn), mnCap = $(".mn-cap", mn);
 const ballOk = "WebGL2RenderingContext" in window;
 let ball = null, ballLoad = null, ballLL = null;
 if (ballOk) mn.classList.add("has-ball");
@@ -77,12 +77,16 @@ function aimAt(k) {
   if (!ball || !ballLL) return;
   const key = k >= 0 ? MN_SITE[mnLinks[k].getAttribute("href")] : null;
   if (key) ball.aim(ballLL[key][0] + 4, ballLL[key][1], key); else ball.aim(26, 26, null);
+  // the card names the domain the Earth is turned to
+  const dom = key && /^#dom-/.test(mnLinks[k].getAttribute("href"));
+  if (dom) mnCap.textContent = mnLinks[k].textContent.trim();
+  mnCap.classList.toggle("on", !!dom);
 }
 function openBall(k) {
   // the frame: the Earth centred in its box, its air inside it
   const frameM = (W, H) => { const R = Math.min(W, H) * 0.37; return { tall: false, S: 0.2, a: { R, cx: W / 2, cy: H / 2, lat: 26, lon: 26 }, b: { R, cx: W / 2, cy: H / 2, lat: 26, lon: 26 } }; };
   ballLoad ||= import("./globe.js")
-    .then(({ mountGlobe, LL }) => { ballLL = LL; return mountGlobe(mnBall, { frame: frameM, drag: wide() ? true : "x", pointer: false, sharp: false, pace: 1.5, lean: 1.14 }); })
+    .then(({ mountGlobe, LL }) => { ballLL = LL; return mountGlobe(mnBall, { frame: frameM, drag: wide() ? true : "x", pointer: false, sharp: false, pace: 1.5, lean: 1.14, air: 0.12, sun: 0 }); })
     .catch(() => null)
     .then((b) => { if (!b) mn.classList.remove("has-ball"); return b; });
   ballLoad.then((b) => { ball = b; if (!b) return; if (mnOpen) { b.hold(false); b.replay(); aimAt(k); } else b.hold(true); });
@@ -98,7 +102,7 @@ const markHere = (a) => mnLinks.forEach((l) => l.classList.toggle("is-on", l ===
 // the item for where the visitor is on the page
 const restLink = () => (here >= 0 ? mnLinks.find((l) => l.getAttribute("href") === hdNodes[here].getAttribute("href")) : null) || null;
 // the pointer leaves the list: the Earth goes back to where the visitor is
-$(".mn-list", mn).addEventListener("pointerleave", () => aimAt(mnLinks.indexOf(restLink())));
+$(".mn-nav", mn).addEventListener("pointerleave", () => aimAt(mnLinks.indexOf(restLink())));
 
 function setMenu(open) {
   if (open === mnOpen) return; mnOpen = open;
@@ -106,7 +110,8 @@ function setMenu(open) {
     mnLast = document.activeElement;
     const a = restLink();
     markHere(a);
-    if (ballOk) openBall(mnLinks.indexOf(a));
+    // the Earth is for desktops (round 6: phones and tablets get the list and the call)
+    if (ballOk && wide()) openBall(mnLinks.indexOf(a));
   } else if (ball) ball.hold(true);
   // the opening's Earth rests while the menu has the screen
   if (globe) globe.hold(open);
@@ -124,6 +129,7 @@ function setMenu(open) {
 }
 mnBtn.addEventListener("click", () => setMenu(true));
 mnClose.addEventListener("click", () => setMenu(false));
+$(".mn-bg", mn).addEventListener("click", () => setMenu(false));
 $$("a", mn).forEach((a) => a.addEventListener("click", () => setMenu(false)));
 addEventListener("keydown", (e) => {
   if (!mnOpen) return;

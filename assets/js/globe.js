@@ -182,7 +182,7 @@ void main(){
 // the outer air: the blue and cyan rim on the end side of the globe (the client asked to keep it), and the sun's first
 // light where the dawn is
 const ATMO_FS = /* glsl */`
-uniform vec3 uRimL, uSun; uniform float uDim, uOn, uSunAmt;
+uniform vec3 uRimL, uSun; uniform float uDim, uOn, uSunAmt, uAir;
 varying vec3 vN; varying vec3 vV; varying vec3 vObj;
 void main(){
   float t = clamp(-dot(vN, vV), 0.0, 1.0);
@@ -192,7 +192,7 @@ void main(){
   vec2 sd = normalize(uSun.xy), nd = normalize(vN.xy + 1e-5);
   float hot = pow(max(dot(nd, sd), 0.0), 18.0) * uSunAmt;
   col = col * (0.3 + 0.9 * lit) + vec3(0.75, 0.92, 1.0) * hot * 1.1;
-  gl_FragColor = vec4(col * i * mix(0.45, 1.0, uDim) * uOn, 1.0);
+  gl_FragColor = vec4(col * i * mix(0.45, 1.0, uDim) * uOn * uAir, 1.0);
 }`;
 // the grid: flat ribbons on the ground, a bright core and a soft halo, growing out from their source, light running
 // along them
@@ -648,7 +648,7 @@ export async function mountGlobe(stage, opt = {}) {
 
   const U = {
     uTime: { value: 0 }, uDim: { value: 1 }, uOn: { value: reduce ? 1 : 0 }, uReveal: { value: reduce ? 9 : 0 },
-    uHub: { value: hubV }, uRimL: { value: rimL }, uMoon: { value: moon }, uSun: { value: sun }, uSunAmt: { value: sunAmt },
+    uHub: { value: hubV }, uRimL: { value: rimL }, uMoon: { value: moon }, uSun: { value: sun }, uSunAmt: { value: sunAmt }, uAir: { value: opt.air ?? 1 },
     uColor: { value: mapC }, uLights: { value: mapL }, uMask: { value: mapM },
     uSites: { value: Object.values(LL).map(([a, b]) => ll2v(a, b)) },
     uFocus: { value: new THREE.Vector2() }, uDof: { value: 0 }, uDofR: { value: 1 }, uZoom: { value: 1 },

@@ -60,7 +60,7 @@
   </div>
 </header>
 
-<!-- the menu: a quiet room. The night closes over the page and the list rises line by line on hairlines -->
+<!-- the menu: a panel that drops from the header, two groups and the call -->
 <div class="mn" id="mn" role="dialog" aria-modal="true" aria-label="תפריט">
   <div class="mn-bg" aria-hidden="true"></div>
   <div class="mn-in">
@@ -69,18 +69,26 @@
       <img class="mn-logo" src="assets/brand/logo-on-dark.svg" alt="" width="507" height="125">
     </div>
     <nav class="mn-nav" aria-label="ניווט ראשי">
-      <ol class="mn-list">
-        <li class="mn-it"><a href="#dom-solar"><span class="mn-t">אנרגיה סולארית</span></a></li>
-        <li class="mn-it"><a href="#dom-storage"><span class="mn-t">אגירת אנרגיה</span></a></li>
-        <li class="mn-it"><a href="#dom-charge"><span class="mn-t">טעינת רכבים</span></a></li>
-        <li class="mn-it"><a href="#knowledge"><span class="mn-t">מרכז הידע</span></a></li>
-        <li class="mn-it"><a href="#about"><span class="mn-t">אודות</span></a></li>
-        <li class="mn-it"><a href="#contact"><span class="mn-t">יצירת קשר</span></a></li>
-      </ol>
+      <div class="mn-grp">
+        <p class="mn-h" id="mn-h1">תחומי פעילות</p>
+        <ul class="mn-list" aria-labelledby="mn-h1">
+          <li class="mn-it"><a href="#dom-solar"><span class="mn-t">אנרגיה סולארית</span></a></li>
+          <li class="mn-it"><a href="#dom-storage"><span class="mn-t">אגירת אנרגיה</span></a></li>
+          <li class="mn-it"><a href="#dom-charge"><span class="mn-t">טעינת רכבים</span></a></li>
+        </ul>
+      </div>
+      <div class="mn-grp">
+        <p class="mn-h" id="mn-h2">החברה</p>
+        <ul class="mn-list" aria-labelledby="mn-h2">
+          <li class="mn-it"><a href="#knowledge"><span class="mn-t">מרכז הידע</span></a></li>
+          <li class="mn-it"><a href="#about"><span class="mn-t">אודות</span></a></li>
+          <li class="mn-it"><a href="#contact"><span class="mn-t">יצירת קשר</span></a></li>
+        </ul>
+      </div>
     </nav>
     <!-- the Earth of the opening, turned to the item the visitor points at (the list is the way for the keyboard and for
          screen readers, so the Earth is hidden from them) -->
-    <div class="mn-ball" aria-hidden="true"><canvas class="gl-canvas"></canvas></div>
+    <div class="mn-ball" aria-hidden="true"><canvas class="gl-canvas"></canvas><span class="mn-cap"></span></div>
     <!-- one way on besides the list (round 5: "simplify it") -->
     <div class="mn-side">
       <div class="mn-contact">
