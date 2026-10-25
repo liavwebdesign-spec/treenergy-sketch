@@ -392,7 +392,6 @@ html.lenis,html.lenis body{height:auto}
 .has-top .gl-canvas{--m0:72%;--m1:88%;--ma:.6}
 .route{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:0 6px;font-size:16px;font-weight:400;color:var(--ink);text-decoration:none;
   transition:color .3s var(--ease)}
-.route i{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);flex:none}
 @media (hover:hover) and (pointer:fine){.route:hover{color:var(--accent-hover)}}
 
 /* the intro: the camera has flown to Israel; one statement lights up word by word */
