@@ -313,6 +313,13 @@ html.lenis,html.lenis body{height:auto}
 .hero.is-in .h-line.l2 > span{transition-delay:calc(var(--t0,.2s) + .12s)}
 .rv-on .h-line > span{animation:none}
 @media (prefers-reduced-motion:reduce){.rv,.h-line > span{transition-duration:.01ms!important;transition-delay:0s!important}}
+/* the header comes in with the opening (Liav 25.10: "אין אנימציות כניסה ... הלוגו, התפריט"): the menu and the logo come
+   down a beat after the first words, the accessibility button last; each then keeps its own states (fill backwards only) */
+.open-anim .mn-btn,.open-anim .hd-logo{animation:hd-in 1.1s var(--ease-out) .9s backwards}
+.open-anim .hd-logo{animation-delay:1.05s}
+.open-anim .ax-btn{animation:ax-in .9s var(--ease) 1.6s backwards}
+@keyframes hd-in{from{opacity:0;transform:translateY(-14px)}}
+@keyframes ax-in{from{opacity:0}}
 
 /* ---------- the journey: the globe stays while the opening and the intro scroll over it ---------- */
 /* the stage keeps its full height in the flow (the opening pulls itself up over it), so it sticks until the journey's
@@ -347,16 +354,14 @@ html.lenis,html.lenis body{height:auto}
 .gl-pin{/* qa-allow: physical: placed by the script in px from the canvas's left edge, centred on its model */position:absolute;left:0;top:0;width:44px;height:44px;pointer-events:auto;visibility:hidden;
   border-radius:50%;color:var(--ink);text-decoration:none;-webkit-tap-highlight-color:transparent;outline-offset:4px}
 .gl-pin:focus-visible{outline:1px solid var(--accent)}
-.gl-card{position:absolute;display:grid;grid-template-columns:auto 1fr;align-items:start;gap:3px 12px;width:max-content;max-width:min(300px,74vw);padding:14px 18px 16px;
-  border-radius:16px;background:rgba(0,14,46,.66);-webkit-backdrop-filter:blur(16px) saturate(1.2);backdrop-filter:blur(16px) saturate(1.2);
-  box-shadow:inset 0 0 0 1px rgba(48,247,123,.26),0 24px 48px -12px rgba(0,5,22,.7);text-align:start;
+/* the card: a quiet plate of night with the words alone, no frame and no icon (Liav 25.10, on the scene page's cards: "נראה כמו עיצוב שמאוד מאפיין AI") */
+.gl-card{position:absolute;display:grid;gap:4px;width:max-content;max-width:min(280px,74vw);padding:13px 16px 15px;
+  border-radius:8px;background:rgba(0,11,36,.8);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  box-shadow:0 18px 40px -14px rgba(0,5,22,.7);text-align:start;
   opacity:0;visibility:hidden;transform:translateY(8px) scale(.97);transition:opacity .35s var(--ease),transform .45s var(--ease),visibility 0s .45s;pointer-events:none}
-.gl-card > *{grid-column:2}
-.gl-card .gc-i{grid-column:1;grid-row:1 / span 3;width:22px;height:22px;margin-top:2px;fill:none;stroke:var(--accent);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 6px rgba(48,247,123,.55))}
 .gl-card em{font-style:normal;font-size:12px;letter-spacing:.06em;color:var(--accent)}
 .gl-card b{font-weight:500;font-size:16px;line-height:1.3;color:var(--ink)}
 .gl-card span{font-size:13.5px;line-height:1.5;color:var(--ink-soft)}
-.gl-pin.is-soft .gl-card .gc-i{stroke:var(--muted);filter:none}
 /* the card opens above its model, or under it near the top of the screen; the script sets its left edge (in px from the
    link's left edge) so it stays on the screen */
 .gl-pin[data-at="t"] .gl-card{bottom:calc(100% + 8px)}
@@ -393,9 +398,11 @@ html.lenis,html.lenis body{height:auto}
 /* the intro: the camera has flown to Israel; one statement lights up word by word */
 .intro{position:relative;z-index:2;min-height:100vh;min-height:100svh;display:flex;align-items:center;padding:var(--sec) var(--gutter)}
 .intro-in{width:min(100%,clamp(560px,58vw,1500px));display:grid;justify-items:start;gap:clamp(20px,3vh,40px)}
-.intro-kick{font-family:var(--text);letter-spacing:0;font-size:var(--fs-small);font-weight:400;color:var(--muted);display:flex;align-items:center;gap:12px}
-.intro-kick::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
-.intro-tag{font-size:var(--fs-body);color:var(--ink-soft);max-width:42ch}
+/* one line over the statement, not two of a size (Liav 25.10: "נראה כאילו יש 2 תתי-כותרות בגדלים מאוד דומים", and no dot
+   beside it): the greeting and the client's line read as one sentence, the greeting a step brighter */
+.intro-kick{font-family:var(--text);letter-spacing:0;font-size:var(--fs-body);line-height:1.5;font-weight:500;color:var(--ink)}
+/* the client's line keeps together: one line where there is room, and on a narrow screen a line of its own */
+.intro-tag{display:inline-block;font-weight:400;color:var(--ink-soft)}
 .intro-say{font-family:var(--display);font-size:var(--fs-say);line-height:1.34;font-weight:var(--dw);letter-spacing:0;color:var(--ink)}
 .intro-say .w{opacity:var(--wo,.16);transition:opacity .2s linear}
 
@@ -711,7 +718,8 @@ html.lenis,html.lenis body{height:auto}
    the strip simply scrolls sideways. A pointer over an article charges its cell from the start side. */
 .kn{position:relative;z-index:1;padding-bottom:var(--sec)}
 .kn-pin{display:grid;gap:clamp(14px,2.4vh,32px);padding-top:clamp(24px,5vh,64px)}
-.kn-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:end;gap:clamp(18px,4vw,128px);padding-inline:var(--gutter)}
+/* the words beside the heading start on its line, not above it (Liav 25.10: "הפסקה מצד שמאל גבוהה יותר מהכותרת") */
+.kn-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;gap:clamp(18px,4vw,128px);padding-inline:var(--gutter)}
 .kn-head h2{font-size:var(--fs-h2);line-height:1.06}
 .kn-say{display:grid;justify-items:start;gap:clamp(10px,1.6vh,18px)}
 .kn-say p{font-size:var(--fs-lead);line-height:1.5;color:var(--ink-soft);max-width:42ch}
@@ -746,10 +754,11 @@ html.lenis,html.lenis body{height:auto}
 @media (min-width:768px) and (max-height:900px){
   .kn.is-run .art-d{display:none}
 }
-/* round 5 (Idan: "a bit darkened"): lighter all along, and the article in focus comes nearly to daylight */
-.kn.is-run .art-img img{filter:saturate(calc(.78 + var(--kl,0) * .22)) brightness(calc(.84 + var(--kl,0) * .2))}
-.kn.is-run .art-img::after{opacity:calc(.48 - var(--kl,0) * .34)}
-.kn.is-run .art .art-t-wrap{opacity:calc(.5 + var(--kl,0) * .5)}
+/* round 5 (Idan: "a bit darkened"), and lighter again (Liav 25.10: "כהה מדי, צריך להבהיר אותם"): the pictures at rest are
+   nearly as they are, with only a breath of the night over them, and the article in focus comes to full daylight */
+.kn.is-run .art-img img{filter:saturate(calc(.9 + var(--kl,0) * .1)) brightness(calc(1 + var(--kl,0) * .06))}
+.kn.is-run .art-img::after{opacity:calc(.16 - var(--kl,0) * .12)}
+.kn.is-run .art .art-t-wrap{opacity:calc(.74 + var(--kl,0) * .26)}
 .art{position:relative;overflow:hidden;isolation:isolate;display:grid;grid-template-rows:auto 1fr;gap:clamp(14px,2vh,24px);padding:clamp(12px,1.2vw,24px);
   border-radius:var(--r);background:rgba(243,246,252,.022);box-shadow:inset 0 0 0 1px var(--line);text-decoration:none;color:var(--ink)}
 /* the charge: a level of light that comes in from the start side, its front the one bright line */
@@ -761,7 +770,7 @@ html.lenis,html.lenis body{height:auto}
 /* the night grade of the projects: the brand navy laid over the daylight, lifted while the article is charged */
 .art-img::after,.say-pic::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(160deg,#0A3A9A,#000B26);mix-blend-mode:multiply;opacity:.62;
   transition:opacity .8s var(--ease)}
-.art-img::after{opacity:.38}
+.art-img::after{opacity:.16}
 /* every card in the strip is as tall as the tallest, and "לקריאה" sits on one line along the bottom of all of them */
 .art-t-wrap{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
 .art-go{margin-top:auto}

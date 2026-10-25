@@ -419,9 +419,15 @@ function placePins(v, alpha) {
     const half = p.cw / 2, pad = 14, gap = p.gap;
     const shift = Math.max(pad + half - x, Math.min(0, W - pad - half - x));
     p.card.style.setProperty("--cx", shift.toFixed(0) + "px");
-    p.el.classList.toggle("is-below", y - gap - p.ch < pad + 64);
+    // it opens under the ring too when above it would cover the opening's words, if there is room below
+    const l = x + shift - half, r = x + shift + half, top = y - gap - p.ch;
+    const onTitle = r > titleBox.l && l < titleBox.r && top < titleBox.b && y - gap > titleBox.t;
+    p.el.classList.toggle("is-below", top < pad + 64 || (onTitle && y + gap + p.ch < H - pad));
   }
 }
+// the opening's words in the stage (the cards keep off them); set on every layout, before the title's own fade
+const titleBox = { l: 0, r: 0, t: 0, b: 0 };
+function measureTitle() { titleBox.l = h1.offsetLeft - 12; titleBox.r = h1.offsetLeft + h1.offsetWidth + 12; titleBox.t = h1.offsetTop; titleBox.b = h1.offsetTop + h1.offsetHeight + 8; }
 
 // where a point of the picture shows, with the flight applied (the shader's mapping, run forwards), in stage pixels
 const F = { m: 0, low: 0, lift: 0, sink: 0, roll: 0, foe: [0.5, 0.46], head: [0.5, 0.5] };
@@ -609,7 +615,7 @@ function frame(now) {
   par.x += (par.tx - par.x) * 0.05; par.y += (par.ty - par.y) * 0.05;
   if (!fine && !reduce) { par.x = Math.sin(time * 0.21) * 0.5; par.y = Math.cos(time * 0.17) * 0.3; }
   if (!set || !set.ready || !ctx) return;
-  if (tReady < 0) tReady = time;
+  if (tReady < 0) { tReady = time; h1.classList.add("is-in"); }
   const since = time - tReady;
 
   let alpha, zoom, reveal, titleA, pinA, center = null;
@@ -678,7 +684,7 @@ function frame(now) {
   cv.style.opacity = 1;
 
   h1.style.setProperty("--ho", clamp01(titleA).toFixed(3));
-  if (cue) cue.style.setProperty("--co", (1 - (tourOn ? smooth(0.002, 0.014, prog) : smooth(0.02, 0.1, prog))).toFixed(3));
+  if (cue) cue.style.setProperty("--co", ((1 - (tourOn ? smooth(0.002, 0.014, prog) : smooth(0.02, 0.1, prog))) * (reduce ? 1 : smooth(2.4, 3.2, since))).toFixed(3));
   placePins(v, pinA);
   // the solar farm's card stands open like the reference; on touch the cards take turns until one is touched
   if (pinA > 0.9 && lastPin < 0.9 && !touched) { show("sol"); cycleAt = time + 4.5; cycleI = 0; }
@@ -707,16 +713,18 @@ if (tourOn) {
   for (const a of arts) a.el.addEventListener("focusin", () => { if (!a.on) goStop(a.i); });
   if (lenis) lenis.on("scroll", () => { clearTimeout(idleT); idleT = setTimeout(settle, 220); });
 }
-const relayout = () => { resize(); readScroll(); for (const p of pins) p.cw = 0; if (dom) dom.layout(); if (tourOn) measureStops(); if (trail) trail.layout(); };
+const relayout = () => { resize(); readScroll(); measureTitle(); for (const p of pins) p.cw = 0; if (dom) dom.layout(); if (tourOn) measureStops(); if (trail) trail.layout(); };
 let rz = 0;
 addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(relayout, 120); });
 addEventListener("load", relayout);
 if (document.fonts) document.fonts.ready.then(relayout);
+measureTitle();
 if (ctx) {
   loadSet();
   requestAnimationFrame(frame);
 } else {
-  // no WebGL: the domains' trail still runs with the scroll
+  // no WebGL: the picture is there at once, and so are its words; the domains' trail still runs with the scroll
+  h1.classList.add("is-in");
   const loop = () => { requestAnimationFrame(loop); if (dom) dom.tick(); };
   requestAnimationFrame(loop);
 }
