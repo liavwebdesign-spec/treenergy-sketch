@@ -118,3 +118,26 @@ html.open-anim:not(.no-gl) .lb-pin > i{opacity:0}
 }
 @media (prefers-reduced-motion:reduce){.lb-pin > i::after,.lb-cue span{animation:none}}
 .ax-still .lb-pin > i::after,.ax-still .lb-cue span{animation:none}
+
+/* the battery's signs (scene.html only): a neon tube over each title, dark glass until the charge front reaches it,
+   then it strikes up with a stutter and keeps a faint hum */
+.cell-ic{grid-row:2;align-self:end;justify-self:start;width:clamp(46px,3.6vw,72px);height:auto;margin-bottom:clamp(14px,1.3vw,22px);overflow:visible;
+  fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;color:rgba(243,246,252,.2);
+  transition:color .5s var(--ease),filter .5s var(--ease)}
+.cell.is-on .cell-ic{color:#C8FFDE;filter:drop-shadow(0 0 1.5px var(--accent)) drop-shadow(0 0 7px rgba(48,247,123,.75)) drop-shadow(0 0 20px rgba(48,247,123,.35));
+  transition:none;animation:ic-strike 1s linear both,ic-hum 5s 1s ease-in-out infinite}
+@keyframes ic-strike{
+  0%,9%,15%,31%{color:rgba(243,246,252,.2);filter:none}
+  6%,12%,24%,40%,100%{color:#C8FFDE;filter:drop-shadow(0 0 1.5px var(--accent)) drop-shadow(0 0 7px rgba(48,247,123,.75)) drop-shadow(0 0 20px rgba(48,247,123,.35))}
+  35%{color:rgba(200,255,222,.55);filter:drop-shadow(0 0 4px rgba(48,247,123,.4))}
+}
+@keyframes ic-hum{0%,100%{opacity:1}50%{opacity:.86}}
+@supports not (grid-template-rows:subgrid){.cell-ic{margin-top:clamp(24px,5vh,88px)}.cell h3{margin-top:0}}
+@media (max-width:1279px){
+  .cell-ic{grid-row:1;grid-column:1;align-self:start;margin-bottom:14px}
+  .cell h3{grid-row:2}
+  .cell p{grid-row:1 / span 2}
+}
+@media (max-width:767px){.cell p{grid-row:3;grid-column:1}}
+@media (prefers-reduced-motion:reduce){.cell.is-on .cell-ic{animation:none}}
+.ax-still .cell.is-on .cell-ic{animation:none}

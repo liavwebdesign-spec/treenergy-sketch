@@ -640,6 +640,8 @@ function charge(i, c) {
   if (el._c === v) return; el._c = v;
   el.style.setProperty("--c", v);
   el.classList.toggle("is-full", c > 0.985);
+  // the charge front has reached the cell's sign (scene.html): it strikes up
+  el.classList.toggle("is-on", c > 0.18);
 }
 function layoutWhy() {
   const r = whySec.getBoundingClientRect(), W = r.width, b = battery.getBoundingClientRect();
