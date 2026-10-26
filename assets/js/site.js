@@ -23,8 +23,6 @@ const scenePage = !!$(".lb");
 /* ---------- the living night ---------- */
 let sky = null;
 try { sky = mountSky($("#sky")); } catch (e) { console.warn("sky", e); }
-// the night compared (round 5, sketch only, ?bg=): the client chooses the background
-if (doc.hasAttribute("data-bg-cmp")) import("./bg-compare.js").then((m) => m.mount(sky));
 
 /* ---------- header: the power line ---------- */
 // The wire's nodes are the stations of this page. The fill reaches node i exactly when the page reaches station i,
@@ -104,8 +102,6 @@ function setMenu(open) {
     // the Earth is for desktops (round 6: phones and tablets get the list and the call)
     if (ballOk && wide()) openBall();
   } else if (ball) ball.hold(true);
-  // the opening's Earth rests while the menu has the screen
-  if (globe) globe.hold(open);
   mn.classList.toggle("open", open);
   mnIn.inert = !open;
   $("#main").inert = open; hd.inert = open;
@@ -313,7 +309,6 @@ function spline(pts) {
   return segs;
 }
 
-let globe = null, jp = 0;
 const wide = () => innerWidth >= 1024;
 
 // the braid's half width and its fibres, shared by every stretch so the globe trail runs on into the domains one
@@ -375,83 +370,6 @@ function measureSeam() {
   seam = { xL, above, below: [below], key: P.map((v) => v.toFixed(0)).join(",") + "|" + J.toFixed(0) };
 }
 
-// the opening: both lines flush to the start edge; on wide screens the two ways on stand in the room the shorter
-// second line leaves, centred on it. Where that room is too small they stay under the line (the CSS default)
-const heroSide = heroEl && $(".hero-side", heroEl), heroL2 = heroEl && $(".h-line.l2", heroEl), heroH1 = heroEl && $("h1", heroEl);
-// round 5: on wide landscape screens the line stands high on the end side, in the open night beside the globe, in three
-// lines and the two ways on under it
-const topTitle = () => wide() && innerWidth / innerHeight >= 1.05;
-function layoutHero() {
-  if (!heroEl) return;
-  heroEl.classList.remove("is-beside");
-  const top = topTitle();
-  heroEl.classList.toggle("is-top", top); stage.classList.toggle("has-top", top);
-  heroEl.style.removeProperty("--fs-top");
-  if (top) { fitTop(); return; }
-  if (!wide()) return;
-  const sd = heroSide.getBoundingClientRect();
-  // out of the flow first: the lines settle lower once the ways on no longer stand under them
-  heroEl.classList.add("is-beside");
-  const h = heroEl.getBoundingClientRect(), l = heroL2.getBoundingClientRect();
-  const g = document.createRange(); g.selectNodeContents(heroL2.firstElementChild); const t = g.getBoundingClientRect();
-  const gap = Math.max(40, l.height * 0.4), pad = parseFloat(getComputedStyle(heroEl).paddingLeft);
-  const rtlDoc = getComputedStyle(heroEl).direction === "rtl";
-  const room = rtlDoc ? t.left - h.left - pad : h.right - pad - t.right;
-  if (room < sd.width + gap) { heroEl.classList.remove("is-beside"); return; }
-  const x = rtlDoc ? h.right - t.left + gap : t.right - h.left + gap;
-  // the middle of the letters (the line box runs deeper below them than above)
-  const cy = l.top - h.top + l.height * 0.5;
-  heroEl.style.setProperty("--side-x", x.toFixed(1) + "px");
-  heroEl.style.setProperty("--side-t", (cy - sd.height / 2).toFixed(1) + "px");
-}
-
-// the line's size: as large as the CSS allows while every line (and the ways on under it) keeps clear of the globe's rim.
-// Lines are flush to the end of the screen's start side, so a smaller size moves each line's far end away from the rim
-function fitTop() {
-  if (!globe || !globe.limb) return;
-  heroEl.style.removeProperty("--fs-top");
-  const spans = [...heroEl.querySelectorAll(".h-line > span")];
-  const keep = spans.map((e) => [e.style.transition, e.style.transform]);
-  spans.forEach((e) => { e.style.transition = "none"; e.style.transform = "none"; });
-  const st = stage.getBoundingClientRect(), h = heroH1.getBoundingClientRect(), sd = heroSide.getBoundingClientRect();
-  const rows = [];
-  const walk = document.createTreeWalker(heroH1, NodeFilter.SHOW_TEXT);
-  for (let n = walk.nextNode(); n; n = walk.nextNode()) {
-    const g = document.createRange(); g.selectNodeContents(n);
-    for (const r of g.getClientRects()) {
-      if (!r.width) continue;
-      const row = rows.find((q) => Math.abs(q.cy - (r.top + r.bottom) / 2) < r.height * 0.4);
-      if (row) { row.l = Math.min(row.l, r.left); row.r = Math.max(row.r, r.right); }
-      else rows.push({ l: r.left, r: r.right, cy: (r.top + r.bottom) / 2 });
-    }
-  }
-  spans.forEach((e, i) => { e.style.transform = keep[i][1]; void e.offsetWidth; e.style.transition = keep[i][0]; });
-  // the ways on, as one more row under the line (they do not scale; they rise with it)
-  const gapS = sd.top - h.bottom;
-  const fits = (k) => rows.every((q) => st.left + globe.limb(h.top + (q.cy - h.top) * k - st.top) <= h.right - (h.right - q.l) * k)
-    && st.left + globe.limb(h.top + (h.bottom - h.top) * k + gapS + sd.height / 2 - st.top) <= sd.left;
-  let lo = 0.45, hi = 1;
-  if (!fits(hi)) { for (let i = 0; i < 18; i++) { const m = (lo + hi) / 2; if (fits(m)) lo = m; else hi = m; } hi = lo; }
-  const fs = parseFloat(getComputedStyle(heroH1).fontSize);
-  if (hi < 0.999) heroEl.style.setProperty("--fs-top", (fs * hi).toFixed(1) + "px");
-}
-
-let diveV = "";
-function setJourney(p) {
-  if (!journey) return;
-  jp = p;
-  if (globe) globe.setProgress(p);
-  // the dive: the words' side darkens and the Earth melts away higher up (round 6). Only an opacity and a mask, so
-  // reduced motion keeps it too
-  const dv = smooth(0.18, 0.62, p).toFixed(3);
-  if (dv !== diveV) { diveV = dv; stage.style.setProperty("--dive", dv); }
-  if (!reduce) {
-    heroEl.style.setProperty("--hero-o", (1 - smooth(0.03, 0.3, p)).toFixed(3));
-    heroEl.style.setProperty("--hero-y", (-p * 120).toFixed(1) + "px");
-    // the shade under the opening goes with it; by the stage's last screen its foot is plain night
-    stage.style.setProperty("--scrim", (1 - smooth(0.05, 0.4, p)).toFixed(3));
-  }
-}
 /* ---------- scroll-linked spans ---------- */
 // A span runs 0..1 between two scroll positions taken from its element (like a scroll trigger's start and end). They
 // are measured in relayout() and written in tick()'s write phase, so the page is never read after something on it was
@@ -480,26 +398,6 @@ function rectOf(el) {
   return { top: s.t - frameY, bottom: s.t - frameY + s.h, height: s.h };
 }
 if (window.ResizeObserver) new ResizeObserver(() => spots.clear()).observe(document.body);
-// the scene page has no journey; the globe's runs from the stage's top to its foot
-if (journey) scrub(journey, (t) => t, (t, b, ih) => b - ih, setJourney);
-
-function webglOK() {
-  try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch (e) { return false; }
-}
-if (journey && webglOK()) {
-  // phones: the labels stop above the opening words (wide screens keep the words beside the globe)
-  const floor = () => { if (wide()) return Infinity; const top = [...heroEl.children].find((e) => e.getClientRects().length); return top.getBoundingClientRect().top - stage.getBoundingClientRect().top; };
-  // the intro's words in the stage's frame: the trail waits rather than run over them
-  // (phones: the whole intro, its link too, since there the S passes under it)
-  const say = $(".intro-say"), introIn = $(".intro-in");
-  const words = () => { const r = (wide() ? say : introIn).getBoundingClientRect(), s = stage.getBoundingClientRect(); return { left: r.left - s.left, right: r.right - s.left, top: r.top - s.top, bottom: r.bottom - s.top }; };
-  // where the intro comes to rest in the stage: when the journey ends, the intro's foot is the stage's foot
-  const intro = $(".intro");
-  const rest = () => { const i = intro.getBoundingClientRect(), r = introIn.getBoundingClientRect(), s = stage.getBoundingClientRect(); return { left: r.left - s.left, right: r.right - s.left, top: s.height - (i.bottom - r.top), bottom: s.height - (i.bottom - r.bottom) }; };
-  import("./globe.js").then(({ mountGlobe }) => mountGlobe(stage, { railX, wide, amp: trailAmp, band: BAND, floor, words, rest, low: () => !topTitle(), seam: () => seam, joint: () => join.y, joinDir: () => [join.dx, join.dy] })).then((g) => {
-    globe = g; if (g) { g.setProgress(jp); layoutHero(); if (document.fonts) document.fonts.ready.then(layoutHero); }
-  }).catch((e) => console.warn("globe", e));
-}
 
 /* ---------- the intro: one statement, lit word by word by the scroll ---------- */
 function initIntro() {
@@ -1160,7 +1058,6 @@ else addEventListener("scroll", () => { if (!ticking) { ticking = true; requestA
 
 function relayout() {
   spots.clear(); sayCols.forEach((c) => { c._sh = undefined; });
-  layoutHero();
   layoutKn();
   measureStations();
   layoutDom();
@@ -1172,7 +1069,6 @@ function relayout() {
   layoutKnTrail();
   measureSpans();
   if (reduce) { if (domRibbon) domRibbon.draw(1); whyRibbon.draw(1); procRibbon.draw(1); flowRibbon.draw(1); closeRibbon.draw(1); steps.forEach((s) => s.classList.add("on")); plug.classList.add("is-lit"); }
-  if (globe) { globe.resize(); if (topTitle()) fitTop(); }
   tick();
   if (lenis) requestAnimationFrame(() => lenis.resize());
 }
