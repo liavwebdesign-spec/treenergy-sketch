@@ -157,3 +157,20 @@ html.open-anim:not(.no-gl) #domains{display:none}
   35%{color:rgba(200,255,222,.6);text-shadow:0 0 8px rgba(48,247,123,.4)}
 }
 @media (prefers-reduced-motion:reduce){.step.on .step-n{animation:none}}
+
+/* the title behind the Earth compared (sketch only, ?hero=; scene.js): a mask cuts the words at the planet's edge (a
+   circle: --mx, --my, --mr in the element's own frame, --mf the soft of the cut). "sink": the title goes down behind the
+   horizon with the first scroll. "word": the name, large and tilted, half behind the Earth */
+html[data-hero] .lb-h{transform:translateY(var(--hs,0px));
+  -webkit-mask-image:radial-gradient(circle var(--mr) at var(--mx) var(--my),transparent calc(var(--mr) - 1px),#000 calc(var(--mr) + var(--mf,5px)));
+  mask-image:radial-gradient(circle var(--mr) at var(--mx) var(--my),transparent calc(var(--mr) - 1px),#000 calc(var(--mr) + var(--mf,5px)))}
+.lb-word{display:none}
+html[data-hero="word"] .lb-word{display:block;position:absolute;z-index:3;left:0;top:0;margin:0;white-space:nowrap;direction:ltr;
+  font-family:"Almoni",system-ui,sans-serif;font-weight:400;font-size:100px;line-height:.9;letter-spacing:.02em;color:var(--ink);opacity:0;
+  text-shadow:0 2px 40px rgba(var(--n0),.5);transform-origin:50% 50%;pointer-events:none;will-change:transform;
+  -webkit-mask-image:radial-gradient(circle var(--mr) at var(--mx) var(--my),transparent calc(var(--mr) - 1px),#000 calc(var(--mr) + var(--mf,6px)));
+  mask-image:radial-gradient(circle var(--mr) at var(--mx) var(--my),transparent calc(var(--mr) - 1px),#000 calc(var(--mr) + var(--mf,6px)))} /* qa-allow: physical, placed in screen pixels by scene.js */
+/* its switch keeps off the opening's words: in the bottom corner of the start side (the scroll cue holds the middle),
+   and on phones at the foot of the opening's screen, under the second line, leaving with the opening */
+.hero-cmp{inset-inline:var(--gutter) auto;margin-inline:0}
+@media (max-width:1023px){.hero-cmp{inset-inline:0;margin-inline:auto;top:calc(100svh - 52px - env(safe-area-inset-bottom))}}

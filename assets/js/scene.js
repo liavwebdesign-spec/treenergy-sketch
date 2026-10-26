@@ -29,7 +29,7 @@ const root = document.documentElement;
 // __still: the visitor stopped motion in the accessibility panel (as in site.js)
 const reduce = !!window.__still || matchMedia("(prefers-reduced-motion: reduce)").matches;
 const fine = matchMedia("(hover:hover) and (pointer:fine)").matches;
-const sec = $(".lb"), stage = $(".lb-stage"), cv = $(".lb-scene"), h1 = $(".lb-h"), sub = $(".lb-sub"), pinsEl = $(".lb-pins"), cue = $(".lb-cue");
+const sec = $(".lb"), stage = $(".lb-stage"), cv = $(".lb-scene"), h1 = $(".lb-h"), sub = $(".lb-sub"), pinsEl = $(".lb-pins"), cue = $(".lb-cue"), word = $(".lb-word");
 const HEAD = 0.72; // the screen line the trail's head rides, as on the home page
 
 // the two pictures and their places (image fractions, y down): the city is where the energy starts; the cards of the
@@ -37,7 +37,7 @@ const HEAD = 0.72; // the screen line the trail's head rides, as on the home pag
 const ZMAX = 2.6; // how close the camera lands before it pulls back over the whole scene
 const SETS = {
   wide: { on: "assets/img/scene/wide-on.webp", off: "assets/img/scene/wide-off.webp", near: "assets/img/scene/wide-near.webp", w: 2752, h: 1536, base: [0.5, 0.52],
-    src: [0.47, 0.555], horizon: 0.21, sun: [0.6, 0.213],
+    src: [0.47, 0.555], horizon: 0.21, sun: [0.6, 0.213], rim: [0.38728, 2.92359, 1.52285],
     // the tour: where each place is (u), how close the camera comes (z), the side its words open on (side: 1 the
     // right of the screen, -1 the left), its life (fx: 1 the panels' sweep, 2 the storage filling, 3 the energy
     // running into the city, 4 the data center's scan) on the ground it covers (O + a·A + b·B), and its ring on the
@@ -54,7 +54,7 @@ const SETS = {
         ["chg", [0.35501, 0.44206, 0.59484, 0.76758]], ["srv", [0.76017, 0.53711, 1, 0.86263]]],
     } },
   tall: { on: "assets/img/scene/tall-on.webp", off: "assets/img/scene/tall-off.webp", near: "assets/img/scene/tall-near.webp", w: 1536, h: 2752, base: [0.5, 0.5],
-    src: [0.55, 0.575], horizon: 0.255, sun: [0.826, 0.263],
+    src: [0.55, 0.575], horizon: 0.255, sun: [0.826, 0.263], rim: [0.38989, 2.6906, 4.37507],
     // a phone's picture has no data center: the fourth stop is the wind turbines on the hill (fx 5: the power running
     // out of them), for the power stations; the words open under the place
     tour: {
@@ -485,7 +485,66 @@ function measureTitle() {
   if (!set) return;
   const v = view(1, set.base), hy = ((set.horizon - v.cy) / v.sy + 0.5) * H;
   DROP = Math.min(0.24, Math.max(0, (titleBox.b + Math.max(24, H * 0.035) - hy) / H));
+  if (hero() === "word") layoutWord(v);
   stage.style.setProperty("--lb-drop", (DROP * H).toFixed(1) + "px");
+}
+
+// ---- the title behind the Earth (sketch only, ?hero=): the planet's edge in the picture is a circle (fitted to its rim
+// in the dark pictures: centre and radius as fractions of the picture's width and height), so the words can go behind
+// it. "sink": the title goes down behind the horizon with the first scroll, like the sun setting. "word" (Liav 25.10:
+// "כותרת גדולה בהטיה עם המילה TREENERGY שחלקה מוסתרת מאחורי הגלובוס"): the name, large and tilted, half behind the
+// Earth, rising out of it as the scene opens and going down behind it with the title. A mask cuts each at the rim
+const hero = () => (tourOn ? root.dataset.hero || "" : "");
+function rimOf(v) {
+  const [cx, cy, r] = set.rim, R = (r / v.sx) * W, [x, y] = screenOf(v, [cx, cy - (r * set.w) / set.h]);
+  return { x, y: y + R, R };
+}
+const rimY = (c, x) => c.y - Math.sqrt(Math.max(0, c.R * c.R - (x - c.x) ** 2));
+// the mask's circle in an element's own frame: its box's top-left at (l, t), turned by a (radians) about its middle
+function maskTo(el, c, l, t, w, h, a, feather) {
+  const dx = c.x - (l + w / 2), dy = c.y - (t + h / 2), co = Math.cos(a), si = Math.sin(a);
+  put(el, "--mx", (dx * co + dy * si + w / 2).toFixed(1) + "px");
+  put(el, "--my", (-dx * si + dy * co + h / 2).toFixed(1) + "px");
+  put(el, "--mr", c.R.toFixed(1) + "px"); put(el, "--mf", feather.toFixed(1) + "px");
+}
+// the word's size and place, at rest: across the dark beside the title on a wide screen and under it on a tall one,
+// tilted down towards the title so its far end comes out of the Earth and its near end stays deep in it; the picture
+// goes lower when the word needs the room under the title (the first flight takes it back, as it does DROP)
+const WD = { F: 0, w: 0, h: 0, x: 0, a: 0, dy: 0 };
+function layoutWord(v) {
+  word.style.fontSize = "100px";
+  const rw = word.offsetWidth / 100, rh = word.offsetHeight / 100, tall = set === SETS.tall;
+  const g = Math.max(16, W - titleBox.r + 12), span = tall ? W - 2 * g : Math.min(W * 0.6, 1180);
+  WD.F = span / rw; WD.w = span; WD.h = rh * WD.F; WD.a = ((tall ? 4 : 6) * Math.PI) / 180;
+  WD.x = tall ? W / 2 : g + span / 2; WD.dy = 0.06 * WD.F;
+  word.style.fontSize = WD.F.toFixed(1) + "px";
+  const [cx, cy, r] = set.rim, c = { x: ((cx - v.cx) / v.sx + 0.5) * W, R: (r / v.sx) * W };
+  c.y = ((cy - (r * set.w) / set.h - v.cy) / v.sy + 0.5) * H + DROP * H + c.R;
+  const yc = rimY(c, WD.x) + WD.dy, top = (x) => yc - WD.h / 2 + (x - WD.x) * Math.tan(WD.a);
+  const x0 = WD.x - span / 2, x1 = WD.x + span / 2, o = Math.max(x0, titleBox.l);
+  let need = 18 - top(x0);
+  if (o < Math.min(x1, titleBox.r)) need = Math.max(need, titleBox.b + 10 - top(o));
+  DROP = Math.min(0.42, DROP + Math.max(0, need) / H);
+}
+function heroTick(v, p, since) {
+  const mode = hero();
+  if (!mode) return false;
+  const c = rimOf(v), sk = smooth(0.002, 0.03, p);
+  // the title: down until its top is under the rim at its lower end
+  const l = h1.offsetLeft, t = h1.offsetTop, w = h1.offsetWidth, h = h1.offsetHeight;
+  const deep = Math.max(rimY(c, l), rimY(c, l + w)) + 8 - t, hs = sk * Math.max(0, deep);
+  put(h1, "--hs", hs.toFixed(1) + "px"); put(h1, "--ho", sk > 0.999 ? "0" : "1");
+  maskTo(h1, c, l, t + hs, w, h, 0, 5);
+  if (mode === "word" && WD.F) {
+    // it rises out of the Earth as the scene opens, and goes back down with the first scroll
+    const up = 1 - Math.pow(1 - smooth(0.9, 3.2, since), 3), out = Math.max(sk, 1 - up);
+    const yc = rimY(c, WD.x) + WD.dy + out * (WD.h + (WD.w / 2) * Math.sin(WD.a) + 12);
+    const lx = WD.x - WD.w / 2, ty = yc - WD.h / 2;
+    put(word, "transform", `translate(${lx.toFixed(1)}px,${ty.toFixed(1)}px) rotate(${WD.a.toFixed(4)}rad)`);
+    put(word, "opacity", out > 0.999 ? "0" : "1");
+    maskTo(word, c, lx, ty, WD.w, WD.h, WD.a, 0.08 * WD.F);
+  }
+  return true;
 }
 
 // where a point of the picture shows, with the flight applied (the shader's mapping, run forwards), in stage pixels
@@ -773,7 +832,7 @@ function frame(now) {
   gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.drawArrays(gl.TRIANGLES, 0, 3);
   put(cv, "opacity", "1");
 
-  put(h1, "--ho", clamp01(titleA).toFixed(3));
+  if (!heroTick(v, prog, since)) put(h1, "--ho", clamp01(titleA).toFixed(3));
   if (sub) put(sub, "--ho", clamp01(titleA).toFixed(3));
   if (cue) put(cue, "--co", ((1 - (tourOn ? smooth(0.002, 0.014, prog) : smooth(0.02, 0.1, prog))) * (reduce ? 1 : smooth(2.4, 3.2, since))).toFixed(3));
   placePins(v, pinA);
@@ -784,6 +843,8 @@ function frame(now) {
 try { ctx = setupGL(); } catch (e) { ctx = null; console.warn(e); }
 if (!ctx) root.classList.add("no-gl");
 tourOn = !reduce && !!ctx;
+if (!tourOn) root.removeAttribute("data-hero");
+else if (root.hasAttribute("data-hero-cmp")) import("./hero-compare.js").then((m) => m.mount());
 resize(); readScroll();
 // the tour takes the place of the domains section; without WebGL or motion the section stays, as on the home page
 if (!tourOn) dom = mountDom({ HEAD, reduce, stageH: () => H });
@@ -808,7 +869,7 @@ if (tourOn) {
   for (const a of arts) a.el.addEventListener("focusin", () => { if (!a.on) goStop(a.i); });
   if (lenis) lenis.on("scroll", () => { clearTimeout(idleT); idleT = setTimeout(settle, 220); });
 }
-const relayout = () => { Q.key = ""; secH = 0; resize(); readScroll(); measureTitle(); for (const p of pins) p.cw = 0; if (dom) dom.layout(); if (tourOn) measureStops(); if (trail) trail.layout(); };
+const relayout = () => { Q.key = ""; Q.tg = -1; secH = 0; resize(); readScroll(); measureTitle(); for (const p of pins) p.cw = 0; if (dom) dom.layout(); if (tourOn) measureStops(); if (trail) trail.layout(); };
 let rz = 0;
 addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(relayout, 120); });
 addEventListener("load", relayout);
