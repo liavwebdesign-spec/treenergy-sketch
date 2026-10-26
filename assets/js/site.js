@@ -809,7 +809,8 @@ function layoutFlow() {
   // below 1024 the process goes out by this same side just above: the thread starts only under where it left, so the
   // two are never on the screen at once (Liav 26.10: "שיהיה רק שובל אחד לאורך כל הגלילה")
   const po = wide() ? -Infinity : procRun.getBoundingClientRect().top + procOut - r.top + 12;
-  const y0 = Math.max(head - 280, po), y1 = Math.max(head - 10, y0 + 60), y2 = wall - 60, y3 = wall + 120, k = (sx - x) * 0.55;
+  // (it goes out a little under the voices, so its last stretch is still on the screen when the articles' thread comes in)
+  const y0 = Math.max(head - 280, po), y1 = Math.max(head - 10, y0 + 60), y2 = wall + 40, y3 = wall + 240, k = (sx - x) * 0.55;
   const segs = [["C", sx, y0, x + k, y0 + 30, x, y0 + (y1 - y0) * 0.4, x, y1], ["L", x, y1, x, y2], ["C", x, y2, x, y2 + (y3 - y2) * 0.6, x + k, y3 - 20, sx, y3]];
   if (!rl) segs.forEach((g) => { for (let i = 1; i < g.length; i += 2) g[i] = W - g[i]; });
   flowRibbon.setPath(segs, null, [0.8, 1, 0.8]);
@@ -878,7 +879,7 @@ function knTick() {
 const knPin = $(".kn-pin", kn), knSvg = $(".kn-trail", kn), knLineEl = $(".kn-line", kn), knCountEl = $(".kn-count", kn);
 const knRibbon = new Ribbon(knSvg, { ...THIN, wave: 420, seed: 9, dim: 0.5 });
 knRibbon.headK = 0.5;
-let knFa = 0, knFb = 1;
+let knFa = 0, knFb = 1, knFe = 0, knSA = 0;
 function layoutKnTrail() {
   kn.classList.toggle("has-trail", knOn);
   if (!knOn) { knRibbon.draw(0); return; }
@@ -913,14 +914,18 @@ function layoutKnTrail() {
   knRibbon.setPath(segs, null, [kIn, kIn, 1, 1]);
   knFa = knRibbon.nearest(rl ? xLand : W - xLand, yL);
   knFb = knRibbon.nearest(rl ? xE : W - xE, yL);
+  // it comes in as soon as its band is up on the screen (over the call bar under 1024), while the voices' thread is still
+  // leaving above: the head starts just past the edge, so no scroll is spent on the stretch out of sight
+  knFe = knRibbon.nearest(rl ? W + 60 : -60, yA);
+  knSA = -Math.max(0, mbarT - hair - 6 - yA);
 }
 function knTrailTick() {
   if (!knOn) return;
   const r = rectOf(kn), ih = innerHeight, run = knRun * KN_K, s = -r.top;
   if (r.top > ih || r.bottom < -ih * 0.4) return;
-  // in as the hold begins, along the line through it, out as it lets go
-  const s0 = -ih * 0.04, s1 = Math.max(s0 + 60, run * 0.15);
-  const f = s < s1 ? knFa * clamp01((s - s0) / (s1 - s0)) : s < run ? knFa + (knFb - knFa) * clamp01((s - s1) / Math.max(1, run - s1))
+  // in as its band comes up, along the line through the hold, out as it lets go
+  const s0 = knSA, s1 = Math.max(s0 + 60, run * 0.15);
+  const f = s < s0 ? 0 : s < s1 ? knFe + (knFa - knFe) * clamp01((s - s0) / (s1 - s0)) : s < run ? knFa + (knFb - knFa) * clamp01((s - s1) / Math.max(1, run - s1))
     : knFb + (1 - knFb) * clamp01((s - run) / (ih * 0.3));
   knRibbon.draw(f);
 }
