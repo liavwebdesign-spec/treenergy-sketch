@@ -1073,6 +1073,13 @@ html.lenis,html.lenis body{height:auto}
   .mbar-go{flex:1;background:var(--accent);color:var(--accent-ink)}
 }
 @media (max-width:767px){
+  /* (Liav 26.10: "השובל ירד ימינה ושמאלה... בין הנקודות השונות ולא בקו ישר") the steps take turns on the two sides:
+     the odd ones on the start rail, the even ones mirrored onto the end rail, and the current swings across in the
+     gaps between them (site.js layoutProc) */
+  .steps{row-gap:clamp(96px,14vh,128px)}
+  .step:nth-child(n){width:86%;justify-self:start}
+  .step:nth-child(even){justify-self:end;justify-items:end;text-align:end;padding-inline-start:0;padding-inline-end:var(--rail-pad)}
+  .step:nth-child(even) .step-node{inset-inline-start:auto;inset-inline-end:calc((var(--rail-pad) - var(--gutter)) / 2);margin-inline-start:0;margin-inline-end:-6px}
   .kn-track{--cw:min(76vw,340px)}
   .kn-say p{font-size:var(--fs-small)}
   .art-img{aspect-ratio:16/10}

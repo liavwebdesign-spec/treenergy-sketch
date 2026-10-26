@@ -170,6 +170,19 @@ html[data-hero="word"] .lb-word{display:block;position:absolute;z-index:3;left:0
   text-shadow:0 2px 40px rgba(var(--n0),.5);transform-origin:50% 50%;pointer-events:none;will-change:transform;
   -webkit-mask-image:radial-gradient(circle var(--mr) at var(--mx) var(--my),transparent calc(var(--mr) - 1px),#000 calc(var(--mr) + var(--mf,6px)));
   mask-image:radial-gradient(circle var(--mr) at var(--mx) var(--my),transparent calc(var(--mr) - 1px),#000 calc(var(--mr) + var(--mf,6px)))} /* qa-allow: physical, placed in screen pixels by scene.js */
+/* "title" (Liav 26.10: "הוא צריך להיות כולו שכבה מתחת לכדור הארץ ושלא יזוז בגלילה"; then: "שהחלק התחתון של הטקסטים
+   יהיה לגמרי מתחת לכדור ולא יראו אותו בכלל"): the title across the middle on arcs round the Earth's centre (scene.js
+   writes them), standing still; the mask cuts the foot of its letters clean at the rim. It comes in with the h1's own
+   entrance, without moving. The h1 stays for screen readers, unseen */
+html[data-hero="title"] .lb-h{opacity:0}
+.lb-tw{display:none}
+html[data-hero="title"] .lb-tw{display:block;position:absolute;z-index:3;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none;
+  font-family:var(--display);font-weight:400;letter-spacing:-.005em;fill:var(--ink);opacity:0;transition:opacity 1.4s var(--ease) .3s;
+  filter:drop-shadow(0 2px 22px rgba(var(--n0),.55));
+  -webkit-mask-image:radial-gradient(circle var(--mr) at var(--mx) var(--my),transparent calc(var(--mr) - 1px),#000 calc(var(--mr) + var(--mf,2px)));
+  mask-image:radial-gradient(circle var(--mr) at var(--mx) var(--my),transparent calc(var(--mr) - 1px),#000 calc(var(--mr) + var(--mf,2px)))} /* qa-allow: physical, placed in screen pixels by scene.js */
+html[data-hero="title"] .lb-h.is-in ~ .lb-tw{opacity:1}
+.lb-tw .g{fill:url(#lb-tw-g)}
 /* its switch keeps off the opening's words: in the bottom corner of the start side (the scroll cue holds the middle),
    and on phones at the foot of the opening's screen, under the second line, leaving with the opening */
 .hero-cmp{inset-inline:var(--gutter) auto;margin-inline:0}

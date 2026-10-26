@@ -1,7 +1,8 @@
 // Treenergy · the title behind the Earth compared (scene page, sketch only: it leaves with Liav's choice). ?hero= on the
 // address shows a small switch: the title as it is, the title going down behind the horizon with the first scroll, and
-// the name TREENERGY large and tilted half behind the Earth. The choice stays on the address, so a link opens on it
-const MODES = [["now", "כמו היום"], ["sink", "שקיעה"], ["word", "TREENERGY"]];
+// the name TREENERGY large and tilted half behind the Earth, and the title itself as a layer under the Earth, curved
+// with its rim and still on the screen. The choice stays on the address, so a link opens on it
+const MODES = [["now", "כמו היום"], ["sink", "שקיעה"], ["word", "TREENERGY"], ["title", "כותרת בעומק"]];
 
 export function mount() {
   const d = document.documentElement;

@@ -29,7 +29,7 @@ const root = document.documentElement;
 // __still: the visitor stopped motion in the accessibility panel (as in site.js)
 const reduce = !!window.__still || matchMedia("(prefers-reduced-motion: reduce)").matches;
 const fine = matchMedia("(hover:hover) and (pointer:fine)").matches;
-const sec = $(".lb"), stage = $(".lb-stage"), cv = $(".lb-scene"), h1 = $(".lb-h"), sub = $(".lb-sub"), pinsEl = $(".lb-pins"), cue = $(".lb-cue"), word = $(".lb-word");
+const sec = $(".lb"), stage = $(".lb-stage"), cv = $(".lb-scene"), h1 = $(".lb-h"), sub = $(".lb-sub"), pinsEl = $(".lb-pins"), cue = $(".lb-cue"), word = $(".lb-word"), tw = $(".lb-tw");
 const HEAD = 0.72; // the screen line the trail's head rides, as on the home page
 
 // the two pictures and their places (image fractions, y down): the city is where the energy starts; the cards of the
@@ -480,12 +480,16 @@ const titleBox = { l: 0, r: 0, t: 0, b: 0 };
 // the opening lowers the picture (DROP, a fraction of the screen) so its land starts under the title with a little
 // room between them (Idan 25.10: "שהכותרת לא יושבת על הכדור עצמו... שיהיה טיפה מרווח"); the first flight takes it back
 let DROP = 0;
-function measureTitle() {
+function boxTitle() {
   titleBox.l = h1.offsetLeft - 12; titleBox.r = h1.offsetLeft + h1.offsetWidth + 12; titleBox.t = h1.offsetTop; titleBox.b = h1.offsetTop + h1.offsetHeight + 8;
+}
+function measureTitle() {
+  boxTitle();
   if (!set) return;
   const v = view(1, set.base), hy = ((set.horizon - v.cy) / v.sy + 0.5) * H;
   DROP = Math.min(0.24, Math.max(0, (titleBox.b + Math.max(24, H * 0.035) - hy) / H));
   if (hero() === "word") layoutWord(v);
+  else if (hero() === "title") layoutTitle(v);
   stage.style.setProperty("--lb-drop", (DROP * H).toFixed(1) + "px");
 }
 
@@ -526,10 +530,74 @@ function layoutWord(v) {
   if (o < Math.min(x1, titleBox.r)) need = Math.max(need, titleBox.b + 10 - top(o));
   DROP = Math.min(0.42, DROP + Math.max(0, need) / H);
 }
+// "title" (Liav 26.10, marked on the screen: "הוא צריך להיות כולו שכבה מתחת לכדור הארץ ושלא יזוז בגלילה. הוא צריך
+// להיות מעוקל בעדינות בהתאם לעיקול של הכדור. 20% מהתחתית של האותיות צריך להיות מתחת לכדור"): the title across the
+// middle of the screen in one line (its two on a tall one), written on arcs round the Earth's centre so it bends with
+// the rim, what goes under the rim cut clean behind the planet. It is laid out once, at rest, and
+// stands still on the screen; only the cut follows the Earth, which rises over it as the tour flies in. The h1 stays
+// for screen readers, unseen
+const TL = { F: 0, sink: 0 };
+// (then: "תעלה את הטקסט קצת, שהחיתוך יהיה נקי אבל שכל המילים ייקראו. תצר מעט את האותיות כך שיהיו צרות וגבוהות
+// יותר. תגדיל מעט את הכותרת"): the baseline a little over the rim, so only the tail of the ן goes under (any deeper
+// and "כאן" reads "כאו", כ reads ר); the letters squeezed to 86% of their width and grown to fill a little more.
+// (then: "בוא נרד מעניין הכותרת בעומק ופשוט נשאיר את הכותרת כפי שהיא וקצת נעלה אותה למעלה וימינה כדי שזה לא ייראה כמו
+// טעות. שתישאר משיקה לעיקול של כדור הארץ"): nothing under the rim any more, the tail of the ן clear of it too, the line
+// still on its arc; on a wide screen its middle a little to the right, and higher on the screen
+const TL_SINK = -0.5, TL_NARROW = 0.86, TL_GROW = 1.04, TL_RIGHT = 0.06;
+const TL_LINES = [["העתיד של האנרגיה מתחיל ", "כאן"], ["העתיד של האנרגיה"], ["מתחיל ", "כאן"]];
+let tlCtx = null;
+// an arc of radius R round c, long enough for any line, its middle where it crosses x
+function arcD(c, R, x) {
+  const a = Math.asin(Math.max(-0.9, Math.min(0.9, (x - c.x) / R))), d = Math.min(1.2, W / R);
+  const at = (t) => (c.x + R * Math.sin(t)).toFixed(1) + " " + (c.y - R * Math.cos(t)).toFixed(1);
+  return "M" + at(a - d) + " A" + R.toFixed(1) + " " + R.toFixed(1) + " 0 0 1 " + at(a + d);
+}
+function layoutTitle(v) {
+  const tall = set === SETS.tall, lines = tall ? TL_LINES.slice(1) : TL_LINES.slice(0, 1);
+  // the letters' size from the longest line: across the middle of a wide screen, from gutter to gutter on a tall one
+  const k = tlCtx || (tlCtx = document.createElement("canvas").getContext("2d"));
+  k.font = "400 100px " + getComputedStyle(h1).fontFamily;
+  const w100 = Math.max(...lines.map((l) => k.measureText(l.join("")).width));
+  const body = k.measureText("המה").actualBoundingBoxAscent / 100, asc = Math.max(...lines.map((l) => k.measureText(l.join("")).actualBoundingBoxAscent)) / 100;
+  const span = tall ? W - 2 * Math.max(18, W * 0.05) : Math.min(W * 0.72, 1600);
+  const F = (TL.F = ((span * (tall ? 1 : TL_GROW)) / (w100 * TL_NARROW)) * 100), lh = 1.06 * F, sink = TL_SINK * body * F;
+  // before the letters or the screen are there, nothing to write yet (the next layout writes it)
+  if (!(F > 0 && F < 1e4 && body > 0)) { TL.F = 0; return; }
+  TL.sink = sink;
+  // the rim at rest; the picture goes lower when the title's top would come too near the top of the screen
+  const [cx, cy, r] = set.rim, c = { x: ((cx - v.cx) / v.sx + 0.5) * W, R: (r / v.sx) * W };
+  const y0 = ((cy - (r * set.w) / set.h - v.cy) / v.sy + 0.5) * H + c.R, n = lines.length, x = W / 2 + (tall ? 0 : TL_RIGHT * W);
+  if (!(c.R > 0 && Number.isFinite(c.x) && Number.isFinite(y0))) { TL.F = 0; return; }
+  const Rb = (i) => c.R - sink + (n - 1 - i) * lh;
+  const topAt = (yc) => yc - Math.sqrt(Math.max(0, Rb(0) ** 2 - (x - c.x) ** 2)) - asc * F;
+  DROP = Math.min(0.42, Math.max(0, (Math.max(tall ? 64 : 88, (tall ? 0.13 : 0.12) * H) - topAt(y0)) / H));
+  c.y = y0 + DROP * H;
+  tw.style.fontSize = F.toFixed(1) + "px";
+  const tps = tw.querySelectorAll("textPath"), paths = tw.querySelectorAll("path");
+  tps.forEach((tp, i) => {
+    const l = lines[i];
+    tp.textContent = l ? l[0] : "";
+    if (l) { tp.setAttribute("textLength", ((k.measureText(l.join("")).width * F * TL_NARROW) / 100).toFixed(1)); tp.setAttribute("lengthAdjust", "spacingAndGlyphs"); } else tp.removeAttribute("textLength");
+    if (l && l[1]) { const g = document.createElementNS("http://www.w3.org/2000/svg", "tspan"); g.setAttribute("class", "g"); g.textContent = l[1]; tp.append(g); }
+    paths[i].setAttribute("d", l ? arcD(c, Rb(i), x) : "M0 0");
+  });
+  // the coloured word's light runs across the word itself, as on the h1
+  const g = tw.querySelector(".g"), gr = tw.querySelector("linearGradient");
+  if (g) { const b = g.getBBox(); gr.setAttribute("x1", b.x.toFixed(1)); gr.setAttribute("x2", (b.x + b.width).toFixed(1)); gr.setAttribute("y1", "0"); gr.setAttribute("y2", "0"); }
+  // the title's box, for the labels to keep off
+  const hw = (span * (tall ? 1 : TL_GROW)) / 2;
+  titleBox.l = x - hw - 12; titleBox.r = x + hw + 12; titleBox.t = topAt(c.y); titleBox.b = rimY(c, x) + 8;
+}
+// each frame only the cut moves, with the Earth as it is now (the slow drift at rest, the flight)
+function titleTick(c) {
+  if (!(Number.isFinite(c.x) && Number.isFinite(c.y) && c.R > 0)) return;
+  maskTo(tw, c, 0, 0, W, H, 0, Math.max(1, 0.008 * TL.F));
+}
 function heroTick(v, p, since) {
   const mode = hero();
   if (!mode) return false;
   const c = rimOf(v), sk = smooth(0.002, 0.03, p);
+  if (mode === "title") { if (TL.F) titleTick(c); return true; }
   // the title: down until its top is under the rim at its lower end
   const l = h1.offsetLeft, t = h1.offsetTop, w = h1.offsetWidth, h = h1.offsetHeight;
   const deep = Math.max(rimY(c, l), rimY(c, l + w)) + 8 - t, hs = sk * Math.max(0, deep);

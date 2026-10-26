@@ -731,7 +731,7 @@ if (reduce) { rollTo(1); cells.forEach((_, i) => charge(i, 1)); battery.classLis
 const proc = $("#process"), procRun = $(".proc-run", proc), procSvg = $(".proc-trail", proc);
 const steps = $$(".step", proc), stepNodes = steps.map((s) => $(".step-node", s));
 const procRibbon = new Ribbon(procSvg, { ...BAND, amp: trailAmp, wave: 420, taperStart: 0, taperEnd: 0, sparks: 4, seed: 5 });
-let stepF = [], procTop = 0, procY0 = 0;
+let stepF = [], procTop = 0, procY0 = 0, procOut = 0;
 function layoutProc() {
   const r = procRun.getBoundingClientRect(), W = r.width, H = r.height;
   procSvg.setAttribute("viewBox", `0 0 ${W} ${H}`);
@@ -756,17 +756,30 @@ function layoutProc() {
     to(inX, mid);
   } else {
     // in above the label and onto the rail with a round corner that is already upright before the label starts, down
-    // beside the words, and a round corner off the left in the gap under the last step, clear of the next heading
-    const x0 = P[0].x, R = 52, k = R * 0.5523, last = steps[steps.length - 1].getBoundingClientRect().bottom - r.top;
-    const yS = $(".kick", proc).getBoundingClientRect().top - r.top - R - 36;
+    // beside the words, and a round corner off the start side in the gap under the last step, clear of the next
+    // heading: the projects' thread comes back in by that side just under it (layoutFlow), so there is one trail.
+    // Phones: the steps take turns on the two rails, and in each gap the current swings across to the next one,
+    // upright as it leaves one rail and as it reaches the other.
+    const x0 = P[0].x, R = 52, k = R * 0.5523, sb = steps.map((s) => { const b = s.getBoundingClientRect(); return { t: b.top - r.top, b: b.bottom - r.top }; });
+    const last = sb[sb.length - 1].b, yS = $(".kick", proc).getBoundingClientRect().top - r.top - R - 36;
     const nh = proc.nextElementSibling && $("h2", proc.nextElementSibling);
     const yE = nh ? (last + nh.getBoundingClientRect().top - r.top) / 2 : last + R + 40, yl = Math.max(last + 8, yE - R);
     procTop = yS;
     segs.push(["L", inX, yS, x0 - R, yS]);
     segs.push(["C", x0 - R, yS, x0 - R + k, yS, x0, yS + R - k, x0, yS + R]);
-    segs.push(["L", x0, yS + R, x0, yl]);
-    segs.push(["C", x0, yl, x0, yl + k, x0 - R + k, yl + R, x0 - R, yl + R]);
-    segs.push(["L", x0 - R, yl + R, inX, yl + R]);
+    let x = x0;
+    if (innerWidth < 768) P.forEach((p, i) => {
+      if (!i) return;
+      const yA = sb[i - 1].b + 10, yB = sb[i].t - 10, d = (yB - yA) * 0.6;
+      segs.push(["L", x, i > 1 ? sb[i - 1].t - 10 : yS + R, x, yA]);
+      segs.push(["C", x, yA, x, yA + d, p.x, yB - d, p.x, yB]);
+      x = p.x;
+    });
+    segs.push(["L", x, innerWidth < 768 && P.length > 1 ? sb[sb.length - 1].t - 10 : yS + R, x, yl]);
+    const xo = sw - r.left + off;
+    segs.push(["C", x, yl, x, yl + k, x + R - k, yl + R, x + R, yl + R]);
+    segs.push(["L", x + R, yl + R, xo, yl + R]);
+    procOut = yl + R;
   }
   if (!rl) segs.forEach((g) => { for (let i = 1; i < g.length; i += 2) g[i] = W - g[i]; });
   procRibbon.setPath(segs);
@@ -895,7 +908,10 @@ function layoutFlow() {
   const x = startRail(W, worksSec), sx = doc.clientWidth - r.left + Math.max(120, trailAmp() * 6), rl = getComputedStyle(worksSec).direction === "rtl";
   const head = $(".works-head", worksSec).getBoundingClientRect().top - r.top, wall = sayWall.getBoundingClientRect().bottom - r.top;
   // a long soft swing in (sloping down from the edge, upright on the rail just above the heading), and the same swing out
-  const y0 = head - 280, y1 = head - 10, y2 = wall - 60, y3 = wall + 120, k = (sx - x) * 0.55;
+  // below 1024 the process goes out by this same side just above: the thread starts only under where it left, so the
+  // two are never on the screen at once (Liav 26.10: "שיהיה רק שובל אחד לאורך כל הגלילה")
+  const po = wide() ? -Infinity : procRun.getBoundingClientRect().top + procOut - r.top + 12;
+  const y0 = Math.max(head - 280, po), y1 = Math.max(head - 10, y0 + 60), y2 = wall - 60, y3 = wall + 120, k = (sx - x) * 0.55;
   const segs = [["C", sx, y0, x + k, y0 + 30, x, y0 + (y1 - y0) * 0.4, x, y1], ["L", x, y1, x, y2], ["C", x, y2, x, y2 + (y3 - y2) * 0.6, x + k, y3 - 20, sx, y3]];
   if (!rl) segs.forEach((g) => { for (let i = 1; i < g.length; i += 2) g[i] = W - g[i]; });
   flowRibbon.setPath(segs, null, [0.8, 1, 0.8]);
