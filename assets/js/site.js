@@ -11,9 +11,11 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const reduce = !!window.__still || matchMedia("(prefers-reduced-motion: reduce)").matches;  // __still: the visitor stopped motion in the accessibility panel
 const clamp01 = (x) => Math.min(1, Math.max(0, x));
 const smooth = (a, b, x) => { const t = clamp01((x - a) / (b - a)); return t * t * (3 - 2 * t); };
-const gsap = window.gsap, ST = window.ScrollTrigger, Split = window.SplitText;
-const hasGsap = !!(gsap && ST);
-if (hasGsap) gsap.registerPlugin(ST, ...(Split ? [Split] : []));
+// GSAP's core is Lenis's clock and SplitText cuts the intro into words; the scroll-linked pieces are this script's own
+// (scrub() below; round 7 dropped ScrollTrigger for speed)
+const gsap = window.gsap, Split = window.SplitText;
+const hasGsap = !!gsap;
+if (hasGsap && Split) gsap.registerPlugin(Split);
 const doc = document.documentElement;
 // the scene page: the tour takes the place of the globe, the opening and the domains (scene.js runs them)
 const scenePage = !!$(".lb");
@@ -167,7 +169,7 @@ function axPaint() {
 function axSave(relay) {
   try { localStorage.setItem(AX_KEY, JSON.stringify(axSaved)); } catch (e) {}
   axPaint();
-  if (relay) requestAnimationFrame(() => { if (hasGsap) ST.refresh(); else relayout(); });
+  if (relay) requestAnimationFrame(relayout);
 }
 function setAx(open, focusTo) {
   if (open === axOpen) return; axOpen = open;
@@ -204,6 +206,13 @@ axPaint();
 
 /* ---------- reveal: the opening ---------- */
 function inView(el, f, at = 0.9) {
+  // an observer where there is one: it answers after the frame is drawn, so nothing reads the page on the scroll
+  // (round 7, for speed: the scroll handler below measured every waiting group on every scroll)
+  if ("IntersectionObserver" in window) {
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { io.disconnect(); f(); } }, { rootMargin: `0px 0px ${(-(1 - at) * 100).toFixed(1)}% 0px` });
+    io.observe(el);
+    return;
+  }
   let ro;
   function chk() { const r = el.getBoundingClientRect(); if (r.top < innerHeight * at && r.bottom > 0) { off(); f(); } }
   function off() { removeEventListener("scroll", chk); removeEventListener("resize", chk); if (ro) ro.disconnect(); }
@@ -228,7 +237,7 @@ if (hasGsap && !reduce && window.Lenis) {
   lenis = new window.Lenis({ autoRaf: false, lerp: scenePage && innerWidth >= 1024 ? 0.085 : 0.12, anchors: { offset: -72 } });
   window.__lenis = lenis;
   // the scroll's speed makes the night flow
-  lenis.on("scroll", (e) => { ST.update(); if (sky) sky.scroll(e.scroll, e.velocity * 60); });
+  lenis.on("scroll", (e) => { if (sky) sky.scroll(e.scroll, e.velocity * 60); });
   gsap.ticker.add((t) => lenis.raf(t * 1000));
   gsap.ticker.lagSmoothing(0);
   doc.classList.add("gsap-live");
@@ -443,16 +452,36 @@ function setJourney(p) {
     stage.style.setProperty("--scrim", (1 - smooth(0.05, 0.4, p)).toFixed(3));
   }
 }
-if (!journey) {
-  // the scene page: no journey
-} else if (hasGsap) {
-  ST.create({ trigger: journey, start: "top top", end: "bottom bottom", onUpdate: (s) => setJourney(s.progress), onRefresh: (s) => setJourney(s.progress) });
-} else {
-  let top = 0, span = 1;
-  const measure = () => { const r = journey.getBoundingClientRect(); top = r.top + scrollY; span = Math.max(1, r.height - innerHeight); };
-  measure(); addEventListener("resize", measure);
-  addEventListener("scroll", () => setJourney(clamp01((scrollY - top) / span)), { passive: true });
+/* ---------- scroll-linked spans ---------- */
+// A span runs 0..1 between two scroll positions taken from its element (like a scroll trigger's start and end). They
+// are measured in relayout() and written in tick()'s write phase, so the page is never read after something on it was
+// written in the same frame (round 7: ScrollTrigger did that on every scroll, and it was the frame's biggest cost)
+const spans = [];
+function scrub(el, start, end, set) { spans.push({ el, start, end, set, a: 0, b: 1, p: -1 }); }
+function measureSpans() {
+  const ih = innerHeight, y = scrollY;
+  for (const s of spans) {
+    const r = s.el.getBoundingClientRect(), t = r.top + y, b = r.bottom + y;
+    s.a = s.start(t, b, ih); s.b = Math.max(s.a + 1, s.end(t, b, ih)); s.p = -1;
+  }
 }
+function spansTick(y) {
+  for (const s of spans) { const p = clamp01((y - s.a) / (s.b - s.a)); if (p !== s.p) { s.p = p; s.set(p); } }
+}
+// Where a section sits on the page, measured once and then read off the scroll, so the frame's section ticks don't
+// measure the page between each other's writes (round 7, for speed). Measured afresh after every relayout() and
+// whenever the page changes size (a picture or a font coming in). The scroll is the one tick() read first: reading it
+// again after a write would lay the page out once more
+const spots = new Map();
+let frameY = 0;
+function rectOf(el) {
+  let s = spots.get(el);
+  if (!s) { const r = el.getBoundingClientRect(); s = { t: r.top + frameY, h: r.height }; spots.set(el, s); }
+  return { top: s.t - frameY, bottom: s.t - frameY + s.h, height: s.h };
+}
+if (window.ResizeObserver) new ResizeObserver(() => spots.clear()).observe(document.body);
+// the scene page has no journey; the globe's runs from the stage's top to its foot
+if (journey) scrub(journey, (t) => t, (t, b, ih) => b - ih, setJourney);
 
 function webglOK() {
   try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch (e) { return false; }
@@ -482,7 +511,8 @@ function initIntro() {
     const k = p * (n + 6) - 3;
     words.forEach((w, i) => w.style.setProperty("--wo", (0.16 + 0.84 * clamp01(k - i)).toFixed(3)));
   };
-  ST.create({ trigger: say, start: "top 82%", end: "bottom 42%", onUpdate: (s) => paint(s.progress), onRefresh: (s) => paint(s.progress) });
+  // from its top at 82% of the screen to its foot at 42%
+  scrub(say, (t, b, ih) => t - 0.82 * ih, (t, b, ih) => b - 0.42 * ih, paint);
 }
 
 /* ---------- domains: the trail draws each domain's sign as it passes through it ---------- */
@@ -592,7 +622,7 @@ function wideOut(r, W, amp, from, xEnd) {
 }
 function domTick() {
   if (!domOn) return;
-  const r = dom.getBoundingClientRect();
+  const r = rectOf(dom);
   // (on phones the way out runs on past the section, to where the reasons' trail comes in)
   if (r.top > innerHeight * 1.4 || r.top + Math.max(r.height, domFoot) < -innerHeight * 0.2) return;
   if (reduce) return;
@@ -745,7 +775,7 @@ function layoutProc() {
 }
 function procTick() {
   if (reduce) return;
-  const r = procRun.getBoundingClientRect(), ih = innerHeight;
+  const r = rectOf(procRun), ih = innerHeight;
   if (r.top > ih * 1.4 || r.bottom < -ih * 0.4) return;
   let f;
   if (wide()) {
@@ -825,11 +855,11 @@ if (reduce) works.forEach((w) => w.style.setProperty("--x", 1));
 const says = $(".says"), sayWall = $(".say-wall", says), sayCols = $$(".say-col", says);
 function saysTick() {
   if (reduce) return;
-  const r = sayWall.getBoundingClientRect(), ih = innerHeight;
+  const r = rectOf(sayWall), ih = innerHeight;
   if (r.bottom < -ih * 0.2 || r.top > ih * 1.2) return;
   const p = clamp01((ih - r.top) / (ih + r.height)), H = r.height;
   sayCols.forEach((col) => {
-    const sp = +col.dataset.speed, run = Math.max(0, col.scrollHeight - H), q = clamp01(0.5 + (p - 0.5) * Math.abs(sp) * 1.2);
+    const sp = +col.dataset.speed, run = Math.max(0, (col._sh ??= col.scrollHeight) - H), q = clamp01(0.5 + (p - 0.5) * Math.abs(sp) * 1.2);
     col.style.setProperty("--sy", (-(sp > 0 ? q : 1 - q) * run).toFixed(1) + "px");
   });
 }
@@ -873,7 +903,7 @@ function layoutFlow() {
 }
 function flowTick() {
   if (reduce) return;
-  const r = flowSvg.getBoundingClientRect(), ih = innerHeight;
+  const r = rectOf(flowSvg), ih = innerHeight;
   if (r.top > ih * 1.4 || r.top + flowEnd < -ih * 0.4) return;
   flowRibbon.draw(flowRibbon.fracAtY(ih * HEAD - r.top));
 }
@@ -884,6 +914,14 @@ function flowTick() {
 // middle to the last one's; the article under it comes up a size and out of the night, and the counter and the line
 // follow it. Nothing moves unless the visitor scrolls. Without motion the strip is left to scroll sideways by hand.
 const kn = $("#knowledge"), knView = $(".kn-view", kn), knTrack = $(".kn-track", kn), knArts = $$(".art", knTrack), knCount = $(".kn-count b", kn);
+// The strip's pictures are lazy, so they don't compete with the opening; but the strip slides them in from the side,
+// where the browser's own lazy loading would ask too late. They are asked for once the page has loaded, or as soon as
+// the strip comes within two screens, whichever is first (round 7)
+const knLate = $$("img[data-early]", knTrack);
+const knIO = knLate.length && "IntersectionObserver" in window ? new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) knFetch(); }, { rootMargin: "200% 0px" }) : null;
+function knFetch() { knLate.forEach((im) => { im.loading = "eager"; }); knLate.length = 0; if (knIO) knIO.disconnect(); }
+if (knIO) knIO.observe(kn); else knFetch();
+addEventListener("load", () => (window.requestIdleCallback || setTimeout)(knFetch, { timeout: 1500 }));
 const KN_K = 0.92;  // scroll per pixel of strip: under 1 so the pinned stretches stay under 30% of the page (round 5, without the calculator the page got shorter)
 let knOn = false, knRun = 0, knRtl = true, knC = [], knStep = 1, knI = -1;
 function layoutKn() {
@@ -896,14 +934,14 @@ function layoutKn() {
   knC = knArts.map((a) => a.offsetLeft + a.offsetWidth / 2);
   knStep = knArts.length > 1 ? Math.abs(knC[1] - knC[0]) : 1;
   const h = Math.round(innerHeight + knRun * KN_K + (parseFloat(getComputedStyle(kn).paddingBottom) || 0)) + "px";
-  // a new height moves everything under it, so the scroll triggers below are measured again (once: the next pass
+  // a new height moves everything under it, so the page is measured again (once: the next pass
   // finds the same height)
-  if (kn.style.height !== h) { kn.style.height = h; if (hasGsap) requestAnimationFrame(() => ST.refresh()); }
+  if (kn.style.height !== h) { kn.style.height = h; requestAnimationFrame(relayout); }
   knI = -1;
 }
 function knTick() {
   if (!knOn) return;
-  const r = kn.getBoundingClientRect(), ih = innerHeight;
+  const r = rectOf(kn), ih = innerHeight;
   if (r.top > ih || r.bottom < 0) return;
   const p = knRun ? clamp01(-r.top / (knRun * KN_K)) : 0, x = p * knRun;
   knTrack.style.setProperty("--kx", (knRtl ? x : -x).toFixed(1) + "px");
@@ -964,7 +1002,7 @@ function layoutKnTrail() {
 }
 function knTrailTick() {
   if (!knOn) return;
-  const r = kn.getBoundingClientRect(), ih = innerHeight, run = knRun * KN_K, s = -r.top;
+  const r = rectOf(kn), ih = innerHeight, run = knRun * KN_K, s = -r.top;
   if (r.top > ih || r.bottom < -ih * 0.4) return;
   // in as the hold begins, along the line through it, out as it lets go
   const s0 = -ih * 0.04, s1 = Math.max(s0 + 60, run * 0.15);
@@ -994,11 +1032,11 @@ function layoutClose() {
 }
 function closeTick() {
   if (reduce) return;
-  const r = closeSec.getBoundingClientRect(), ih = innerHeight;
+  const r = rectOf(closeSec), ih = innerHeight;
   if (r.top > ih * 1.2 || r.bottom < -ih * 0.2) return;
   const f = closeRibbon.fracAtY(ih * 0.7 - r.top);
   closeRibbon.draw(f);
-  plug.classList.toggle("is-lit", f > 0.985);
+  if (plug.classList.contains("is-lit") !== f > 0.985) { plug.classList.toggle("is-lit", f > 0.985); arcRun(); }
 }
 
 /* ---------- the footer and the phone bar ---------- */
@@ -1008,7 +1046,7 @@ inView(ft, () => ft.classList.add("is-in"), 0.95);
 // the footer is built by the scroll: --fp runs from 0 as it comes up the screen to 1 at the end of the page
 function ftTick() {
   if (reduce) return;
-  const r = ft.getBoundingClientRect(), ih = innerHeight;
+  const r = rectOf(ft), ih = innerHeight;
   if (r.top > ih) { if (ft._p !== "0") { ft._p = "0"; ft.style.setProperty("--fp", 0); } return; }
   const p = clamp01((ih - r.top) / Math.max(1, Math.min(r.height, ih * 0.9))).toFixed(3);
   if (ft._p !== p) { ft._p = p; ft.style.setProperty("--fp", p); }
@@ -1058,6 +1096,28 @@ const nearMap = new Map();
 const nearIO = "IntersectionObserver" in window ? new IntersectionObserver((es) => es.forEach((e) => nearMap.set(e.target, e.isIntersecting)), { rootMargin: "200% 0px" }) : null;
 const near = (...els) => !nearIO || els.some((el) => el && nearMap.get(el) !== false);
 if (nearIO) [dom, whySec, procRun, worksSec, sayWall, kn, closeSec, ft, ...drifts.map((d) => d.el)].forEach((el) => el && nearIO.observe(el));
+
+/* ---------- endless loops rest out of sight (round 7, for speed) ---------- */
+// The star round the plug, the horizon's sweep and glow, the neon's hum and the floating machines loop for ever, and
+// they cost a repaint every frame even off screen. While their section is out of sight it is marked .is-far and they
+// hold still (site.css); on screen nothing changes. The arc's moving noise round the plug (an SVG filter run by SMIL,
+// the costliest of them) is paused too while the section is away or the plug is dark (after its fade-out)
+const fx = $(".fx-defs"), canPause = !!(fx && fx.pauseAnimations);
+let arcFar = true, arcT = 0;
+function arcRun() {
+  if (!canPause) return;
+  clearTimeout(arcT);
+  if (arcFar) fx.pauseAnimations();
+  else if (plug.classList.contains("is-lit")) fx.unpauseAnimations();
+  else arcT = setTimeout(() => fx.pauseAnimations(), 1000);
+}
+const farIO = "IntersectionObserver" in window ? new IntersectionObserver((es) => es.forEach((e) => {
+  e.target.classList.toggle("is-far", !e.isIntersecting);
+  if (e.target === closeSec) { arcFar = !e.isIntersecting; arcRun(); }
+}), { rootMargin: "25% 0px" }) : null;
+if (farIO) [domOn ? dom : null, whySec, procRun, closeSec, ft].forEach((el) => el && farIO.observe(el));
+else arcFar = false;
+arcRun();
 // The page is read first (the scroll, the drifting headings, the phone bar's marks), then each section reads and
 // writes its own, and the header and the headings are written last. With Lenis the frame runs from its scroll, right
 // after it has moved the page and before the scene's own frame writes anything (scene.js), so those reads find the
@@ -1065,7 +1125,7 @@ if (nearIO) [dom, whySec, procRun, worksSec, sayWall, kn, closeSec, ft, ...drift
 let ticking = false;
 function tick() {
   ticking = false;
-  const y = scrollY, bar = mbarRead();
+  const y = frameY = scrollY, bar = mbarRead();
   driftRead();
   if (near(dom)) domTick();
   if (near(whySec)) whyTick();
@@ -1076,12 +1136,14 @@ function tick() {
   if (near(kn)) { knTick(); knTrailTick(); }
   if (near(closeSec)) closeTick();
   if (near(ft)) ftTick();
+  spansTick(y);
   driftWrite(); mbarSet(bar); headerTick(y);
 }
 if (lenis) lenis.on("scroll", tick);
 else addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(tick); } }, { passive: true });
 
 function relayout() {
+  spots.clear(); sayCols.forEach((c) => { c._sh = undefined; });
   layoutHero();
   layoutKn();
   measureStations();
@@ -1092,6 +1154,7 @@ function relayout() {
   layoutWorks();
   layoutFlow();
   layoutKnTrail();
+  measureSpans();
   if (reduce) { if (domRibbon) domRibbon.draw(1); whyRibbon.draw(1); procRibbon.draw(1); flowRibbon.draw(1); closeRibbon.draw(1); steps.forEach((s) => s.classList.add("on")); plug.classList.add("is-lit"); }
   if (globe) { globe.resize(); if (topTitle()) fitTop(); }
   tick();
@@ -1099,16 +1162,15 @@ function relayout() {
 }
 let rz = 0;
 addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(relayout, 120); });
-if (hasGsap) ST.addEventListener("refresh", relayout);
 relayout();
 
 // the split and the measures need the real fonts; wait for them (at most 1.5s)
 Promise.race([document.fonts ? document.fonts.ready : Promise.resolve(), new Promise((r) => setTimeout(r, 1500))]).then(() => {
   initIntro();
-  if (hasGsap) ST.refresh(); else relayout();
+  relayout();
 });
 addEventListener("load", () => {
-  if (hasGsap) ST.refresh(); else relayout();
+  relayout();
   // back from a "stop motion" reload: the same place on the page, the panel open on the same switch
   let back = null;
   try { back = JSON.parse(sessionStorage.getItem("tr-ax-back") || "null"); sessionStorage.removeItem("tr-ax-back"); } catch (e) {}

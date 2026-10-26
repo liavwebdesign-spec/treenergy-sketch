@@ -28,18 +28,17 @@
   (function (d) { var h = new URLSearchParams(location.search).get("hero"); if (h === null) return;
     d.setAttribute("data-hero-cmp", ""); if (h === "sink" || h === "word") d.setAttribute("data-hero", h); })(document.documentElement);
 </script>
-<link rel="stylesheet" href="assets/css/site.css?v=r7">
-<link rel="stylesheet" href="assets/css/scene.css?v=r7">
+<link rel="stylesheet" href="assets/css/site.css?v=r8">
+<link rel="stylesheet" href="assets/css/scene.css?v=r8">
 <link rel="preload" href="assets/img/scene/wide-on.webp" as="image" media="(min-aspect-ratio:9/10)">
 <link rel="preload" href="assets/img/scene/tall-on.webp" as="image" media="(max-aspect-ratio:9/10)">
 <!-- the page's own files carry the round (?v=), so a visitor never gets this round's code with pieces of the last one from the cache -->
-<script type="importmap">{"imports":{"three":"./vendor/three/three.module.min.js","./assets/js/ribbon.js":"./assets/js/ribbon.js?v=r7","./assets/js/sky.js":"./assets/js/sky.js?v=r7","./assets/js/scene-dom.js":"./assets/js/scene-dom.js?v=r7","./assets/js/scene-marks.js":"./assets/js/scene-marks.js?v=r7","./assets/js/scene-trail.js":"./assets/js/scene-trail.js?v=r7","./assets/js/globe.js":"./assets/js/globe.js?v=r7","./assets/js/menu-dots.js":"./assets/js/menu-dots.js?v=r7","./assets/js/bg-compare.js":"./assets/js/bg-compare.js?v=r7","./assets/js/hero-compare.js":"./assets/js/hero-compare.js?v=r7"}}</script>
+<script type="importmap">{"imports":{"three":"./vendor/three/three.module.min.js","./assets/js/ribbon.js":"./assets/js/ribbon.js?v=r8","./assets/js/sky.js":"./assets/js/sky.js?v=r8","./assets/js/scene-dom.js":"./assets/js/scene-dom.js?v=r8","./assets/js/scene-marks.js":"./assets/js/scene-marks.js?v=r8","./assets/js/scene-trail.js":"./assets/js/scene-trail.js?v=r8","./assets/js/globe.js":"./assets/js/globe.js?v=r8","./assets/js/menu-dots.js":"./assets/js/menu-dots.js?v=r8","./assets/js/bg-compare.js":"./assets/js/bg-compare.js?v=r8","./assets/js/hero-compare.js":"./assets/js/hero-compare.js?v=r8"}}</script>
 <script defer src="vendor/gsap/gsap.min.js"></script>
-<script defer src="vendor/gsap/ScrollTrigger.min.js"></script>
 <script defer src="vendor/gsap/SplitText.min.js"></script>
 <script defer src="vendor/lenis/lenis.min.js"></script>
-<script type="module" src="assets/js/site.js?v=r7"></script>
-<script type="module" src="assets/js/scene.js?v=r7"></script>
+<script type="module" src="assets/js/site.js?v=r8"></script>
+<script type="module" src="assets/js/scene.js?v=r8"></script>
 </head>
 <body>
 <!-- the living night: one field behind the whole page -->
@@ -107,7 +106,8 @@
   <div class="lb-stage">
     <!-- the scene: the picture with the network off and on, lit live -->
     <canvas class="lb-scene" aria-hidden="true"></canvas>
-    <img class="lb-still" src="assets/img/scene/wide-on.webp" alt="" aria-hidden="true">
+    <img class="lb-still" alt="" aria-hidden="true">
+    <script>/* the still holds the preloaded picture of this screen's shape (tall under 9:10, as scene.js picks), so the scene finds it in memory (round 7) */document.querySelector(".lb-still").src = "assets/img/scene/" + (innerWidth / innerHeight < 0.9 ? "tall" : "wide") + "-on.webp";</script>
     <!-- the name behind the Earth (sketch only, ?hero=word): scene.js places it and cuts it at the planet's edge -->
     <p class="lb-word" aria-hidden="true">TREENERGY</p>
     <h1 id="lb-h" class="lb-h"><span>העתיד של האנרגיה</span><span>מתחיל <span class="gword">כאן</span></span></h1>
@@ -374,27 +374,27 @@
     <div class="kn-view">
       <div class="kn-track">
         <a class="art" href="#knowledge">
-          <figure class="art-img"><img src="assets/img/kn-1-1200.webp" alt="" loading="eager" fetchpriority="low" decoding="async" style="object-position:50% 50%"></figure>
+          <figure class="art-img"><img src="assets/img/kn-1-1200.webp" alt="" loading="lazy" fetchpriority="low" data-early decoding="async" style="object-position:50% 50%"></figure>
           <span class="art-t-wrap"><span class="art-t">איך לבחור מערכת סולארית לבית פרטי</span><span class="art-d">מדריך מעשי למי שיש גג ורוצה להתחיל לחסוך, שלב אחר שלב.</span><span class="art-go">לקריאה<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></span></span>
         </a>
         <a class="art" href="#knowledge">
-          <figure class="art-img"><img src="assets/img/dom-solar-1200.webp" alt="" loading="eager" fetchpriority="low" decoding="async" style="object-position:30% 60%"></figure>
+          <figure class="art-img"><img src="assets/img/dom-solar-1200.webp" alt="" loading="lazy" fetchpriority="low" data-early decoding="async" style="object-position:30% 60%"></figure>
           <span class="art-t-wrap"><span class="art-t">כמה עולה מערכת סולארית לעסק, ומתי היא מחזירה את עצמה</span><span class="art-d">על מה משלמים, ואיך מחשבים תוך כמה שנים המערכת מחזירה את ההשקעה.</span><span class="art-go">לקריאה<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></span></span>
         </a>
         <a class="art" href="#knowledge">
-          <figure class="art-img"><img src="assets/img/dom-storage-1200.webp" alt="" loading="eager" fetchpriority="low" decoding="async" style="object-position:50% 50%"></figure>
+          <figure class="art-img"><img src="assets/img/dom-storage-1200.webp" alt="" loading="lazy" fetchpriority="low" data-early decoding="async" style="object-position:50% 50%"></figure>
           <span class="art-t-wrap"><span class="art-t">מתי משתלם להוסיף אגירה למערכת סולארית קיימת</span><span class="art-d">מה מרוויחים מסוללה לצד מערכת שכבר עובדת, ובאילו מקרים זה לא שווה את ההשקעה.</span><span class="art-go">לקריאה<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></span></span>
         </a>
         <a class="art" href="#knowledge">
-          <figure class="art-img"><img src="assets/img/dom-charge-1200.webp" alt="" loading="eager" fetchpriority="low" decoding="async" style="object-position:50% 40%"></figure>
+          <figure class="art-img"><img src="assets/img/dom-charge-1200.webp" alt="" loading="lazy" fetchpriority="low" data-early decoding="async" style="object-position:50% 40%"></figure>
           <span class="art-t-wrap"><span class="art-t">עמדות טעינה בבניין משותף</span><span class="art-d">מי צריך לאשר את ההתקנה, ואיך מתחלקים בתשלום בין הדיירים.</span><span class="art-go">לקריאה<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></span></span>
         </a>
         <a class="art" href="#knowledge">
-          <figure class="art-img"><img src="assets/img/prj-2-1200.webp" alt="" loading="eager" fetchpriority="low" decoding="async" style="object-position:50% 50%"></figure>
+          <figure class="art-img"><img src="assets/img/prj-2-1200.webp" alt="" loading="lazy" fetchpriority="low" data-early decoding="async" style="object-position:50% 50%"></figure>
           <span class="art-t-wrap"><span class="art-t">השכרת קרקע לחווה סולארית</span><span class="art-d">כמה זמן נמשך החוזה, ומה קורה עם הקרקע כשהוא נגמר.</span><span class="art-go">לקריאה<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></span></span>
         </a>
         <a class="art" href="#knowledge">
-          <figure class="art-img"><img src="assets/img/prj-1-1200.webp" alt="" loading="eager" fetchpriority="low" decoding="async" style="object-position:70% 30%"></figure>
+          <figure class="art-img"><img src="assets/img/prj-1-1200.webp" alt="" loading="lazy" fetchpriority="low" data-early decoding="async" style="object-position:70% 30%"></figure>
           <span class="art-t-wrap"><span class="art-t">החיבור לרשת של חברת החשמל</span><span class="art-d">אילו אישורים צריך, וכמה זמן זה לוקח בדרך כלל.</span><span class="art-go">לקריאה<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></span></span>
         </a>
       </div>

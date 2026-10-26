@@ -1090,3 +1090,5 @@ html.lenis,html.lenis body{height:auto}
 .rb{overflow:visible}
 .trails{position:fixed;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
 .ax-contrast .trails{opacity:.6}
+/* endless loops hold still while their section is out of sight (round 7, for speed: site.js marks it .is-far) */
+.is-far .plug::after,.is-far .ft-rim::before,.is-far .ft-glow,.is-far .obj,.is-far .sp,.is-far .cell-ic,.is-far .step-n{animation-play-state:paused}
