@@ -1077,8 +1077,17 @@ function relayout() {
   tick();
   if (lenis) requestAnimationFrame(() => lenis.resize());
 }
-let rz = 0;
-addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(relayout, 120); });
+// On a phone the address bar comes and goes as the visitor scrolls, and the screen grows or shrinks by its height each
+// time: the page isn't laid out again for that (the frame reads the screen's height as it is), only when the width
+// changes or the screen changes by more than a bar (the keyboard, a turn of the phone). Laying it all out again mid
+// scroll stalled a few frames every time the scroll changed direction (round 8, for speed)
+const coarse = matchMedia("(pointer:coarse)").matches;
+let rz = 0, rzW = innerWidth, rzH = innerHeight;
+addEventListener("resize", () => {
+  if (coarse && innerWidth === rzW && Math.abs(innerHeight - rzH) < 160) return;
+  rzW = innerWidth; rzH = innerHeight;
+  clearTimeout(rz); rz = setTimeout(relayout, 120);
+});
 relayout();
 
 // the split and the measures need the real fonts; wait for them (at most 1.5s)

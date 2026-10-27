@@ -11,7 +11,16 @@
 let uid = 0;
 
 const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
-const still = () => (typeof window !== "undefined" && !!window.__still) || (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches);
+const rmq = typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)") : null;
+// a line's colour at a given brightness, the same string as before but made once (round 8, for speed: the lines are
+// stroked in short runs, and building a fresh colour string for every run cost more than the drawing on a phone)
+const tints = new Map();
+const tint = (col, a) => {
+  let t = tints.get(col); if (!t) tints.set(col, (t = []));
+  const k = Math.round(a * 1000);
+  return t[k] || (t[k] = `rgba(${col},${(k / 1000).toFixed(3)})`);
+};
+const still = () => (typeof window !== "undefined" && !!window.__still) || (!!rmq && rmq.matches);
 const val = (v) => (typeof v === "function" ? v() : v);
 
 // a path is a list of segments: ["C", x0,y0, x1,y1, x2,y2, x3,y3] or ["L", x0,y0, x1,y1]; marks keeps the length
@@ -60,12 +69,18 @@ function painter() {
   P.low = document.createElement("canvas"); P.lctx = P.low.getContext("2d");
   P.glow = sprite(64, [[0, "rgba(246,255,249,1)"], [0.08, "rgba(210,255,228,.95)"], [0.22, "rgba(48,247,123,.45)"], [0.5, "rgba(48,247,123,.12)"], [1, "rgba(48,247,123,0)"]]);
   P.spark = sprite(16, [[0, "rgba(246,255,249,1)"], [0.3, "rgba(150,255,196,.7)"], [1, "rgba(48,247,123,0)"]]);
+  // A phone's address bar makes the screen a little taller or shorter as the visitor scrolls (round 8, for speed): the
+  // canvas is kept as tall as the tallest screen yet at this width, hanging from the top with the spare foot off the
+  // screen, so it is only made anew when the width changes or the screen grows past it, not on every turn of the scroll
+  P.aw = 0; P.ah = 0;
   const size = () => {
-    P.dpr = Math.min(window.devicePixelRatio || 1, innerWidth < 768 ? 2 : 1.75);
-    P.W = innerWidth; P.H = innerHeight;
-    cv.width = Math.round(P.W * P.dpr); cv.height = Math.round(P.H * P.dpr);
-    P.k = P.W < 768 ? 4 : 3; P.low.width = Math.ceil(P.W / P.k); P.low.height = Math.ceil(P.H / P.k);
-    P.dirty = true;
+    const w = innerWidth, h = innerHeight, dpr = Math.min(window.devicePixelRatio || 1, w < 768 ? 2 : 1.75);
+    P.W = w; P.H = h; P.dirty = true;
+    if (w !== P.aw || dpr !== P.dpr) P.ah = 0;
+    else if (h <= P.ah) return;
+    P.aw = w; P.dpr = dpr; P.ah = Math.max(h, P.ah);
+    cv.width = Math.round(w * dpr); cv.height = Math.round(P.ah * dpr); cv.style.height = P.ah + "px";
+    P.k = w < 768 ? 4 : 3; P.low.width = Math.ceil(w / P.k); P.low.height = Math.ceil(P.ah / P.k);
   };
   size(); addEventListener("resize", size);
   P.t0 = performance.now();
@@ -280,10 +295,16 @@ export class Ribbon {
         for (let c = r0; c < r1; c += C) {
           const e = Math.min(r1, c + C), i0 = c - g.j0, im = Math.min(e, c + (C >> 1)) - g.j0, al = ln.al * br[im] * dim;
           if (al < 0.01) continue;
+          // a run wholly off the canvas would paint nothing: skip it (round 8, for speed; the points are still counted
+          // from the same place, so the flicker along the line falls exactly where it did)
+          let x0 = xs[i0], x1 = x0, y0 = ys[i0], y1 = y0;
+          for (let j = i0 + 1; j <= e - g.j0; j++) { const x = xs[j], y = ys[j]; if (x < x0) x0 = x; else if (x > x1) x1 = x; if (y < y0) y0 = y; else if (y > y1) y1 = y; }
+          const pad = ln.w * 2 + 4;
+          if (x1 < -pad || x0 > P.W + pad || y1 < -pad || y0 > P.ah + pad) continue;
           ctx.beginPath(); ctx.moveTo(xs[i0], ys[i0]);
           for (let j = c + 1; j <= e; j++) ctx.lineTo(xs[j - g.j0], ys[j - g.j0]);
-          if (!ln.hair) { ctx.strokeStyle = `rgba(${ln.col},${(al * 0.16).toFixed(3)})`; ctx.lineWidth = ln.w * 4; ctx.stroke(); }
-          ctx.strokeStyle = `rgba(${ln.col},${al.toFixed(3)})`; ctx.lineWidth = ln.w; ctx.stroke();
+          if (!ln.hair) { ctx.strokeStyle = tint(ln.col, al * 0.16); ctx.lineWidth = ln.w * 4; ctx.stroke(); }
+          ctx.strokeStyle = tint(ln.col, al); ctx.lineWidth = ln.w; ctx.stroke();
         }
       }
     }

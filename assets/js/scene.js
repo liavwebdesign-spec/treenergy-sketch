@@ -908,8 +908,15 @@ if (tourOn) {
   if (lenis) lenis.on("scroll", () => { clearTimeout(idleT); idleT = setTimeout(settle, 220); });
 }
 const relayout = () => { Q.key = ""; Q.tg = -1; secH = 0; resize(); readScroll(); measureTitle(); for (const p of pins) p.cw = 0; if (dom) dom.layout(); if (tourOn) measureStops(); if (trail) trail.layout(); };
-let rz = 0;
-addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(relayout, 120); });
+// (a phone's address bar coming and going doesn't lay the tour out again: its stage is the small screen's height, which
+// the bar doesn't change; site.js, round 8)
+const coarse = matchMedia("(pointer:coarse)").matches;
+let rz = 0, rzW = innerWidth, rzH = innerHeight;
+addEventListener("resize", () => {
+  if (coarse && innerWidth === rzW && Math.abs(innerHeight - rzH) < 160) return;
+  rzW = innerWidth; rzH = innerHeight;
+  clearTimeout(rz); rz = setTimeout(relayout, 120);
+});
 addEventListener("load", relayout);
 if (document.fonts) document.fonts.ready.then(relayout);
 measureTitle();
