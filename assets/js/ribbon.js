@@ -1,8 +1,10 @@
 // The energy trail (v5, 28.10; Liav: "still too flat and static... not the three-dimensional, realistic trail I have in
-// mind... too busy, it can be refined... the trail itself is heavy"). One ribbon of light instead of the fifteen lines,
-// the dust and the sparks of v4: a band that turns slowly around its own length (wide where it shows its face, one
-// bright line where it turns its edge, its rims lit like glass), drifts towards the visitor and away, carries packets of
-// current to the head, and ends in a small hot bead with a lens streak. The shaders below say how.
+// mind... too busy, it can be refined... the trail itself is heavy"). One trail of light instead of the fifteen lines,
+// the dust and the sparks of v4. Refined the same day (Liav: "a bit like a fabric ribbon more than an energy trail...
+// but the three-dimensional feeling, spot on"): no surface any more, a white-hot wire of current with two threads of
+// light wound around it (the edges of the old band, still turning, so the depth stays), a faint charged haze between
+// them, drifting towards the visitor and away, carrying packets of current to the head, and ending in a small hot bead
+// with a lens streak. The shaders below say how.
 // It all happens on the graphics card: a ribbon's shape is sent once when its path is set, and a frame only moves a few
 // numbers (where it is on the screen, the time, how far the head has come), so scrolling costs almost nothing.
 // One instance per stretch of the page (the tour's exit, the reasons, the process, the projects and the voices, the
@@ -45,19 +47,20 @@ function sample(segs, step, marks) {
 }
 
 /* ---------- the shaders ---------- */
-// The trail is a band of light, a ribbon a few pixels wide, that turns slowly around its own length as it goes, the
-// way a silk ribbon does when it falls: where it shows its face it is wide, shaded by the light from the upper left and
-// catching a sheen as it turns towards it; where it turns its edge to the eye it closes into one bright line. Its two
-// edges are lit like the rim of glass (the one nearer the eye brighter), so the turns read as depth. It drifts towards
-// the visitor and away in a long slow swell (wider and brighter when near), packets of current run along it to the head,
-// and the night air around it glows faintly. The strip on the card is as wide as that glow; every pixel knows how far it
-// is from the middle (vD) and how far along (vS), and works out the light from those.
+// The trail is a wire of current: a thin white-hot core that flickers as the current races along it, and around it a
+// sheath of two threads of light, the edges of an unseen band that turns around its own length as it goes. Where the
+// band shows its face the threads spread apart, where it turns its edge to the eye they close onto the core, and the
+// one in front is bright while the one behind is faint, so the turns read as depth. Light runs along the threads in
+// beads; between them there is no surface, only a faint charged haze. It all drifts towards the visitor and away in a
+// long slow swell (wider and brighter when near), packets of current run to the head, and the night air around the wire
+// glows green. The strip on the card is as wide as that glow; every pixel knows how far it is from the middle (vD) and
+// how far along (vS), and works out the light from those.
 // Everything that moves with time is worked out per point in the vertex shader (the two shaders share no uniforms, so
 // they never have to agree on precision); between points, 7px apart, it is smooth enough to be carried over as is.
 const VS_TUBE = `
 attribute vec2 aP; attribute vec2 aN; attribute vec4 aA;   // aA: s, side, taper, swayK
 uniform vec2 uOff, uRes; uniform float uT, uS0, uHW, uSwA, uSwW, uZW, uTw, uPL; uniform vec4 uPh;
-varying float vS, vD, vZ, vT, vL, vR, vPu; varying vec2 vTw;
+varying float vS, vD, vZ, vT, vR, vPu; varying vec2 vTw, vFl;
 void main(){
   float s = aA.x, ss = s + uS0;
   // the thread swims from side to side in two slow waves running towards the head (the projects, the voices)
@@ -69,14 +72,15 @@ void main(){
   gl_Position = vec4(p.x / uRes.x * 2.0 - 1.0, 1.0 - p.y / uRes.y * 2.0, 0.0, 1.0);
   // vR: how far this side of the strip reaches (less on the inside of a tight turn), so the glow fades out before it
   vS = s; vD = aA.y * hw; vZ = z; vT = aA.z; vR = abs(aA.y) * hw;
-  // how the band has turned here: the turns run slowly towards the head
-  float th = 6.28318 * (ss - 46.0 * uT) / uTw + uPh.x + uPh.w;
+  // how the sheath has turned here: the turns run towards the head, a little faster than a ribbon would fall
+  float th = 6.28318 * (ss - 70.0 * uT) / uTw + uPh.x + uPh.w;
   vTw = vec2(cos(th), sin(th));
   // a packet of current every so often, running to the head
   float u = fract((ss - 230.0 * uT) / uPL), q = (u - 0.5) * uPL / 65.0;
   vPu = exp(-q * q);
-  // how much the path's side faces the light (from the upper left of the screen)
-  vL = dot(aN, vec2(-0.47, -0.88));
+  // the current itself: the core flickers in fine waves that race to the head, the field around it crackles slower
+  vFl = vec2(0.78 + 0.14 * sin(6.28318 * (ss - 520.0 * uT) / 88.0 + uPh.y) + 0.08 * sin(6.28318 * (ss - 760.0 * uT) / 37.0 + uPh.z),
+             0.68 + 0.32 * sin(6.28318 * (ss - 300.0 * uT) / 61.0 + uPh.w));
 }`;
 const FS_TUBE = `
 #ifdef GL_FRAGMENT_PRECISION_HIGH
@@ -86,35 +90,40 @@ precision mediump float;
 #endif
 uniform float uHs, uW, uHR, uDim, uHot;
 uniform vec4 uGap;
-varying float vS, vD, vZ, vT, vL, vR, vPu; varying vec2 vTw;
+varying float vS, vD, vZ, vT, vR, vPu; varying vec2 vTw, vFl;
 void main(){
   float s = vS;
   if (s > uHs) discard;
   if ((s > uGap.x && s < uGap.y) || (s > uGap.z && s < uGap.w)) discard;
   float ds = uHs - s, z = vZ, d = abs(vD);
-  float persp = 1.0 + 0.28 * z;
-  // the band's half width: nearer is wider, and it narrows to a point at the head and where it is born
-  float w = uW * persp * (0.25 + 0.75 * vT) * (0.15 + 0.85 * smoothstep(0.0, 150.0, ds));
+  float persp = 1.0 + 0.28 * z, near = max(z, 0.0);
+  // the sheath's half width: nearer is wider, and it closes onto the core at the head and where it is born
+  float w = uW * 0.9 * persp * (0.25 + 0.75 * vT) * (0.15 + 0.85 * smoothstep(0.0, 150.0, ds));
   vec2 tw = normalize(vTw); float c = tw.x, sn = tw.y;
   float e = w * c, hb = abs(e);
   // crisp when far, a touch soft when near, like a lens focused just behind it
-  float soft = 0.7 + 0.8 * max(z, 0.0);
-  // the two edges, lit like the rim of glass; the one nearer the eye brighter (squared by hand: pow() of a negative
-  // number is undefined in GLSL, and some phone GPUs return NaN for it)
+  float soft = 0.9 + 0.9 * near;
+  // the core: a white-hot wire of current in the middle, flickering as it runs, whiter where a packet passes
+  // (everything squared is squared by hand: pow() of a negative number is undefined in GLSL, and some phone GPUs
+  // return NaN for it)
+  float k = d / ((0.6 + 0.3 * near) * (0.6 + 0.4 * vT));
+  float core = exp(-k * k), halo = exp(-d / (1.7 * persp));
+  // the sheath: two threads of light wound around the core (the two edges of the turning band); the one in front
+  // bright, the one behind faint, both beaded with light that runs along them
   float r1 = (vD - e) / soft, r2 = (vD + e) / soft;
-  float rim = exp(-r1 * r1) * (0.6 + 0.4 * sn) + exp(-r2 * r2) * (0.6 - 0.4 * sn);
-  // the face: thin light seen at a slant gathers (brighter edge on), shaded by how it faces the light, with a sheen
+  float rim = exp(-r1 * r1) * (0.55 + 0.45 * sn) + exp(-r2 * r2) * (0.55 - 0.45 * sn);
+  float o2 = min(abs(vD - e), abs(vD + e));
+  // between the threads no surface, only a faint charged haze, a little brighter where the band is seen edge on
   float inside = 1.0 - smoothstep(hb - soft * 0.5, hb + soft, d);
-  float dens = min(1.9, 0.3 / max(abs(c), 0.15));
-  vec2 nrm = vec2(-sn, c), Ld = normalize(vec2(vL * 0.8, 0.62));
-  float lam = abs(dot(nrm, Ld));
-  float spec = pow(abs(dot(nrm, normalize(Ld + vec2(0.0, 1.0)))), 26.0);
-  vec3 green = vec3(0.188, 0.969, 0.482), deep = vec3(0.02, 0.30, 0.36), mint = vec3(0.74, 1.0, 0.87), white = vec3(0.97, 1.0, 0.98);
-  vec3 col = mix(deep, green, 0.3 + 0.7 * lam) * dens * 0.5 * inside + mint * rim * 0.85 + white * spec * inside * 0.55;
-  // the glow in the night air around it, tight and green, then wide and faint; gone at the strip's edge
-  float o = max(d - hb, 0.0), hr = uHR * persp;
-  col += green * (exp(-o / hr) * 0.26 + exp(-o / (hr * 2.8)) * 0.09) * (1.0 - smoothstep(vR * 0.6, vR, d));
-  float I = (0.8 + 0.24 * z) * (1.0 + uHot * exp(-ds / 160.0)) * (1.0 + 0.8 * vPu) * (0.3 + 0.7 * vT) * uDim * smoothstep(0.0, 3.0, ds);
+  float dens = min(1.6, 0.25 / max(abs(c), 0.15));
+  vec3 green = vec3(0.188, 0.969, 0.482), mint = vec3(0.74, 1.0, 0.87), white = vec3(0.97, 1.0, 0.98);
+  vec3 col = white * core * (0.85 + 0.6 * vPu) * vFl.x + mint * halo * 0.3 * vFl.x
+           + mix(green, mint, 0.4) * (rim * 0.6 + exp(-o2 / (2.2 * persp)) * 0.1) * vFl.y
+           + green * inside * dens * 0.11;
+  // the glow in the night air around the wire, tight and green, then wide and faint; gone at the strip's edge
+  float hr = uHR * persp;
+  col += green * (exp(-d / hr) * 0.3 + exp(-d / (hr * 2.8)) * 0.1) * (1.0 - smoothstep(vR * 0.6, vR, d));
+  float I = (0.8 + 0.24 * z) * (1.0 + uHot * exp(-ds / 160.0)) * (1.0 + 0.45 * vPu) * (0.3 + 0.7 * vT) * uDim * smoothstep(0.0, 3.0, ds);
   col = min(col * I, 1.0);
   gl_FragColor = vec4(col, max(col.r, max(col.g, col.b)));
 }`;
@@ -399,12 +408,12 @@ export class Ribbon {
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
-  // without WebGL: the path as a soft line up to the head, and the head as a small glow
+  // without WebGL: the path as a soft green glow with a thin white-hot wire in it, and the head as a small glow
   draw2d(ctx, ox, oy, t) {
     const pts = this.pts, h = this.head(), n = Math.min(pts.length, h.j), dim = this.o.dim;
     const hj = Math.min(h.j, pts.length - 1), hsw = this.sway(hj, t), hx = h.x + pts[hj].nx * hsw + ox, hy = h.y + pts[hj].ny * hsw + oy;
     const hidden = this.gaps.length && this.inGap(h.s);
-    for (const [w, a] of [[this.W * 2.6, 0.1], [this.W * 0.9, 0.32], [Math.max(1.4, this.W * 0.32), 0.9]]) {
+    for (const [w, a] of [[this.W * 2.6, 0.1], [this.W * 0.9, 0.28], [Math.max(1.2, this.W * 0.2), 0.9]]) {
       ctx.beginPath();
       let pen = false;
       for (let j = 0; j < n; j++) {
@@ -414,7 +423,7 @@ export class Ribbon {
         if (pen) ctx.lineTo(x, y); else { ctx.moveTo(x, y); pen = true; }
       }
       if (pen && !hidden) ctx.lineTo(hx, hy);
-      ctx.strokeStyle = a > 0.5 ? `rgba(214,255,232,${a * dim})` : `rgba(48,247,123,${a * dim})`;
+      ctx.strokeStyle = a > 0.5 ? `rgba(240,255,246,${a * dim})` : `rgba(48,247,123,${a * dim})`;
       ctx.lineWidth = w; ctx.stroke();
     }
     if (hidden || this.p >= 0.998 || this.p <= 0.002) return;
