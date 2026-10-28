@@ -743,7 +743,12 @@ $$("form[data-lead]").forEach((f) => {
 // --d: how far the next one has come up over it (it sinks back into the night)
 const works = $$(".work");
 let workTop = 0;
-function layoutWorks() { workTop = works.length ? parseFloat(getComputedStyle(works[0]).top) || 0 : 0; }
+let workRs = 12;
+function layoutWorks() {
+  workTop = works.length ? parseFloat(getComputedStyle(works[0]).top) || 0 : 0;
+  // one step per pixel the corner gives up: --r is clamp(18px,2.2vw,44px), and the opening takes .7 of it
+  workRs = Math.max(1, Math.round(Math.min(44, Math.max(18, innerWidth * .022)) * .7));
+}
 function worksTick() {
   if (reduce || !works.length) return;
   const ih = innerHeight, span = Math.max(1, ih - workTop);
@@ -755,13 +760,17 @@ function worksTick() {
     if (xs[i] < 0) return;
     const x = xs[i].toFixed(3), d = (i + 1 < works.length ? Math.max(0, xs[i + 1]) : 0).toFixed(3);
     if (w._x !== x) { w._x = x; w.style.setProperty("--x", x); }
+    // the rounding in whole-pixel steps (r shrinks by .7 r over the opening): a corner that moves less than a pixel
+    // is not worth a full-screen repaint
+    const xr = (Math.round(xs[i] * workRs) / workRs).toFixed(3);
+    if (w._xr !== xr) { w._xr = xr; w.style.setProperty("--xr", xr); }
     if (w._d !== d) { w._d = d; w.style.setProperty("--d", d); }
     // wholly under the next one: out of sight, so out of the page too
     const gone = d === "1.000";
     if (w._g !== gone) { w._g = gone; w.style.visibility = gone ? "hidden" : ""; }
   });
 }
-if (reduce) works.forEach((w) => w.style.setProperty("--x", 1));
+if (reduce) works.forEach((w) => { w.style.setProperty("--x", 1); w.style.setProperty("--xr", 1); });
 
 /* ---------- what clients say: three columns run past each other through the window ---------- */
 // while the section crosses the screen every column travels the whole of its overflow, each at its own speed and the

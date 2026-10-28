@@ -225,23 +225,20 @@ html.lenis,html.lenis body{height:auto}
 @media (hover:hover) and (pointer:fine){.mn-close:hover{color:var(--accent)}}
 
 .mn-nav{align-self:center}
-.mn-list{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
-.mn-it{border-bottom:1px solid var(--line)}
+/* no hairlines between the items (28.10, "the dividers look AI"): the space is the divider */
+.mn-list{list-style:none;margin:0;padding:0}
 .mn-it a{position:relative;display:block;padding:clamp(12px,2.1vh,24px) 0;text-decoration:none;color:var(--ink);
   opacity:0;transform:translateY(18px);transition:opacity .2s var(--ease),transform .2s var(--ease)}
 .mn.open .mn-it a{opacity:1;transform:none;transition:opacity .7s var(--ease) calc(.18s + var(--i,0) * 55ms),transform .9s var(--ease-out) calc(.18s + var(--i,0) * 55ms)}
-/* the light: a green line that runs along the hairline under the item */
-.mn-it a::after{content:"";position:absolute;inset-inline:0;bottom:-1px;height:1px;background:var(--accent);transform:scaleX(0);transform-origin:right;transition:transform .55s var(--ease-out)}
 .mn-t{display:block;font-family:var(--display);font-weight:var(--dw);font-size:clamp(30px,min(3.2vw,6.2vh),84px);line-height:1.2;letter-spacing:0;
   transition:transform .55s var(--ease-out)}
 @media (hover:hover) and (pointer:fine){
   .mn-list:hover .mn-it a{color:var(--ink-soft)}
   .mn-list .mn-it a:hover{color:var(--ink)}
-  .mn-it a:hover::after{transform:none}
   .mn-it a:hover .mn-t{transform:translateX(-12px)}
 }
-/* the current place keeps the line lit (it was the green number) */
-.mn-it a:focus-visible::after,.mn-it a.is-on::after{transform:none}
+/* the current place is lit in the action green (it was a line under the item) */
+.mn-it a.is-on,.mn-list .mn-it a.is-on{color:var(--accent)}
 
 .mn-side{display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:clamp(0px,1vh,12px)}
 /* one way on besides the list (round 5: "simplify it"): the call */
@@ -256,6 +253,9 @@ html.lenis,html.lenis body{height:auto}
   .mn-nav{align-self:start;padding-top:1vh}
   .mn-t{font-size:clamp(26px,7.4vw,48px)}
   .mn-it a{padding:clamp(10px,1.7vh,18px) 0}
+  /* without the Earth the list stands alone: centred, and the call under it (28.10) */
+  .mn-nav,.mn-it a{text-align:center}
+  .mn-contact{justify-content:center}
 }
 
 /* ---------- the Earth (when the browser can draw it; otherwise the list above is the whole menu) ----------
@@ -562,20 +562,32 @@ html.lenis,html.lenis body{height:auto}
 .works-run{--in:calc(var(--gutter) + 5vw);margin-inline:calc(var(--gutter) * -1)}
 .work{--x:1;--d:0;--edge:calc(var(--in) * (1 - var(--x)));position:sticky;top:calc(var(--hd-h) + 1vh);display:grid;align-items:end;isolation:isolate;
   height:calc(100vh - var(--hd-h) - 2vh);height:calc(100svh - var(--hd-h) - 2vh);
-  clip-path:inset(0 var(--edge) round calc(var(--r) * (1 - var(--x) * .7)));transform:scale(calc(1 - var(--d) * .06));transform-origin:50% 0}
-.js .work{--x:0}
+  transform:scale(calc(1 - var(--d) * .06));transform-origin:50% 0}
+.js .work{--x:0;--xr:0}
+/* the frame that opens out: two clips, each rounded on its own side, slid in from the edges by transform, and the
+   picture slid back, so the opening moves layers and never redraws the full-screen picture (28.10: an animated
+   clip-path on .work repainted it every frame on the phone). The rounding follows --xr, which site.js steps a pixel
+   at a time, so it repaints only when the corner really changes */
+.work{--xr:1}
+.work-cl,.work-cr{position:absolute;inset:0;overflow:hidden;border-radius:calc(var(--r) * (1 - var(--xr) * .7));will-change:transform}
+.work-cl{z-index:-1;transform:translateX(var(--edge))}
+.work-cr{transform:translateX(calc(var(--edge) * -2))}
 /* the way between two projects sits above the next one, so the one before ends exactly under it (not 12vh higher) */
 .work + .work{margin-top:12vh}
-.work-img{position:absolute;inset:0;z-index:-1;margin:0;overflow:hidden;background:var(--night-1)}
+.work-img{position:absolute;inset:0;margin:0;overflow:hidden;background:var(--night-1);transform:translateX(var(--edge))}
 .work-img img{width:100%;height:100%;object-fit:cover;transform:scale(calc(1.16 - var(--x) * .16));will-change:transform}
 .work-img::before,.work-img::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none}
 .work-img::before{background:linear-gradient(160deg,#0A3A9A,#000B26);mix-blend-mode:multiply;opacity:.55}
 /* a floor of night under the words; the one being covered sinks into the night */
-.work-img::after{background:linear-gradient(to top,rgba(var(--n0),.92),rgba(var(--n0),.4) 40%,rgba(var(--n0),0) 68%);box-shadow:inset 0 0 0 100vmax rgba(var(--n0),calc(var(--d) * .62))}
+.work-img::after{background:linear-gradient(to top,rgba(var(--n0),.92),rgba(var(--n0),.4) 40%,rgba(var(--n0),0) 68%)}
+/* the sinking is a veil of its own whose opacity alone changes, so the phone never repaints the picture for it
+   (28.10: it was an inset shadow on the floor above, redrawn full screen every frame) */
+.work-dim{position:absolute;inset:0;z-index:2;background:rgba(var(--n0),.62);opacity:var(--d);pointer-events:none;will-change:opacity}
 /* the last project has nothing sliding over it: its picture dissolves into the night at the foot, so the voices below
    come up out of the same night with no edge between them */
 .work:last-child .work-img{-webkit-mask-image:linear-gradient(to bottom,#000 58%,transparent);mask-image:linear-gradient(to bottom,#000 58%,transparent)}
-.work-img .tmp{top:clamp(18px,3vh,32px);inset-inline-start:calc(var(--edge) + var(--gutter))}
+/* moved in by transform (the page is rtl: the start is the right), not by inset, so it never relays the picture */
+.work-img .tmp{top:clamp(18px,3vh,32px);inset-inline-start:var(--gutter);transform:translateX(calc(var(--edge) * -1));will-change:transform}
 /* the next project slides over this one: its words go out before they would sit under the next one's */
 .work-t{opacity:calc(1 - var(--d) * 1.6)}
 .work-t{position:relative;display:grid;justify-items:start;gap:clamp(8px,1.4vh,16px);padding:0 calc(var(--edge) + var(--gutter)) clamp(28px,6vh,88px)}
