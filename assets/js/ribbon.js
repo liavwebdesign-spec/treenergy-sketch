@@ -1,27 +1,21 @@
-// The energy trail (v4, round 3): a tail of light, drawn against the two vectors Liav sent ("fiery wavy green tail
-// light", "glowing green lines, sparkling wavy light"): a few bright fine lines close together, a mist of fainter
-// hairlines around them, a soft bloom of green light under all of it, and a dust of sparkles drifting along. The lines
-// part and gather in long slow waves and a flicker of light runs along them towards the head, where they meet in one
-// point; the trail is never still, even when the page is (light-pillar and soft-aurora gave the bloom and the drift).
-// One instance per stretch of the page (the globe, the domains, the reasons, the process, the projects and the voices,
-// the articles, the close).
-// An instance keeps its geometry in the frame of its own <svg> (left empty, it only gives the frame), and every
-// instance is painted by one fixed canvas under the page's words: one canvas, one frame loop, only the part on screen.
-// Geometry is computed from cubic segments in JS (no layout reads), so it can be rebuilt every frame on the globe.
+// The energy trail (v5, 28.10; Liav: "still too flat and static... not the three-dimensional, realistic trail I have in
+// mind... too busy, it can be refined... the trail itself is heavy"). One ribbon of light instead of the fifteen lines,
+// the dust and the sparks of v4: a band that turns slowly around its own length (wide where it shows its face, one
+// bright line where it turns its edge, its rims lit like glass), drifts towards the visitor and away, carries packets of
+// current to the head, and ends in a small hot bead with a lens streak. The shaders below say how.
+// It all happens on the graphics card: a ribbon's shape is sent once when its path is set, and a frame only moves a few
+// numbers (where it is on the screen, the time, how far the head has come), so scrolling costs almost nothing.
+// One instance per stretch of the page (the tour's exit, the reasons, the process, the projects and the voices, the
+// articles, the close). An instance keeps its geometry in the frame of its own <svg> (left empty, it only gives the
+// frame), and every instance is painted by one fixed canvas under the page's words: one canvas, one frame loop.
+// Without WebGL a plain 2D canvas draws the same path as a soft line, with a small glow for the head.
 let uid = 0;
 
 const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 const rmq = typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)") : null;
-// a line's colour at a given brightness, the same string as before but made once (round 8, for speed: the lines are
-// stroked in short runs, and building a fresh colour string for every run cost more than the drawing on a phone)
-const tints = new Map();
-const tint = (col, a) => {
-  let t = tints.get(col); if (!t) tints.set(col, (t = []));
-  const k = Math.round(a * 1000);
-  return t[k] || (t[k] = `rgba(${col},${(k / 1000).toFixed(3)})`);
-};
 const still = () => (typeof window !== "undefined" && !!window.__still) || (!!rmq && rmq.matches);
 const val = (v) => (typeof v === "function" ? v() : v);
+const TAU = 2 * Math.PI;
 
 // a path is a list of segments: ["C", x0,y0, x1,y1, x2,y2, x3,y3] or ["L", x0,y0, x1,y1]; marks keeps the length
 // at the start of every segment
@@ -50,29 +44,155 @@ function sample(segs, step, marks) {
   return pts;
 }
 
+/* ---------- the shaders ---------- */
+// The trail is a band of light, a ribbon a few pixels wide, that turns slowly around its own length as it goes, the
+// way a silk ribbon does when it falls: where it shows its face it is wide, shaded by the light from the upper left and
+// catching a sheen as it turns towards it; where it turns its edge to the eye it closes into one bright line. Its two
+// edges are lit like the rim of glass (the one nearer the eye brighter), so the turns read as depth. It drifts towards
+// the visitor and away in a long slow swell (wider and brighter when near), packets of current run along it to the head,
+// and the night air around it glows faintly. The strip on the card is as wide as that glow; every pixel knows how far it
+// is from the middle (vD) and how far along (vS), and works out the light from those.
+// Everything that moves with time is worked out per point in the vertex shader (the two shaders share no uniforms, so
+// they never have to agree on precision); between points, 7px apart, it is smooth enough to be carried over as is.
+const VS_TUBE = `
+attribute vec2 aP; attribute vec2 aN; attribute vec4 aA;   // aA: s, side, taper, swayK
+uniform vec2 uOff, uRes; uniform float uT, uS0, uHW, uSwA, uSwW, uZW, uTw, uPL; uniform vec4 uPh;
+varying float vS, vD, vZ, vT, vL, vR, vPu; varying vec2 vTw;
+void main(){
+  float s = aA.x, ss = s + uS0;
+  // the thread swims from side to side in two slow waves running towards the head (the projects, the voices)
+  float sw = uSwA * aA.w * (0.66 * sin(6.28318 * (s - 34.0 * uT) / uSwW + uPh.z) + 0.34 * sin(6.28318 * (s - 15.0 * uT) / (uSwW * 0.47) + uPh.w));
+  // depth: the band drifts towards the eye and away in a long wave that travels with the current
+  float z = 0.62 * sin(6.28318 * (ss - 38.0 * uT) / uZW + uPh.x) + 0.38 * sin(6.28318 * (ss + 21.0 * uT) / (uZW * 0.41) + uPh.y);
+  float hw = uHW * (1.0 + 0.28 * z);
+  vec2 p = aP + aN * (sw + aA.y * hw) + uOff;
+  gl_Position = vec4(p.x / uRes.x * 2.0 - 1.0, 1.0 - p.y / uRes.y * 2.0, 0.0, 1.0);
+  // vR: how far this side of the strip reaches (less on the inside of a tight turn), so the glow fades out before it
+  vS = s; vD = aA.y * hw; vZ = z; vT = aA.z; vR = abs(aA.y) * hw;
+  // how the band has turned here: the turns run slowly towards the head
+  float th = 6.28318 * (ss - 46.0 * uT) / uTw + uPh.x + uPh.w;
+  vTw = vec2(cos(th), sin(th));
+  // a packet of current every so often, running to the head
+  float u = fract((ss - 230.0 * uT) / uPL), q = (u - 0.5) * uPL / 65.0;
+  vPu = exp(-q * q);
+  // how much the path's side faces the light (from the upper left of the screen)
+  vL = dot(aN, vec2(-0.47, -0.88));
+}`;
+const FS_TUBE = `
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+uniform float uHs, uW, uHR, uDim, uHot;
+uniform vec4 uGap;
+varying float vS, vD, vZ, vT, vL, vR, vPu; varying vec2 vTw;
+void main(){
+  float s = vS;
+  if (s > uHs) discard;
+  if ((s > uGap.x && s < uGap.y) || (s > uGap.z && s < uGap.w)) discard;
+  float ds = uHs - s, z = vZ, d = abs(vD);
+  float persp = 1.0 + 0.28 * z;
+  // the band's half width: nearer is wider, and it narrows to a point at the head and where it is born
+  float w = uW * persp * (0.25 + 0.75 * vT) * (0.15 + 0.85 * smoothstep(0.0, 150.0, ds));
+  vec2 tw = normalize(vTw); float c = tw.x, sn = tw.y;
+  float e = w * c, hb = abs(e);
+  // crisp when far, a touch soft when near, like a lens focused just behind it
+  float soft = 0.7 + 0.8 * max(z, 0.0);
+  // the two edges, lit like the rim of glass; the one nearer the eye brighter (squared by hand: pow() of a negative
+  // number is undefined in GLSL, and some phone GPUs return NaN for it)
+  float r1 = (vD - e) / soft, r2 = (vD + e) / soft;
+  float rim = exp(-r1 * r1) * (0.6 + 0.4 * sn) + exp(-r2 * r2) * (0.6 - 0.4 * sn);
+  // the face: thin light seen at a slant gathers (brighter edge on), shaded by how it faces the light, with a sheen
+  float inside = 1.0 - smoothstep(hb - soft * 0.5, hb + soft, d);
+  float dens = min(1.9, 0.3 / max(abs(c), 0.15));
+  vec2 nrm = vec2(-sn, c), Ld = normalize(vec2(vL * 0.8, 0.62));
+  float lam = abs(dot(nrm, Ld));
+  float spec = pow(abs(dot(nrm, normalize(Ld + vec2(0.0, 1.0)))), 26.0);
+  vec3 green = vec3(0.188, 0.969, 0.482), deep = vec3(0.02, 0.30, 0.36), mint = vec3(0.74, 1.0, 0.87), white = vec3(0.97, 1.0, 0.98);
+  vec3 col = mix(deep, green, 0.3 + 0.7 * lam) * dens * 0.5 * inside + mint * rim * 0.85 + white * spec * inside * 0.55;
+  // the glow in the night air around it, tight and green, then wide and faint; gone at the strip's edge
+  float o = max(d - hb, 0.0), hr = uHR * persp;
+  col += green * (exp(-o / hr) * 0.26 + exp(-o / (hr * 2.8)) * 0.09) * (1.0 - smoothstep(vR * 0.6, vR, d));
+  float I = (0.8 + 0.24 * z) * (1.0 + uHot * exp(-ds / 160.0)) * (1.0 + 0.8 * vPu) * (0.3 + 0.7 * vT) * uDim * smoothstep(0.0, 3.0, ds);
+  col = min(col * I, 1.0);
+  gl_FragColor = vec4(col, max(col.r, max(col.g, col.b)));
+}`;
+// the head: a small hot bead, its glow, and a faint horizontal streak like light caught in a lens
+const VS_HEAD = `
+attribute vec2 aQ;
+uniform vec2 uC, uRes; uniform float uRad;
+varying vec2 vQ;
+void main(){ vQ = aQ; vec2 p = uC + aQ * uRad * vec2(2.6, 1.0);
+  gl_Position = vec4(p.x / uRes.x * 2.0 - 1.0, 1.0 - p.y / uRes.y * 2.0, 0.0, 1.0); }`;
+const FS_HEAD = `
+precision mediump float;
+uniform float uI;
+varying vec2 vQ;
+void main(){
+  vec2 q = vQ * vec2(2.6, 1.0); float d = length(q);   // in head radii
+  float core = exp(-pow(d / 0.11, 2.0));
+  float glow = exp(-d / 0.3) * 0.5 + exp(-d / 0.75) * 0.12;
+  float streak = exp(-abs(q.y) / 0.035) * exp(-abs(q.x) / 0.9) * 0.22;
+  float edge = smoothstep(1.0, 0.7, max(abs(vQ.x), abs(vQ.y)));
+  vec3 c = min((vec3(0.96, 1.0, 0.975) * core + vec3(0.19, 0.97, 0.48) * glow + vec3(0.6, 1.0, 0.8) * streak) * uI * edge, 1.0);
+  gl_FragColor = vec4(c, max(c.r, max(c.g, c.b)));
+}`;
+
 /* ---------- the painter: one fixed canvas for every trail on the page ---------- */
-const P = { set: new Set(), cv: null, ctx: null, low: null, lctx: null, k: 3, dpr: 1, W: 0, H: 0, dirty: true, t0: 0, blank: true, glow: null, spark: null };
-function sprite(r, stops) {
-  const c = document.createElement("canvas"); c.width = c.height = r * 2;
-  const g = c.getContext("2d"), gr = g.createRadialGradient(r, r, 0, r, r, r);
-  for (const [o, col] of stops) gr.addColorStop(o, col);
-  g.fillStyle = gr; g.fillRect(0, 0, r * 2, r * 2); return c;
+const P = { set: new Set(), cv: null, gl: null, ctx: null, dpr: 1, W: 0, H: 0, aw: 0, ah: 0, dirty: true, t0: 0, blank: true, sy: null };
+
+function compile(gl, vs, fs) {
+  const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
+  const p = gl.createProgram();
+  gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+  const loc = { p };
+  const na = gl.getProgramParameter(p, gl.ACTIVE_ATTRIBUTES), nu = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+  for (let i = 0; i < na; i++) { const a = gl.getActiveAttrib(p, i); loc[a.name] = gl.getAttribLocation(p, a.name); }
+  for (let i = 0; i < nu; i++) { const u = gl.getActiveUniform(p, i); loc[u.name] = gl.getUniformLocation(p, u.name); }
+  return loc;
 }
+// the programs and the head's quad; again after the card drops the context and gives it back
+function glSetup() {
+  const gl = P.gl;
+  P.tube = compile(gl, VS_TUBE, FS_TUBE);
+  P.head = compile(gl, VS_HEAD, FS_HEAD);
+  P.quad = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, P.quad);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+  gl.enable(gl.BLEND);
+  // light meets light by its brighter value, so where a bend folds the strip on itself it is not lit twice
+  const mm = gl.getExtension("EXT_blend_minmax");
+  if (mm) gl.blendEquation(mm.MAX_EXT); else gl.blendFunc(gl.ONE, gl.ONE);
+  gl.clearColor(0, 0, 0, 0);
+  for (const r of P.set) { r.buf = null; r.fresh = true; }
+}
+
 function painter() {
   if (P.cv) return;
-  const cv = P.cv = document.createElement("canvas");
-  cv.className = "trails"; cv.setAttribute("aria-hidden", "true");
+  const make = () => {
+    const cv = document.createElement("canvas");
+    cv.className = "trails"; cv.setAttribute("aria-hidden", "true");
+    return cv;
+  };
+  let cv = P.cv = make();
   const sky = document.getElementById("sky");
   if (sky && sky.parentNode) sky.parentNode.insertBefore(cv, sky.nextSibling); else document.body.prepend(cv);
-  P.ctx = cv.getContext("2d");
-  // the bloom is painted small and laid over the page soft (a blur, or at least the stretch of a small picture)
-  P.low = document.createElement("canvas"); P.lctx = P.low.getContext("2d");
-  P.glow = sprite(64, [[0, "rgba(246,255,249,1)"], [0.08, "rgba(210,255,228,.95)"], [0.22, "rgba(48,247,123,.45)"], [0.5, "rgba(48,247,123,.12)"], [1, "rgba(48,247,123,0)"]]);
-  P.spark = sprite(16, [[0, "rgba(246,255,249,1)"], [0.3, "rgba(150,255,196,.7)"], [1, "rgba(48,247,123,0)"]]);
+  try {
+    P.gl = cv.getContext("webgl", { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false, preserveDrawingBuffer: false });
+    if (P.gl) glSetup();
+  } catch (e) { P.gl = null; }
+  if (P.gl) {
+    cv.addEventListener("webglcontextlost", (e) => { e.preventDefault(); P.lost = true; });
+    cv.addEventListener("webglcontextrestored", () => { P.lost = false; glSetup(); P.dirty = true; });
+  } else {
+    // a canvas that has given out a WebGL context cannot give a 2D one: a fresh canvas for the plain line
+    const c2 = make(); cv.replaceWith(c2); cv = P.cv = c2;
+    P.ctx = cv.getContext("2d");
+  }
   // A phone's address bar makes the screen a little taller or shorter as the visitor scrolls (round 8, for speed): the
   // canvas is kept as tall as the tallest screen yet at this width, hanging from the top with the spare foot off the
   // screen, so it is only made anew when the width changes or the screen grows past it, not on every turn of the scroll
-  P.aw = 0; P.ah = 0;
   const size = () => {
     const w = innerWidth, h = innerHeight, dpr = Math.min(window.devicePixelRatio || 1, w < 768 ? 2 : 1.75);
     P.W = w; P.H = h; P.dirty = true;
@@ -80,14 +200,15 @@ function painter() {
     else if (h <= P.ah) return;
     P.aw = w; P.dpr = dpr; P.ah = Math.max(h, P.ah);
     cv.width = Math.round(w * dpr); cv.height = Math.round(P.ah * dpr); cv.style.height = P.ah + "px";
-    P.k = w < 768 ? 4 : 3; P.low.width = Math.ceil(w / P.k); P.low.height = Math.ceil(P.ah / P.k);
   };
   size(); addEventListener("resize", size);
   P.t0 = performance.now();
   const loop = (now) => { requestAnimationFrame(loop); paint(now); };
   requestAnimationFrame(loop);
 }
+
 function paint(now) {
+  if (P.lost || !(P.gl || P.ctx)) return;
   const moving = !still();
   // at rest (stop motion), only paint when something changed: a trail, or where the page is
   // the scroll from Lenis when it drives the page (a number it keeps, no layout read)
@@ -95,81 +216,63 @@ function paint(now) {
   if (sy !== P.sy) { P.sy = sy; P.dirty = true; }
   if (!moving && !P.dirty) return;
   P.dirty = false;
-  const ctx = P.ctx, t = moving ? (now - P.t0) / 1000 : 0;
-  // read every frame first, then paint (no layout read between strokes)
+  const t = moving ? (now - P.t0) / 1000 : 0;
+  // read every frame first, then paint (no layout read between draws)
   const on = [];
   for (const r of P.set) {
     if (!r.pts || r.p <= 0.002) continue;
     const b = r.svg.getBoundingClientRect();
     if (!b.width && !b.height) continue;
-    if (b.left + r.bx1 < -80 || b.left + r.bx0 > P.W + 80 || b.top + r.by1 < -120 || b.top + r.by0 > P.H + 120) continue;
+    if (b.left + r.bx1 < 0 || b.left + r.bx0 > P.W || b.top + r.by1 < 0 || b.top + r.by0 > P.H) continue;
     on.push([r, b.left, b.top]);
   }
-  if (!on.length) { if (!P.blank) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, P.cv.width, P.cv.height); P.blank = true; } return; }
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, P.cv.width, P.cv.height);
-  const l = P.lctx;
-  l.setTransform(1, 0, 0, 1, 0, 0); l.clearRect(0, 0, P.low.width, P.low.height);
-  l.setTransform(1 / P.k, 0, 0, 1 / P.k, 0, 0);
-  l.globalCompositeOperation = "lighter"; l.lineCap = "round"; l.lineJoin = "round";
-  const geo = on.map(([r, ox, oy]) => r.lines(ox, oy, t));
-  on.forEach(([r, ox, oy], i) => r.bloom(l, geo[i], ox, oy));
-  ctx.setTransform(P.dpr, 0, 0, P.dpr, 0, 0);
-  ctx.globalCompositeOperation = "lighter";
-  ctx.lineCap = "round"; ctx.lineJoin = "round";
-  if (P.W >= 768) ctx.filter = "blur(5px)";
-  ctx.drawImage(P.low, 0, 0, P.low.width * P.k, P.low.height * P.k);
-  ctx.filter = "none";
-  on.forEach(([r, ox, oy], i) => r.paint(ctx, ox, oy, t, geo[i]));
-  ctx.globalCompositeOperation = "source-over";
+  const gl = P.gl, ctx = P.ctx;
+  if (!on.length) {
+    if (!P.blank) { if (gl) { gl.viewport(0, 0, P.cv.width, P.cv.height); gl.clear(gl.COLOR_BUFFER_BIT); } else { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, P.cv.width, P.cv.height); } P.blank = true; }
+    return;
+  }
+  if (gl) {
+    gl.viewport(0, 0, P.cv.width, P.cv.height);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    const T = P.tube; gl.useProgram(T.p);
+    gl.uniform2f(T.uRes, P.W, P.ah); gl.uniform1f(T.uT, t);
+    gl.enableVertexAttribArray(T.aP); gl.enableVertexAttribArray(T.aN); gl.enableVertexAttribArray(T.aA);
+    for (const [r, ox, oy] of on) r.drawTube(gl, T, ox, oy, t);
+    gl.disableVertexAttribArray(T.aN); gl.disableVertexAttribArray(T.aA);
+    const H = P.head; gl.useProgram(H.p);
+    gl.uniform2f(H.uRes, P.W, P.ah);
+    gl.bindBuffer(gl.ARRAY_BUFFER, P.quad); gl.enableVertexAttribArray(H.aQ); gl.vertexAttribPointer(H.aQ, 2, gl.FLOAT, false, 0, 0);
+    for (const [r, ox, oy] of on) r.drawHead(gl, H, ox, oy, t);
+  } else {
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, P.cv.width, P.cv.height);
+    ctx.setTransform(P.dpr, 0, 0, P.dpr, 0, 0); ctx.globalCompositeOperation = "lighter"; ctx.lineCap = "round"; ctx.lineJoin = "round";
+    for (const [r, ox, oy] of on) r.draw2d(ctx, ox, oy, t);
+    ctx.globalCompositeOperation = "source-over";
+  }
   P.blank = false;
 }
 
 export class Ribbon {
-  // opt: strands (how full the trail is: the lines are fewer than the old band's fibres), amp (px, half the trail's
-  // width, or a function), wave (px, the lines' typical wavelength), pinches (fractions 0..1 where the trail gathers:
-  // energy passing a node), taperStart / taperEnd (px), sparks, seed, anchor ("end": the waves are counted back from
-  // the last point, so a trail that starts where this one ends, with the same seed, carries every line on), dim (how
-  // bright, 0..1: the light stretches through the projects, the voices and the articles are a faint thread of it), sway
-  // (px, or a function: the whole thread swims from side to side in slow waves that travel towards the head, so a stretch
-  // that runs straight is never a ruled line; Liav 25.10: "יותר חי ודינמי ופחות ישר ומרובע") and swayWave (px, their length)
+  // opt: amp (px, or a function: how bold the trail is, the tube's radius and glow follow it), wave (px: the length the
+  // winding, the swell and the packets of current are measured in), pinches (fractions 0..1 where the trail narrows:
+  // energy passing a node), taperStart / taperEnd (px), seed, anchor ("end": the waves are counted back from the last
+  // point, so a trail that starts where this one ends, with the same seed, carries the current on), dim (how bright,
+  // 0..1: the stretches through the projects, the voices and the articles are a faint thread), sway (px, or a function:
+  // the whole thread swims from side to side in slow waves that travel towards the head; Liav 25.10: "יותר חי ודינמי
+  // ופחות ישר ומרובע") and swayWave (px, their length). strands and sparks belonged to v4 and are ignored.
   constructor(svg, opt = {}) {
     this.svg = svg;
-    this.o = Object.assign({ strands: 16, amp: 24, wave: 520, pinches: [], taperStart: 90, taperEnd: 0, sparks: 4, step: 6, seed: 1, dim: 1, sway: 0, swayWave: 520 }, opt);
+    this.o = Object.assign({ amp: 24, wave: 520, pinches: [], taperStart: 90, taperEnd: 0, step: 7, seed: 1, dim: 1, sway: 0, swayWave: 520 }, opt);
     this.id = ++uid;
     svg.classList.add("rb");
     svg.setAttribute("aria-hidden", "true");
     svg.setAttribute("focusable", "false");
     let r = this.o.seed * 9301 + 49297;
     const rnd = () => ((r = (r * 9301 + 49297) % 233280) / 233280);
-    // the lines: two near-white cores, a few mint and green ones close to them, and faint hairlines around (the mist
-    // of fibres in the first vector). Each parts from the middle in its own long slow wave, so they open and gather
-    const n = this.o.strands >= 20 ? 6 : 5, nh = this.o.strands >= 20 ? 9 : 6;
-    this.ln = [];
-    for (let i = 0; i < n + nh; i++) {
-      const core = i < 2, hair = i >= n;
-      this.ln.push({
-        hair,
-        lane: hair ? (rnd() - 0.5) * 1.6 : (rnd() - 0.5) * 0.35,
-        lam: (1.6 + rnd() * 1.6) * this.o.wave,
-        a: hair ? 0.35 + rnd() * 0.4 : core ? 0.2 + rnd() * 0.2 : 0.35 + rnd() * 0.35,
-        ph: rnd() * 6.28,
-        v: 26 + rnd() * 30,                     // px a second the waves travel towards the head
-        fl: 0.5 + rnd() * 0.5,                  // the flicker running along it: wavelength (x wave) and speed
-        fv: 180 + rnd() * 160, fp: rnd() * 6.28,
-        w: hair ? 0.5 + rnd() * 0.35 : core ? 1.6 + rnd() * 0.4 : 0.9 + rnd() * 0.5,
-        col: core ? (i ? "205,255,224" : "240,255,246") : hair ? (rnd() < 0.5 ? "48,247,123" : "150,255,196") : rnd() < 0.5 ? "62,247,132" : "125,251,172",
-        al: hair ? 0.14 + rnd() * 0.14 : core ? 0.9 : 0.5 + rnd() * 0.3,
-      });
-    }
-    this.sp = [];
-    for (let i = 0; i < this.o.sparks; i++) this.sp.push({ k: i % 2, v: 220 + rnd() * 200, o: rnd() });
-    // the dust: sparkles scattered around the trail, drifting slowly towards the head and twinkling
-    this.du = [];
-    for (let i = 0; i < 160; i++) { const g = (rnd() + rnd() + rnd() - 1.5) / 1.5; this.du.push({ u: rnd(), off: g * 2.6, z: 0.6 + rnd() * rnd() * 2.2, tw: 1 + rnd() * 3, tp: rnd() * 6.28 }); }
-    this.pts = null; this.L = 1; this.p = -1; this.gaps = []; this.env = null; this.amp = 0; this.swA = 0; this.swk = null;
-    this.swp = [rnd() * 6.28, rnd() * 6.28];
-    this.headK = 1;                              // the head's flare size (the globe makes it small while it rests on Israel)
+    this.ph = [rnd() * TAU, rnd() * TAU, rnd() * TAU, rnd() * TAU];
+    this.pts = null; this.L = 1; this.p = -1; this.gaps = []; this.amp = 0; this.swA = 0; this.swk = null;
+    this.buf = null; this.data = null; this.fresh = false;
+    this.headK = 1;                              // the head's size (the tour's exit makes it small as it is born)
     this.bx0 = this.by0 = 0; this.bx1 = this.by1 = 0;
     painter(); P.set.add(this);
   }
@@ -187,19 +290,52 @@ export class Ribbon {
       for (let i = 1; i < marks.length; i++) k += (K(i) - K(i - 1)) * smooth(marks[i] - 90, marks[i] + 90, pts[j].s);
       swk[j] = k;
     }
-    const env = this.env = new Float32Array(pts.length);
+    // the ribbon's size from the old band's width: the 28px band (desktop) is now a ribbon of about 16px at its widest,
+    // the 14px one (phone) about 10px, a thread about 8px; its glow, and the strip that carries both
+    this.W = 2 + this.amp * 0.22;
+    this.hr = 2.5 + this.W * 0.55;
+    this.hw = Math.ceil(this.W * 1.3 + this.hr * 3.4);
+    // where the path turns tighter than the strip is wide, the strip's inner side would fold over itself (a bow tie at
+    // the bend): there the inner side reaches only as far as the room inside the turn, the ribbon itself kept whole
+    const n = pts.length, reach = this.hw * 1.28, kmin = Math.min(1, (this.W * 1.4) / reach);
+    const kP = new Float32Array(n).fill(1), kM = new Float32Array(n).fill(1);   // how far each side may reach
+    for (let j = 0; j < n; j++) {
+      const a = pts[Math.max(0, j - 2)], b = pts[Math.min(n - 1, j + 2)];
+      const cr = a.nx * b.ny - a.ny * b.nx, ang = Math.abs(Math.atan2(cr, a.nx * b.nx + a.ny * b.ny));
+      if (ang < 1e-4) continue;
+      const R = (b.s - a.s) / ang - this.swA * swk[j];
+      (cr > 0 ? kP : kM)[j] = Math.min(1, Math.max(kmin, (0.85 * R) / reach));
+    }
+    // and it changes gently from point to point: a reach that jumps leaves a crease in the glow (the strip's triangles
+    // then disagree on how far a pixel is from the middle). The tightest reach around (6 points each way), then the
+    // average of that over 3 points each way, which never reaches further than the room at any point
+    const ease = (k) => {
+      const e = new Float32Array(n), out = new Float32Array(n);
+      for (let j = 0; j < n; j++) { let m = 1; for (let i = Math.max(0, j - 6); i <= Math.min(n - 1, j + 6); i++) m = Math.min(m, k[i]); e[j] = m; }
+      for (let j = 0; j < n; j++) { let t = 0, c = 0; for (let i = Math.max(0, j - 3); i <= Math.min(n - 1, j + 3); i++) { t += e[i]; c++; } out[j] = t / c; }
+      return out;
+    };
+    const kp = ease(kP), km = ease(kM);
+    // every point twice, one on each side of the path: x, y, normal, then s, side (how far that side reaches, -1..1),
+    // taper and sway
+    const d = this.data = new Float32Array(pts.length * 16);
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (let j = 0; j < pts.length; j++) {
       const q = pts[j];
       let e = (o.taperStart ? smooth(0, o.taperStart, q.s) : 1) * (o.taperEnd ? smooth(L, L - o.taperEnd, q.s) : 1);
-      for (const f of pinches) e *= 1 - 0.75 * Math.exp(-Math.pow((q.s - f * L) / 90, 2));
-      env[j] = e;
+      for (const f of pinches) e *= 1 - 0.6 * Math.exp(-Math.pow((q.s - f * L) / 90, 2));
+      for (let k = 0; k < 2; k++) {
+        const i = (j * 2 + k) * 8;
+        d[i] = q.x; d[i + 1] = q.y; d[i + 2] = q.nx; d[i + 3] = q.ny; d[i + 4] = q.s;
+        d[i + 5] = k ? kp[j] : -km[j]; d[i + 6] = e; d[i + 7] = swk[j];
+      }
       if (q.x < x0) x0 = q.x; if (q.x > x1) x1 = q.x; if (q.y < y0) y0 = q.y; if (q.y > y1) y1 = q.y;
     }
-    const m = this.amp * 3 + 40 + this.swA;
+    this.fresh = true;
+    const m = this.hw * 1.3 + this.swA + 80 * this.headK + 10;
     this.bx0 = x0 - m; this.bx1 = x1 + m; this.by0 = y0 - m; this.by1 = y1 + m;
     P.dirty = true;
-    this.draw(this.p < 0 ? 0 : this.p, true);
+    this.draw(this.p < 0 ? 0 : this.p);
   }
 
   // stretches (fractions of the length) where the trail runs out of sight, inside something (the battery)
@@ -223,120 +359,68 @@ export class Ribbon {
 
   inGap(s) { const f = s / this.L; for (const [a, b] of this.gaps) if (f > a && f < b) return true; return false; }
 
-  // how far the thread swims off its path at point j: two slow waves running towards the head, one long and one short,
-  // so the swing never repeats in an even beat (still, it keeps one gentle bend)
+  // how far the thread swims off its path at point j (the same two waves as in the shader, for the head)
   sway(j, t) {
     if (!this.swA) return 0;
-    const s = this.pts[j].s, w = this.o.swayWave, two = 2 * Math.PI;
-    return this.swA * this.swk[j] * (0.66 * Math.sin(two * (s - 34 * t) / w + this.swp[0]) + 0.34 * Math.sin(two * (s - 15 * t) / (w * 0.47) + this.swp[1]));
+    const s = this.pts[j].s, w = this.o.swayWave;
+    return this.swA * this.swk[j] * (0.66 * Math.sin(TAU * (s - 34 * t) / w + this.ph[2]) + 0.34 * Math.sin(TAU * (s - 15 * t) / (w * 0.47) + this.ph[3]));
   }
 
-  // the visible stretch and every line's points on it, shared by the bloom and the lines
-  lines(ox, oy, t) {
-    const pts = this.pts, env = this.env, amp = this.amp, h0 = this.head(), hs = h0.s, L = this.L;
-    // the head swims with the thread (its flare follows the lines' meeting point)
-    const hq = pts[h0.j], hw = this.sway(h0.j, t), h = { ...h0, x: h0.x + hq.nx * hw, y: h0.y + hq.ny * hw };
-    let j0 = 0, j1 = h.j;
-    const top = -oy - 200, bot = P.H - oy + 200, left = -ox - 200, right = P.W - ox + 200;
-    const out = (q) => q.y < top || q.y > bot || q.x < left || q.x > right;
-    while (j0 < j1 && out(pts[j0])) j0++;
-    while (j1 > j0 && out(pts[j1])) j1--;
-    if (j1 - j0 < 1) return { h, runs: [], j0, j1, xy: null };
-    // runs of points outside the gaps
-    const runs = [];
-    let a = -1;
-    for (let j = j0; j <= j1; j++) {
-      const hid = this.gaps.length && this.inGap(pts[j].s);
-      if (!hid && a < 0) a = j;
-      if ((hid || j === j1) && a >= 0) { runs.push([a, hid ? j - 1 : j]); a = -1; }
-    }
-    // the lines gather into the head: wide behind it, one point at the front
-    const two = 2 * Math.PI, s0 = this.o.anchor === "end" ? -L : 0, m = j1 - j0 + 1;
-    const sw = new Float32Array(m);
-    if (this.swA) for (let j = j0; j <= j1; j++) sw[j - j0] = this.sway(j, t);
-    const xy = this.ln.map((ln) => {
-      const xs = new Float32Array(m), ys = new Float32Array(m), br = new Float32Array(m);
-      for (let j = j0; j <= j1; j++) {
-        const q = pts[j], s = q.s + s0, e = env[j] * smooth(0, 320, hs - q.s);
-        const off = amp * e * (ln.lane + ln.a * Math.sin(two * (s - ln.v * t) / ln.lam + ln.ph)) + sw[j - j0];
-        xs[j - j0] = q.x + q.nx * off + ox; ys[j - j0] = q.y + q.ny * off + oy;
-        br[j - j0] = (0.25 + 0.75 * e) * (0.6 + 0.4 * Math.sin(two * (s - ln.fv * t) / (ln.fl * this.o.wave) + ln.fp));
+  drawTube(gl, T, ox, oy, t) {
+    if (!this.buf) this.buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.buf);
+    if (this.fresh) { gl.bufferData(gl.ARRAY_BUFFER, this.data, gl.STATIC_DRAW); this.fresh = false; }
+    gl.vertexAttribPointer(T.aP, 2, gl.FLOAT, false, 32, 0);
+    gl.vertexAttribPointer(T.aN, 2, gl.FLOAT, false, 32, 8);
+    gl.vertexAttribPointer(T.aA, 4, gl.FLOAT, false, 32, 16);
+    const h = this.head(), o = this.o, w = o.wave, g = this.gaps, L = this.L;
+    gl.uniform2f(T.uOff, ox, oy);
+    gl.uniform1f(T.uS0, o.anchor === "end" ? -L : 0);
+    gl.uniform1f(T.uHs, h.s); gl.uniform1f(T.uHW, this.hw);
+    gl.uniform1f(T.uW, this.W); gl.uniform1f(T.uHR, this.hr); gl.uniform1f(T.uDim, o.dim);
+    gl.uniform1f(T.uSwA, this.swA); gl.uniform1f(T.uSwW, o.swayWave);
+    gl.uniform1f(T.uZW, w * 2.3); gl.uniform1f(T.uTw, w * 0.8); gl.uniform1f(T.uPL, w * 1.7);
+    gl.uniform1f(T.uHot, this.p < 0.998 ? 1.1 : 0);
+    gl.uniform4f(T.uPh, this.ph[0], this.ph[1], this.ph[2], this.ph[3]);
+    gl.uniform4f(T.uGap, g[0] ? g[0][0] * L : -1, g[0] ? g[0][1] * L : -1, g[1] ? g[1][0] * L : -1, g[1] ? g[1][1] * L : -1);
+    // only the stretch up to the head
+    const n = Math.min(this.pts.length, h.j + 2);
+    if (n > 1) gl.drawArrays(gl.TRIANGLE_STRIP, 0, n * 2);
+  }
+
+  drawHead(gl, H, ox, oy, t) {
+    if (this.p >= 0.998 || this.p <= 0.002) return;
+    const h = this.head();
+    if (this.gaps.length && this.inGap(h.s)) return;
+    const q = this.pts[Math.min(h.j, this.pts.length - 1)], sw = this.sway(Math.min(h.j, this.pts.length - 1), t);
+    const rad = (26 + this.W * 3) * this.headK * (1 + 0.1 * Math.sin(t * 2.4));
+    gl.uniform2f(H.uC, h.x + q.nx * sw + ox, h.y + q.ny * sw + oy);
+    gl.uniform1f(H.uRad, rad); gl.uniform1f(H.uI, this.o.dim);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+
+  // without WebGL: the path as a soft line up to the head, and the head as a small glow
+  draw2d(ctx, ox, oy, t) {
+    const pts = this.pts, h = this.head(), n = Math.min(pts.length, h.j), dim = this.o.dim;
+    const hj = Math.min(h.j, pts.length - 1), hsw = this.sway(hj, t), hx = h.x + pts[hj].nx * hsw + ox, hy = h.y + pts[hj].ny * hsw + oy;
+    const hidden = this.gaps.length && this.inGap(h.s);
+    for (const [w, a] of [[this.W * 2.6, 0.1], [this.W * 0.9, 0.32], [Math.max(1.4, this.W * 0.32), 0.9]]) {
+      ctx.beginPath();
+      let pen = false;
+      for (let j = 0; j < n; j++) {
+        const q = pts[j], sw = this.sway(j, t);
+        if (this.gaps.length && this.inGap(q.s)) { pen = false; continue; }
+        const x = q.x + q.nx * sw + ox, y = q.y + q.ny * sw + oy;
+        if (pen) ctx.lineTo(x, y); else { ctx.moveTo(x, y); pen = true; }
       }
-      return { xs, ys, br };
-    });
-    return { h, runs, j0, j1, xy };
-  }
-
-  // the bloom, painted small: a soft wide band of light under the lines, and the head's flare
-  bloom(l, g, ox, oy) {
-    const amp = this.amp;
-    if (g.xy) for (const [r0, r1] of g.runs) {
-      if (r1 - r0 < 1) continue;
-      const A = g.xy[0], B = g.xy[1];
-      for (const [wm, al] of [[2.8, 0.1], [1.2, 0.18]]) {
-        l.beginPath();
-        for (let j = r0; j <= r1; j++) { const i = j - g.j0, x = (A.xs[i] + B.xs[i]) / 2, y = (A.ys[i] + B.ys[i]) / 2; if (j === r0) l.moveTo(x, y); else l.lineTo(x, y); }
-        l.strokeStyle = `rgba(48,247,123,${al * this.o.dim})`; l.lineWidth = Math.max(6, amp * wm); l.stroke();
-      }
+      if (pen && !hidden) ctx.lineTo(hx, hy);
+      ctx.strokeStyle = a > 0.5 ? `rgba(214,255,232,${a * dim})` : `rgba(48,247,123,${a * dim})`;
+      ctx.lineWidth = w; ctx.stroke();
     }
-    if (this.p > 0.002 && this.p < 0.998 && !(this.gaps.length && this.inGap(g.h.s))) {
-      const r = 110 * this.headK; l.globalAlpha = this.o.dim; l.drawImage(P.glow, g.h.x + ox - r, g.h.y + oy - r, r * 2, r * 2); l.globalAlpha = 1;
-    }
-  }
-
-  paint(ctx, ox, oy, t, g) {
-    if (!g.xy) { this.paintHead(ctx, ox, oy, g.h, t); return; }
-    const pts = this.pts, amp = this.amp, hs = g.h.s, step = this.L / (pts.length - 1), dim = this.o.dim;
-    // the lines, in short runs so the flicker can run along them
-    const C = 8;
-    for (let k = 0; k < this.ln.length; k++) {
-      const ln = this.ln[k], { xs, ys, br } = g.xy[k];
-      for (const [r0, r1] of g.runs) {
-        for (let c = r0; c < r1; c += C) {
-          const e = Math.min(r1, c + C), i0 = c - g.j0, im = Math.min(e, c + (C >> 1)) - g.j0, al = ln.al * br[im] * dim;
-          if (al < 0.01) continue;
-          // a run wholly off the canvas would paint nothing: skip it (round 8, for speed; the points are still counted
-          // from the same place, so the flicker along the line falls exactly where it did)
-          let x0 = xs[i0], x1 = x0, y0 = ys[i0], y1 = y0;
-          for (let j = i0 + 1; j <= e - g.j0; j++) { const x = xs[j], y = ys[j]; if (x < x0) x0 = x; else if (x > x1) x1 = x; if (y < y0) y0 = y; else if (y > y1) y1 = y; }
-          const pad = ln.w * 2 + 4;
-          if (x1 < -pad || x0 > P.W + pad || y1 < -pad || y0 > P.ah + pad) continue;
-          ctx.beginPath(); ctx.moveTo(xs[i0], ys[i0]);
-          for (let j = c + 1; j <= e; j++) ctx.lineTo(xs[j - g.j0], ys[j - g.j0]);
-          if (!ln.hair) { ctx.strokeStyle = tint(ln.col, al * 0.16); ctx.lineWidth = ln.w * 4; ctx.stroke(); }
-          ctx.strokeStyle = tint(ln.col, al); ctx.lineWidth = ln.w; ctx.stroke();
-        }
-      }
-    }
-    // the dust, around the lit part only
-    for (const d of this.du) {
-      const s = (d.u * this.L + 14 * t) % this.L;
-      if (s > hs) continue;
-      const j = Math.min(pts.length - 1, Math.round(s / step));
-      if (j < g.j0 || j > g.j1 || (this.gaps.length && this.inGap(pts[j].s))) continue;
-      const q = pts[j], e = this.env[j] * smooth(0, 320, hs - s), off = amp * (0.25 + e) * d.off + this.sway(j, t);
-      const a = (0.35 + 0.65 * Math.abs(Math.sin(t * d.tw + d.tp))) * smooth(0, 160, s) * (0.4 + 0.6 * e) * dim;
-      if (a < 0.04) continue;
-      const z = d.z * 3.2;
-      ctx.globalAlpha = a; ctx.drawImage(P.spark, q.x + q.nx * off + ox - z / 2, q.y + q.ny * off + oy - z / 2, z, z);
-    }
-    ctx.globalAlpha = 1;
-    // sparks: small lights running along the two cores towards the head
-    if (t) for (const sp of this.sp) {
-      const { xs, ys } = g.xy[sp.k], s = (sp.o * hs + sp.v * t) % Math.max(1, hs);
-      const j = Math.min(pts.length - 1, Math.round(s / step));
-      if (j < g.j0 || j > g.j1 || (this.gaps.length && this.inGap(pts[j].s))) continue;
-      const fade = smooth(0, 120, s) * smooth(hs, hs - 60, s);
-      if (fade < 0.02) continue;
-      ctx.globalAlpha = fade * dim; ctx.drawImage(P.spark, xs[j - g.j0] - 9, ys[j - g.j0] - 9, 18, 18); ctx.globalAlpha = 1;
-    }
-    this.paintHead(ctx, ox, oy, g.h, t);
-  }
-
-  paintHead(ctx, ox, oy, h, t) {
-    if (this.p >= 0.998 || this.p <= 0.002 || (this.gaps.length && this.inGap(h.s))) return;
-    const r = 34 * this.headK * (1 + 0.12 * Math.sin(t * 2.4));
-    ctx.globalAlpha = this.o.dim; ctx.drawImage(P.glow, h.x + ox - r, h.y + oy - r, r * 2, r * 2); ctx.globalAlpha = 1;
+    if (hidden || this.p >= 0.998 || this.p <= 0.002) return;
+    const rad = (26 + this.W * 3) * this.headK, g = ctx.createRadialGradient(hx, hy, 0, hx, hy, rad);
+    g.addColorStop(0, `rgba(240,255,246,${dim})`); g.addColorStop(0.08, `rgba(140,250,185,${0.6 * dim})`); g.addColorStop(0.3, `rgba(48,247,123,${0.14 * dim})`); g.addColorStop(1, "rgba(48,247,123,0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(hx, hy, rad, 0, TAU); ctx.fill();
   }
 
   // the fraction of the trail drawn when its head is at height y (the path must only ever go down, as the page does)

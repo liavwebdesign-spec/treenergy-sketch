@@ -643,12 +643,15 @@ function layoutProc() {
     const hr = $(".proc-head", proc).getBoundingClientRect(), mid = (P[0].y + P[1].y) / 2;
     procTop = hr.top - r.top - Math.max(64, trailAmp() * 3);
     const R = (mid - procTop) / 2, cx = sw - r.left - R * 0.3, k = R * 0.5523;
-    let x = cx, y = mid;
+    // the turn comes back at mid a little past the first step, so the current reaches it from the start side in a soft
+    // curve (at every width the round turn alone came back short of it, and the trail had to double back: a hook)
+    const cb = Math.max(cx, P[0].x + Math.max(72, (mid - P[0].y) * 2)), kb = (cx + R - cb) * 0.5523;
+    let x = cb, y = mid;
     const y0 = procTop - 72, xa = W * 0.55;
     segs.push(["C", inX, y0, xa * 0.55, y0, xa * 0.55, procTop, xa, procTop]);
     segs.push(["L", xa, procTop, cx, procTop]);
     segs.push(["C", cx, procTop, cx + k, procTop, cx + R, procTop + R - k, cx + R, procTop + R]);
-    segs.push(["C", cx + R, procTop + R, cx + R, procTop + R + k, cx + k, mid, cx, mid]);
+    segs.push(["C", cx + R, procTop + R, cx + R, procTop + R + k, cb + kb, mid, cb, mid]);
     const to = (nx, ny) => { const q = (x - nx) * 0.5; segs.push(["C", x, y, x - q, y, nx + q, ny, nx, ny]); x = nx; y = ny; };
     P.forEach((p) => to(p.x, p.y));
     to(inX, mid);
