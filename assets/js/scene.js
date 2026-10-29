@@ -552,11 +552,22 @@ function layoutTitle(v) {
   c.y = y0 + DROP * H;
   tw.style.fontSize = F.toFixed(1) + "px";
   const tps = tw.querySelectorAll("textPath"), paths = tw.querySelectorAll("path");
+  // Safari lays text on a path out left to right whatever its direction, so the Hebrew came out backwards there (the
+  // client's phone, 29.10). The letters are written already in the order they are seen, left to right, and the text is
+  // told not to reorder them (scene.css), so every browser draws the same line
+  const back = (s) => [...s].reverse().join("");
   tps.forEach((tp, i) => {
     const l = lines[i];
-    tp.textContent = l ? l[0] : "";
-    if (l) { tp.setAttribute("textLength", ((k.measureText(l.join("")).width * F * TL_NARROW) / 100).toFixed(1)); tp.setAttribute("lengthAdjust", "spacingAndGlyphs"); } else tp.removeAttribute("textLength");
-    if (l && l[1]) { const g = document.createElementNS("http://www.w3.org/2000/svg", "tspan"); g.setAttribute("class", "g"); g.textContent = l[1]; tp.append(g); }
+    tp.textContent = "";
+    // set from its start, not centred: Safari centres the line on its width before the squeeze, which put it 27px off
+    // to the left on a phone. The arc's middle is where it crosses x, so half the arc less half the line
+    if (l) {
+      const L = (k.measureText(l.join("")).width * F * TL_NARROW) / 100, R = Rb(i);
+      tp.setAttribute("textLength", L.toFixed(1)); tp.setAttribute("lengthAdjust", "spacingAndGlyphs");
+      tp.setAttribute("startOffset", (R * Math.min(1.2, W / R) - L / 2).toFixed(1)); tp.setAttribute("text-anchor", "start");
+    } else tp.removeAttribute("textLength");
+    if (l && l[1]) { const g = document.createElementNS("http://www.w3.org/2000/svg", "tspan"); g.setAttribute("class", "g"); g.textContent = back(l[1]); tp.append(g); }
+    if (l) tp.append(back(l[0]));
     paths[i].setAttribute("d", l ? arcD(c, Rb(i), x) : "M0 0");
   });
   // the coloured word's light runs across the word itself, as on the h1

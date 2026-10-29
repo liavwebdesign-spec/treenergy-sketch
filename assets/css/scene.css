@@ -171,3 +171,5 @@ html[data-hero="title"] .lb-tw{display:block;position:absolute;z-index:3;left:0;
   mask-image:radial-gradient(circle var(--mr) at var(--mx) var(--my),transparent calc(var(--mr) - 1px),#000 calc(var(--mr) + var(--mf,2px)))} /* qa-allow: physical, placed in screen pixels by scene.js */
 html[data-hero="title"] .lb-h.is-in ~ .lb-tw{opacity:1}
 .lb-tw .g{fill:url(#lb-tw-g)}
+/* scene.js writes the line in the order it is seen, left to right (Safari ignores the direction on a path) */
+.lb-tw text{direction:ltr;unicode-bidi:bidi-override}
