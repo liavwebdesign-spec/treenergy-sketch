@@ -92,7 +92,9 @@ export function mountSky(canvas) {
   function loop(now) {
     raf = requestAnimationFrame(loop);
     acc += Math.min(0.1, (now - last) / 1000); last = now;
-    if (acc < STEP && !dirty) return;
+    // the scroll's drift waits for the next step too (29.10: redrawn on every frame of the scroll, the night was most of
+    // what a phone's graphics did through the projects, though a step moves it less than a pixel)
+    if (acc < STEP) return;
     time += acc; acc = 0;
     draw();
   }

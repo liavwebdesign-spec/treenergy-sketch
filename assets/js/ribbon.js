@@ -181,7 +181,7 @@ function painter() {
   if (P.cv) return;
   const make = () => {
     const cv = document.createElement("canvas");
-    cv.className = "trails"; cv.setAttribute("aria-hidden", "true");
+    cv.className = "trails"; cv.setAttribute("aria-hidden", "true"); cv.style.visibility = "hidden";   // out of the picture until a trail is drawn
     return cv;
   };
   let cv = P.cv = make();
@@ -237,9 +237,11 @@ function paint(now) {
   }
   const gl = P.gl, ctx = P.ctx;
   if (!on.length) {
-    if (!P.blank) { if (gl) { gl.viewport(0, 0, P.cv.width, P.cv.height); gl.clear(gl.COLOR_BUFFER_BIT); } else { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, P.cv.width, P.cv.height); } P.blank = true; }
+    // and an empty canvas is taken out of the picture, so the phone does not lay a blank screen over the page every frame
+    if (!P.blank) { if (gl) { gl.viewport(0, 0, P.cv.width, P.cv.height); gl.clear(gl.COLOR_BUFFER_BIT); } else { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, P.cv.width, P.cv.height); } P.blank = true; P.cv.style.visibility = "hidden"; }
     return;
   }
+  if (P.blank) P.cv.style.visibility = "";
   if (gl) {
     gl.viewport(0, 0, P.cv.width, P.cv.height);
     gl.clear(gl.COLOR_BUFFER_BIT);

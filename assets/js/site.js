@@ -816,7 +816,11 @@ function layoutFlow() {
   const r = worksSec.getBoundingClientRect(), W = r.width;
   flowSvg.setAttribute("viewBox", `0 0 ${W} ${r.height}`);
   const x = startRail(W, worksSec), sx = doc.clientWidth - r.left + Math.max(120, trailAmp() * 6), rl = getComputedStyle(worksSec).direction === "rtl";
-  const head = $(".works-head", worksSec).getBoundingClientRect().top - r.top, wall = sayWall.getBoundingClientRect().bottom - r.top;
+  // (Liav 29.10: "במובייל בסקשן הזה השובל יכול להיות מוסתר ורק כשהוא מסתיים השובל יחזור חזרה החוצה") on a phone the
+  // projects go by without it: it comes back in by the same edge out of the last one's night, just above the voices
+  const head = innerWidth < 768 ? says.getBoundingClientRect().top - r.top + (parseFloat(getComputedStyle(says).paddingTop) || 0)
+    : $(".works-head", worksSec).getBoundingClientRect().top - r.top;
+  const wall = sayWall.getBoundingClientRect().bottom - r.top;
   // a long soft swing in (sloping down from the edge, upright on the rail just above the heading), and the same swing out
   // below 1024 the process goes out by this same side just above: the thread starts only under where it left, so the
   // two are never on the screen at once (Liav 26.10: "שיהיה רק שובל אחד לאורך כל הגלילה")
