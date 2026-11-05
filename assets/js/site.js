@@ -1037,9 +1037,15 @@ if (nearIO) [dom, whySec, procRun, worksSec, sayWall, kn, closeSec, ft, ...drift
 // they cost a repaint every frame even off screen. While their section is out of sight it is marked .is-far and they
 // hold still (site.css); on screen nothing changes. The arc's moving noise round the plug (an SVG filter run by SMIL,
 // the costliest of them) is paused too while the section is away or the plug is dark (after its fade-out)
+// Apple's engine (Safari, and every browser on an iPhone) chokes on that filter and does not even draw it (measured
+// 5.11.2026): the plug stuck there as the trail came in. So there the filter is gone, and the same crackle is drawn once
+// and only turned (arc-rings.js, .is-apple in site.css); everywhere else nothing changes
+const apple = /Apple/.test(navigator.vendor);
+if (apple) { document.documentElement.classList.add("is-apple"); $(".fx-defs")?.remove(); }
 const fx = $(".fx-defs"), canPause = !!(fx && fx.pauseAnimations);
-let arcFar = true, arcT = 0;
+let arcFar = true, arcT = 0, rings = false;
 function arcRun() {
+  if (apple && !arcFar && !rings) { rings = true; import("./arc-rings.js").then((m) => m.mountArcRings($(".plug-arc", closeSec))); }
   if (!canPause) return;
   clearTimeout(arcT);
   if (arcFar) fx.pauseAnimations();

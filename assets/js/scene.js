@@ -613,19 +613,37 @@ function project(v, u) {
 let dom = null;
 
 // ---- the tour ----
-// the section reads as: up to .022 the scene as it opens, then for each place a flight (.085) and a stop (.125), and
+// the section reads as: up to .022 the scene as it opens, then for each place a flight (.186) and a stop (.024), and
 // from .862 the camera pulls back over the whole scene, which stays and rises past the visitor. Nothing new plays after the
-// last place (Liav 19.10: "אפשר לדעתי לסיים עם כל האנימציות אחרי שמסיימים את המעבירים בין העמדות")
-const TT = { t0: 0.022, tr: 0.085, dw: 0.125, out: 0.07 }, SEG = TT.tr + TT.dw;
+// last place (Liav 19.10: "אפשר לדעתי לסיים עם כל האנימציות אחרי שמסיימים את המעבירים בין העמדות").
+// Since the status meeting of 5.11 one gesture carries the whole way from place to place (the stepper below), so nearly
+// all of the way is flight: a long stop would be a stretch of the glide with nothing moving. What a stop plays (the slow
+// push in, a place's life, the tick under its words) runs by the clock from the moment the camera lands (DW), at rest
+const TT = { t0: 0.022, tr: 0.186, dw: 0.024, out: 0.07 }, SEG = TT.tr + TT.dw;
 const easeIO = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(2 - 2 * t, 3) / 2);
 let TS = { mode: "ov", from: -1, to: -1, raw: 0, e: 0, dw: 0, u: [0.5, 0.5] };
+// a stop's clock: the place it belongs to, when it began, how far it has come (v). It stands still off the stop, so a
+// place left half way eases out from where it got to, and a flight turned back to it carries on from there
+const DWELL = 2.6, DW = { i: -1, t: 0, v: 0 };
+function dwStep(st, time) {
+  if (st.mode !== "at") { DW.t = time - DW.v * DWELL; return; }
+  if (DW.i !== st.to) { DW.i = st.to; DW.t = time; }
+  st.dw = DW.v = clamp01((time - DW.t) / DWELL);
+}
+// how much of the stop's slow push in is still on: all of it at the stop, gone half way out of it
+function dwKeep(st) {
+  if (st.mode === "at") return 1;
+  if (st.from === DW.i) return 1 - smooth(0, 0.5, st.raw);
+  if (st.mode === "go" && st.to === DW.i) return 1 - smooth(0, 0.5, 1 - st.raw);
+  return 0;
+}
 function tourAt(p) {
   const n = set.tour.stops.length, end = TT.t0 + n * SEG;
   if (p < TT.t0) return { mode: "ov", from: -1, to: -1, raw: 0, e: 0, dw: 0 };
-  if (p >= end) { const raw = clamp01((p - end) / TT.out); return { mode: "out", from: n - 1, to: -1, raw, e: easeIO(raw), dw: 1 }; }
+  if (p >= end) { const raw = clamp01((p - end) / TT.out); return { mode: "out", from: n - 1, to: -1, raw, e: easeIO(raw), dw: 0 }; }
   const i = Math.min(n - 1, Math.floor((p - TT.t0) / SEG)), q = p - TT.t0 - i * SEG;
   if (q < TT.tr) { const raw = q / TT.tr; return { mode: "go", from: i - 1, to: i, raw, e: easeIO(raw), dw: 0 }; }
-  return { mode: "at", from: i, to: i, raw: 1, e: 1, dw: clamp01((q - TT.tr) / TT.dw) };
+  return { mode: "at", from: i, to: i, raw: 1, e: 1, dw: 0 };
 }
 // where the camera stands for a place: close in, the place on the side of the screen away from its words (on a tall
 // screen high up, the words under it); -1 is the whole scene
@@ -670,8 +688,13 @@ function leadOf(x, y, s, b, tall) {
 // the scroll position of a place's stop, and the way there
 const yAt = (p) => sec.getBoundingClientRect().top + scrollY + p * (sec.offsetHeight - H);
 // while the page itself takes the camera somewhere, a slow frame must not read as a flight left half way
-let flyUntil = 0;
-function glide(y, duration) { flyUntil = performance.now() + duration * 1000 + 120; lenis.scrollTo(y, { duration, easing: (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(2 - 2 * t, 2) / 2) }); }
+let flyUntil = 0, gateUntil = 0;
+const softEnds = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(2 - 2 * t, 2) / 2);
+function glide(y, duration, easing = softEnds) {
+  const now = performance.now();
+  flyUntil = now + duration * 1000 + 120; gateUntil = now + duration * 880;
+  lenis.scrollTo(y, { duration, easing });
+}
 function goStop(i) {
   const y = yAt(TT.t0 + i * SEG + TT.tr + 0.012);
   if (lenis) glide(y, (slowDesk ? 1.4 : 1.1) + 0.35 * Math.abs(i - Math.max(0, TS.to)));
@@ -693,13 +716,123 @@ function placeAnchors() {
     sec.appendChild(at);
   });
 }
-// a flight left half way settles: past its middle on to the next place, before it back to the last one
-let idleT = 0;
+// ---- one gesture, one place (the status meeting, 5.11. Liav: "המעבר יהיה אחרי שאני עושה פעם אחת גלילה"; Daniel: "גלילה
+// אחת שתעביר את זה"; Idan: "גלילה לדעתי תחום") ----
+// Inside the tour the wheel, the finger and the keys no longer move the camera by how far they move: one gesture takes it
+// the whole way to the next place, where it stays until the next gesture. The way out at the end carries the visitor on
+// into the page, where the scroll is free again, and the way back from there comes in to the last place.
+// A place's number: -1 is the opening at the top of the page, the number of places is the way out
+const placeY = (i) => {
+  const n = set.tour.stops.length;
+  return i < 0 ? yAt(0) : i >= n ? yAt(1) + 0.75 * H : yAt(TT.t0 + i * SEG + TT.tr + 0.012);
+};
+const progNow = () => { const span = secH - H; return span > 0 ? clamp01((lenis.animatedScroll - secTop) / span) : 0; };
+// the place a gesture goes to from here. A flight about to land counts as landed, so a gesture made as it comes in goes on
+function nextPlace(st, dir) {
+  if (st.mode === "at") return st.to + dir;
+  if (st.mode === "go") return dir > 0 ? (st.raw > 0.85 ? st.to + 1 : st.to) : st.raw < 0.15 ? st.to - 2 : st.to - 1;
+  if (st.mode === "ov") return dir > 0 ? 0 : -1;
+  return dir > 0 ? set.tour.stops.length : set.tour.stops.length - 1;
+}
+// the scroll runs nearly even, so the camera's own easing is what the eye sees and it answers the gesture at once; a part
+// of the way takes its part of the time. The way out moves the page itself, so it lands softly
+function flyTo(i) {
+  const y = placeY(i), d = Math.abs(y - lenis.animatedScroll);
+  if (d < 1) return;
+  if (i >= set.tour.stops.length) { glide(y, slowDesk ? 2 : 1.6); return; }
+  const whole = SEG * (secH - H), k = Math.min(1, Math.max(0.4, d / (whole || 1)));
+  glide(y, (slowDesk ? 1.35 : 1.05) * k, (t) => Math.pow(t, 0.8));
+}
+// is the scroll in the tour's hands, going this way? Past the section's end the page is free, and so is the top of the page
+function inTour(dir) {
+  const y = lenis.animatedScroll, end = secTop + secH - H;
+  return dir > 0 ? y < end - 1 : y > secTop + 0.5 && y <= end + 2;
+}
+const G = { last: 0, sign: 0, avg: 0, acc: 0, armed: true };            // the wheel's gesture
+const TF = { on: false, free: false, first: false, acc: 0, fired: false };   // the finger's
+// every wheel and touch event comes here first (Lenis's own hook): false means it is dealt with, and Lenis leaves it alone
+function tourGesture({ deltaX, deltaY, event: e }) {
+  if (lenis.isStopped) return true;     // the menu is open
+  const now = performance.now(), busy = now < gateUntil;
+  if (e.type === "wheel") {
+    if (e.ctrlKey) return true;         // zooming the page
+    if (!deltaY || Math.abs(deltaX) > Math.abs(deltaY)) { if (busy) e.preventDefault(); return !busy; }
+    // A touchpad's gesture goes on by itself long after the fingers have left (a stream of events that dies away), so a
+    // flight's end is not a new gesture: only a quiet moment, a turn the other way, or a clear new push is. A wheel still
+    // spinning hard well after the flight has landed is someone who wants to go on
+    // (the gap is read from when the event happened, not when it got here: a slow frame must not read as a quiet moment)
+    const a = Math.abs(deltaY), sg = Math.sign(deltaY), gap = e.timeStamp - G.last;
+    if (gap > 150 || sg !== G.sign || (!busy && a > 24 && a > G.avg * 2.2)) { G.armed = true; G.acc = 0; }
+    else if (now > gateUntil + 350 && a >= 60) G.armed = true;
+    G.avg = gap > 150 ? a : G.avg * 0.7 + a * 0.3; G.last = e.timeStamp; G.sign = sg;
+    if (busy) { e.preventDefault(); return false; }
+    if (!inTour(sg)) return true;
+    e.preventDefault();
+    if (G.armed && (G.acc += a) >= 12) { G.armed = false; G.acc = 0; flyTo(nextPlace(tourAt(progNow()), sg)); }
+    return false;
+  }
+  if (e.type === "touchstart") {
+    // two fingers, or a page zoomed in: the page is the visitor's to move
+    const zoomed = window.visualViewport && visualViewport.scale > 1.01;
+    TF.on = true; TF.free = e.touches.length > 1 || zoomed; TF.first = true; TF.acc = 0; TF.fired = false;
+    return true;
+  }
+  if (e.type === "touchend") {
+    if (!e.touches.length) { TF.on = false; clearTimeout(idleT); idleT = setTimeout(settle, 220); }
+    return TF.free;
+  }
+  if (TF.free) return true;
+  if (e.touches.length > 1) { TF.free = true; return true; }
+  if (TF.first) {
+    TF.first = false;
+    // sideways is not ours; nor is pulling down at the top of the page (a phone's refresh), nor the page below the tour
+    if (Math.abs(deltaX) > Math.abs(deltaY) || (!busy && !inTour(Math.sign(deltaY) || 1))) { TF.free = true; return true; }
+  }
+  // a finger put down on a page still running from a flick can't be held: the page runs on, and settles when it stops
+  if (!e.cancelable) { TF.free = true; return true; }
+  e.preventDefault();
+  if (!TF.fired && !busy && Math.abs(TF.acc += deltaY) >= 24) {
+    const dir = Math.sign(TF.acc);
+    TF.fired = true;
+    if (inTour(dir)) flyTo(nextPlace(tourAt(progNow()), dir));
+  }
+  return false;
+}
+function tourKey(e) {
+  if (lenis.isStopped || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+  const k = e.key, sp = k === " " || k === "Spacebar";
+  const dir = k === "ArrowDown" || k === "PageDown" || (sp && !e.shiftKey) ? 1 : k === "ArrowUp" || k === "PageUp" || (sp && e.shiftKey) ? -1 : 0;
+  if (!dir || !inTour(dir)) return;
+  const t = e.target, on = (s) => t && t.closest && t.closest(s);
+  if (on("input, textarea, select, [contenteditable]") || (sp && on("a, button, summary, label"))) return;
+  e.preventDefault();
+  if (performance.now() >= gateUntil) flyTo(nextPlace(tourAt(progNow()), dir));
+}
+// whatever else leaves the camera between places (a flick that can't be held, a link, a page opened half way down) settles
+// on the way it was going, or to the nearest when it wasn't going anywhere. Not under a finger, or a hand on the scrollbar
+let idleT = 0, lastDir = 0, barHeld = false;
 function settle() {
-  if (!tourOn || !lenis || performance.now() < flyUntil || TS.mode !== "go" || TS.raw < 0.03 || TS.raw > 0.97) return;
-  // on a desktop the way is longer, so a short push of the wheel already carries on in the way it went
-  const pa = TT.t0 + TS.to * SEG, mid = slowDesk ? (lenis.direction < 0 ? 0.8 : 0.2) : 0.5;
-  glide(yAt(TS.raw < mid ? (TS.to === 0 ? 0 : pa - 0.004) : pa + TT.tr + 0.012), slowDesk ? 1.25 : 0.9);
+  if (!tourOn || !lenis || lenis.isStopped || TF.on || barHeld || performance.now() < flyUntil) return;
+  // a link's own glide still on its way: not left half way, it gets where it was sent
+  if (lenis.isScrolling === "smooth") { clearTimeout(idleT); idleT = setTimeout(settle, 220); return; }
+  const y = lenis.animatedScroll;
+  if (y < secTop + 0.5 || y > secTop + secH - H + 1) return;
+  const st = tourAt(progNow());
+  if (st.mode === "at") return;
+  const dir = lastDir || (st.raw < 0.5 ? -1 : 1);
+  flyTo(st.mode === "go" ? (dir > 0 ? st.to : st.to - 1) : nextPlace(st, dir));
+}
+function tourStepper() {
+  lenis.options.virtualScroll = tourGesture;
+  addEventListener("keydown", tourKey);
+  addEventListener("touchcancel", () => { TF.on = false; }, { passive: true });
+  // the scrollbar is the only thing a press lands on the page's root for
+  addEventListener("mousedown", (e) => { if (e.target === root) barHeld = true; }, { passive: true });
+  const letGo = () => { if (!barHeld) return; barHeld = false; clearTimeout(idleT); idleT = setTimeout(settle, 220); };
+  addEventListener("mouseup", letGo, { passive: true });
+  addEventListener("mousemove", (e) => { if (!e.buttons) letGo(); }, { passive: true });
+  lenis.on("scroll", () => { lastDir = lenis.direction || lastDir; clearTimeout(idleT); idleT = setTimeout(settle, 220); });
+  addEventListener("load", () => { clearTimeout(idleT); idleT = setTimeout(settle, 400); });
 }
 // what the tour shows this frame: the marks, the words, and the shader's focus, frost, life and energy front
 const TU = { foc: [0.5, 0.5], focR: 1, focA: 0, panS: 1, panA: 0, fx: 0, fxK: 0, fxT: 0, fxO: [0, 0], fxM: [1, 0, 0, 1], fxC: [0, 0], enO: [0, 0], enR: 0, enK: 0,
@@ -741,7 +874,8 @@ function tourDraw(v, time) {
   if (cur >= 0) {
     const s = S[cur], k = presence(st, cur, 0.4);
     TU.panS = tall ? 0 : s.side; TU.panA = k;
-    life(s, presence(st, cur, 0.45), st.mode === "at" ? 0.1 + 0.86 * smooth(0, 0.9, st.dw) : cur === st.to ? 0.1 : 0.96);
+    // (a place being left stays where its clock got to; one being come to starts from the beginning)
+    life(s, presence(st, cur, 0.45), cur === DW.i ? 0.1 + 0.86 * smooth(0, 0.9, DW.v) : 0.1);
     TU.hov = [s.u[0], s.u[1], presence(st, cur, 0.45)]; TU.hovR = s.ring[2] * ia * 1.15;
   } else if (HV.i >= 0 && HV.k > 0) {
     const s = S[HV.i], k = smooth(0, 1, HV.k);
@@ -765,7 +899,7 @@ function tourDraw(v, time) {
     const on = presence(st, a.i, 0.4) > 0.5;
     if (on !== a.on) { a.on = on; a.el.classList.toggle("is-on", on); }
   }
-  if (cur >= 0) put(arts[cur].el, "--pw", (st.mode === "at" ? st.dw : cur === st.to ? 0 : 1).toFixed(3));
+  if (cur >= 0) put(arts[cur].el, "--pw", (cur === DW.i ? DW.v : 0).toFixed(3));
 }
 
 // the end: from e0 the scene rises (and the site's trail comes out of the city); once the stage lets go it keeps rising
@@ -813,10 +947,11 @@ function frame(now) {
     alpha = smooth(0, 0.9, since);
     reveal = smooth(0.6, 3.4, since);
     const st = tourAt(p), A = poseOf(st.from, intro), B = st.mode === "at" ? A : poseOf(st.to, intro), e = st.e;
+    dwStep(st, time);
     const u = [lerp(A.u[0], B.u[0], e), lerp(A.u[1], B.u[1], e)], a = [lerp(A.a[0], B.a[0], e), lerp(A.a[1], B.a[1], e)];
     const hop = st.mode === "go" && st.from >= 0 ? Math.sin(Math.PI * e) : 0;
     F.roll = -0.038 * (Math.sign(B.u[0] - A.u[0]) || 1) * hop * (set === SETS.tall ? 0.7 : 1);
-    zoom = Math.max(1, lerp(A.z, B.z, e) * (1 - 0.24 * hop) * (st.mode === "at" ? 1 + 0.05 * st.dw : 1)) * (1 + Math.abs(F.roll) * 1.6);
+    zoom = Math.max(1, lerp(A.z, B.z, e) * (1 - 0.24 * hop) * (1 + 0.05 * DW.v * dwKeep(st))) * (1 + Math.abs(F.roll) * 1.6);
     center = centerFor(zoom, u, a[0] * W, a[1] * H);
     F.m = 0.24 * hop; F.low = hop > 0 ? -0.035 * Math.sin(2 * Math.PI * e) : 0; F.foe = a;
     st.u = u; TS = st;
@@ -916,7 +1051,7 @@ if (tourOn) {
   stage.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse") { show(null); stage.style.cursor = ""; } });
   stage.addEventListener("click", (e) => { if (e.target.closest("a, button")) return; const k = pick(...stagePt(e)); if (k) go(k); });
   for (const a of arts) a.el.addEventListener("focusin", () => { if (!a.on) goStop(a.i); });
-  if (lenis) lenis.on("scroll", () => { clearTimeout(idleT); idleT = setTimeout(settle, 220); });
+  if (lenis) tourStepper();
 }
 const relayout = () => { Q.key = ""; Q.tg = -1; secH = 0; resize(); readScroll(); measureTitle(); for (const p of pins) p.cw = 0; if (dom) dom.layout(); if (tourOn) measureStops(); if (trail) trail.layout(); };
 // (a phone's address bar coming and going doesn't lay the tour out again: its stage is the small screen's height, which

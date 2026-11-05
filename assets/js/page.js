@@ -11,6 +11,7 @@ const doc = document.documentElement;
 /* ---------- the living night ---------- */
 let sky = null;
 try { sky = mountSky($("#sky")); } catch (e) { console.warn("sky", e); }
+window.__sky = sky;  // a domain page (domain.js) moves the night with its own scroll
 
 /* ---------- header: the line is whole here ---------- */
 const hd = $("#hd"), main = $("#main");

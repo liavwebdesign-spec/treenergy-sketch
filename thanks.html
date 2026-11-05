@@ -18,8 +18,8 @@
     ["contrast", "links", "read", "still"].forEach(function (k) { if (ax[k]) d.classList.add("ax-" + k); });
     if (ax.text) d.classList.add("ax-t" + ax.text); })(document.documentElement);
 </script>
-<link rel="stylesheet" href="assets/css/site.css?v=r27">
-<script type="module" src="assets/js/page.js?v=r27"></script>
+<link rel="stylesheet" href="assets/css/site.css?v=r28">
+<script type="module" src="assets/js/page.js?v=r28"></script>
 </head>
 <body>
 <canvas id="sky" aria-hidden="true"></canvas>
@@ -30,7 +30,6 @@
 <header class="hd" id="hd">
   <div class="hd-start">
     <button class="mn-btn" type="button" aria-expanded="false" aria-controls="mn"><span class="mn-ic" aria-hidden="true"><i></i><i></i></span><span class="mn-lbl">תפריט</span></button>
-    <a class="hd-tel" href="tel:*6223" aria-label="חייגו 6223*"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg><span class="num">6223*</span></a>
   </div>
   <nav class="hd-rail" aria-label="המסע בעמוד">
     <span class="hd-wire" aria-hidden="true"><i class="hd-fill"></i></span>
@@ -43,7 +42,8 @@
   </nav>
   <div class="hd-end">
     <a class="hd-cta" href="index.html#contact">כמה תוכל להרוויח</a>
-    <a class="hd-logo" href="index.html"><img src="assets/brand/logo-on-dark.svg" alt="טרינרג'י, לעמוד הבית" width="507" height="125"><img class="hd-logo-l" src="assets/brand/logo-on-light.svg" alt="" width="507" height="125"></a>
+    <a class="hd-tel" href="tel:*6223" aria-label="חייגו 6223*"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></a>
+    <a class="hd-logo" href="index.html"><img src="assets/brand/logo-on-dark.svg" alt="טרינרג'י, לעמוד הבית" width="507" height="125"></a>
   </div>
 </header>
 
@@ -58,10 +58,10 @@
     <nav class="mn-nav" aria-label="ניווט ראשי">
       <ol class="mn-list">
         <li class="mn-it"><a href="index.html#dom-solar"><span class="mn-t">אנרגיה סולארית</span></a></li>
-        <li class="mn-it"><a href="index.html#dom-storage"><span class="mn-t">אגירת אנרגיה</span></a></li>
         <li class="mn-it"><a href="index.html#dom-charge"><span class="mn-t">טעינת רכבים</span></a></li>
-        <li class="mn-it"><a href="index.html#knowledge"><span class="mn-t">מרכז הידע</span></a></li>
+        <li class="mn-it"><a href="index.html#dom-storage"><span class="mn-t">אגירת אנרגיה</span></a></li>
         <li class="mn-it"><a href="index.html#about"><span class="mn-t">אודות</span></a></li>
+        <li class="mn-it"><a href="index.html#knowledge"><span class="mn-t">מרכז הידע</span></a></li>
         <li class="mn-it"><a href="index.html#contact"><span class="mn-t">יצירת קשר</span></a></li>
       </ol>
     </nav>
@@ -99,7 +99,7 @@
     <nav class="ft-col" aria-label="ניווט מהיר"><p class="ft-k">ניווט מהיר</p><a href="index.html#about">אודות</a><a href="index.html#knowledge">מרכז הידע</a><a href="index.html#contact">יצירת קשר</a></nav>
     <nav class="ft-col" aria-label="תחומי פעילות"><p class="ft-k">תחומי פעילות</p><a href="index.html#dom-solar">אנרגיה סולארית</a><a href="index.html#dom-charge">טעינת רכבים</a><a href="index.html#dom-storage">אגירת אנרגיה</a></nav>
     <div class="ft-col"><p class="ft-k">דברו איתנו</p><a href="tel:*6223">חייגו <span class="num">6223*</span></a><a class="lat" href="mailto:info@treenergy.co.il">info@treenergy.co.il</a><span>ישורון 3, תל אביב</span></div>
-    <div class="ft-col"><p class="ft-k">עקבו אחרינו</p><a href="#ft">פייסבוק</a><a href="#ft">אינסטגרם</a></div>
+    <div class="ft-col"><p class="ft-k">עקבו אחרינו</p><a href="https://www.facebook.com/treenergygroup" target="_blank" rel="noopener">פייסבוק</a><a href="https://www.instagram.com/treenergygroup" target="_blank" rel="noopener">אינסטגרם</a></div>
   </div>
   <div class="ft-sky" aria-hidden="true"><i class="ft-glow"></i><i class="ft-rim"></i></div>
   <div class="ft-base">
