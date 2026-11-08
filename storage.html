@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>אגירת אנרגיה | טרינרג'י</title>
+<meta name="description" content="טרינרג'י יוזמת, מקימה ומנהלת מערכות אגירת אנרגיה במתח נמוך ובמתח גבוה, מפתרונות לעסקים ומבנים מסחריים ועד פרויקטי אגירה רחבי היקף.">
+<meta name="theme-color" content="#000B26">
+<link rel="icon" href="assets/brand/mark.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/hatzor-regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/almoni-medium-aaa.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/almoni-regular-aaa.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/img/storage/hero-w.webp" as="image" media="(min-aspect-ratio:9/10)">
+<link rel="preload" href="assets/img/storage/hero-t.webp" as="image" media="(max-aspect-ratio:9/10)">
+<script>
+  document.documentElement.classList.add("js");
+  // the visitor's display choices (the accessibility panel) hold here too; "stop motion" counts as reduced motion
+  (function (d) { var ax = {}; try { ax = JSON.parse(localStorage.getItem("tr-ax") || "{}"); } catch (e) {}
+    window.__still = !!ax.still;
+    ["contrast", "links", "read", "still"].forEach(function (k) { if (ax[k]) d.classList.add("ax-" + k); });
+    if (ax.text) d.classList.add("ax-t" + ax.text); })(document.documentElement);
+  if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+</script>
+<link rel="stylesheet" href="assets/css/site.css?v=r29">
+<link rel="stylesheet" href="assets/css/domain.css?v=r29">
+<!-- the page's own files carry the round (?v=), so a visitor never gets this round's code with pieces of the last one from the cache -->
+<script type="importmap">{"imports":{"./assets/js/ribbon.js":"./assets/js/ribbon.js?v=r29","./assets/js/arc-rings.js":"./assets/js/arc-rings.js?v=r29","./assets/js/sky.js":"./assets/js/sky.js?v=r29"}}</script>
+<script defer src="vendor/gsap/gsap.min.js"></script>
+<script defer src="vendor/lenis/lenis.min.js"></script>
+<script type="module" src="assets/js/page.js?v=r29"></script>
+<script type="module" src="assets/js/domain.js?v=r29"></script>
+</head>
+<body>
+<canvas id="sky" aria-hidden="true"></canvas>
+<a class="hskip" href="#main">דלג לתוכן</a>
+
+<!-- header: the power line, whole on a domain page; this domain's node is where the visitor stands -->
+<header class="hd" id="hd">
+  <div class="hd-start">
+    <button class="mn-btn" type="button" aria-expanded="false" aria-controls="mn"><span class="mn-ic" aria-hidden="true"><i></i><i></i></span><span class="mn-lbl">תפריט</span></button>
+  </div>
+  <nav class="hd-rail" aria-label="ניווט באתר">
+    <span class="hd-wire" aria-hidden="true"><i class="hd-fill"></i></span>
+    <a class="hd-node" href="index.html#about"><i aria-hidden="true"></i><span>אודות</span></a>
+    <a class="hd-node" href="solar.html"><i aria-hidden="true"></i><span>סולארי</span></a>
+    <a class="hd-node is-here" href="storage.html" aria-current="page"><i aria-hidden="true"></i><span>אגירה</span></a>
+    <a class="hd-node" href="index.html#dom-charge"><i aria-hidden="true"></i><span>טעינה</span></a>
+    <a class="hd-node" href="index.html#knowledge"><i aria-hidden="true"></i><span>מרכז ידע</span></a>
+    <a class="hd-node" href="#contact"><i aria-hidden="true"></i><span>צור קשר</span></a>
+  </nav>
+  <div class="hd-end">
+    <a class="hd-cta" href="#contact">כמה תוכל להרוויח</a>
+    <a class="hd-tel" href="tel:*6223" aria-label="חייגו 6223*"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></a>
+    <a class="hd-logo" href="index.html"><img src="assets/brand/logo-on-dark.svg" alt="טרינרג'י, לעמוד הבית" width="507" height="125"></a>
+  </div>
+</header>
+
+<!-- the menu: a quiet room. The night closes over the page and the list rises line by line -->
+<div class="mn" id="mn" role="dialog" aria-modal="true" aria-label="תפריט">
+  <div class="mn-bg" aria-hidden="true"></div>
+  <div class="mn-in">
+    <div class="mn-top">
+      <button class="mn-close" type="button"><span class="mn-x" aria-hidden="true"><i></i><i></i></span><span class="mn-lbl">סגירה</span></button>
+      <img class="mn-logo" src="assets/brand/logo-on-dark.svg" alt="" width="507" height="125">
+    </div>
+    <nav class="mn-nav" aria-label="ניווט ראשי">
+      <ol class="mn-list">
+        <li class="mn-it"><a href="solar.html"><span class="mn-t">אנרגיה סולארית</span></a></li>
+        <li class="mn-it"><a href="index.html#dom-charge"><span class="mn-t">טעינת רכבים</span></a></li>
+        <li class="mn-it"><a class="is-on" href="storage.html" aria-current="page"><span class="mn-t">אגירת אנרגיה</span></a></li>
+        <li class="mn-it"><a href="index.html#about"><span class="mn-t">אודות</span></a></li>
+        <li class="mn-it"><a href="index.html#knowledge"><span class="mn-t">מרכז הידע</span></a></li>
+        <li class="mn-it"><a href="#contact"><span class="mn-t">יצירת קשר</span></a></li>
+      </ol>
+    </nav>
+    <div class="mn-side">
+      <div class="mn-contact">
+        <a class="mn-tel" href="tel:*6223"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>חייגו <span class="num">6223*</span></a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<main id="main" class="dp">
+
+<!-- the opening, the types and who it suits share one trail: it is born where the storage field meets the line in the
+     picture, comes down past the words, runs under the three types (lighting them) and leaves by the side -->
+<div class="dp-flow">
+  <svg class="dp-trail" aria-hidden="true" focusable="false"></svg>
+
+  <section class="sh" aria-labelledby="sh-h" data-glow-w="assets/img/storage/hero-w-glow.png" data-glow-t="assets/img/storage/hero-t-glow.png" data-birth="933,937,65,1357">
+    <div class="sh-pic" aria-hidden="true">
+      <picture>
+        <source media="(min-aspect-ratio:9/10)" srcset="assets/img/storage/hero-w.webp" width="2400" height="1340">
+        <img src="assets/img/storage/hero-t.webp" alt="" width="1080" height="1935" fetchpriority="high" decoding="async">
+      </picture>
+      <canvas class="sh-glow"></canvas>
+    </div>
+    <div class="sh-say">
+      <nav class="crumb" aria-label="מיקום באתר"><a href="index.html">דף הבית</a><span aria-hidden="true">/</span><span aria-current="page">אגירת אנרגיה</span></nav>
+      <h1 id="sh-h"><span class="sh-l">לא רק מיצרים אנרגיה,</span> <span class="sh-l"><span class="gword">מנהלים</span> אותה.</span></h1>
+      <p class="sh-lead">מערכות אגירת אנרגיה מאפשרות לנהל את האנרגיה בצורה חכמה וגמישה יותר, לנצל אותה בזמן הנכון ולייצר הזדמנויות כלכליות חדשות.</p>
+      <p class="sh-lead">אנו בטרינרג'י יוזמים, מקימים ומנהלים מערכות אגירה במתח נמוך ובמתח גבוה, החל מפתרונות לעסקים ומבנים מסחריים ועד לפרויקטי אגירה רחבי היקף.</p>
+      <a class="btn btn-lg" href="#contact" data-cta-origin>בדוק האם הנכס שלך מתאים<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
+    </div>
+  </section>
+
+  <!-- the types: three cells; the current runs under them and each catches the light as it passes. A cell opens for its text -->
+  <div class="sw-wrap">
+  <section class="sw" id="types" aria-labelledby="sw-h">
+    <h2 id="sw-h" data-drift="30">סוגי מערכות אגירה</h2>
+    <ul class="pcells pcells-3">
+      <li class="pc"><details class="pc-d"><summary><span class="pc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="ic" aria-hidden="true" focusable="false"><circle cx="7" cy="7" r="3"/><path d="M7 1.5v1.2M7 11.3v1.2M1.5 7h1.2M11.3 7h1.2M3.1 3.1l.9.9M10 10l.9.9M3.1 10.9l.9-.9M10 4l.9-.9"/><rect x="12" y="13" width="9" height="8" rx="1.5"/><path d="M15 13v-1.5h3V13"/><path d="M17 15l-1.5 2.2h2.2L16.2 19.5"/></svg></span><h3>אגירה משולבת סולארי</h3><span class="pc-sub">מקסום הערך מהמערכת הסולארית</span><i aria-hidden="true"></i></summary><p>שילוב סוללות אגירה במערכת סולארית חדשה או קיימת, מאפשר להעביר אנרגיה משעות הייצור לשעות שבהן הערך שלה גבוה יותר וכך למקסם את פונציאל הרווח.</p></details></li>
+      <li class="pc"><details class="pc-d"><summary><span class="pc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="ic" aria-hidden="true" focusable="false"><path d="M3 11l7-6 7 6"/><path d="M5 10v10h10V10"/><rect x="8" y="13" width="4" height="5" rx=".6"/><path d="M19 9v11M17 13h4M17 17h4"/></svg></span><h3>אגירה לצריכה עצמית <span lang="en" dir="ltr">(BTM)</span></h3><span class="pc-sub">לנהל את האנרגיה מאחורי המונה</span><i aria-hidden="true"></i></summary><p>מערכת סוללות אגירה "מאחורי המונה" המותאמת לפרופיל הצריכה של הנכס. אוגרים בשעות ה"שפל" ומשתמשים בשעות ה"שיא" וכך מנהלים עומסים, מנצלים חכם יותר את האנרגיה וחוסכים כסף רב.</p></details></li>
+      <li class="pc"><details class="pc-d"><summary><span class="pc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="ic" aria-hidden="true" focusable="false"><rect x="2" y="9" width="9" height="10" rx="1"/><rect x="13" y="9" width="9" height="10" rx="1"/><path d="M4.5 12v4M7 12v4M15.5 12v4M18 12v4"/><path d="M6.5 9V5h11v4M12 5V3"/></svg></span><h3>אגירה מסחרית</h3><span class="pc-sub">אגירה בהיקפים גדולים כחלק ממשק האנרגיה</span><i aria-hidden="true"></i></summary><p>מערכות אגירה בקנה מידה מסחרי, העמודות כמתקן עצמאי או בשילוב מקור ייצור סולארי. מערכת המאפשרת לייצר נכס אנרגטי משמעותי שמגיב לצרכי הרשת והמשק.</p></details></li>
+    </ul>
+  </section>
+  </div>
+
+  <!-- who it suits: the places themselves, large, each lit as it crosses the screen -->
+  <section class="spl" id="who" aria-labelledby="spl-h">
+    <h2 id="spl-h">למי זה מתאים?</h2>
+    <ul class="pl pl-7">
+      <li class="pl-it is-on"><img src="assets/img/solar/pl-roofs.webp" alt="" width="1400" height="1050" loading="lazy" decoding="async"><span class="pl-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 13l4-7h10l4 7z"/><path d="M7 6l-1 7M12 6v7M17 6l1 7M5 9.5h14"/><path d="M12 13v4M8 21h8M10 17h4"/></svg><span class="pl-n">מערכות סולאריות קיימות</span></span></li>
+      <li class="pl-it"><img src="assets/img/storage/au-centers.webp" alt="" width="1400" height="1050" loading="lazy" decoding="async"><span class="pl-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 8h16l-1.5 11a2 2 0 0 1-2 1.7h-9a2 2 0 0 1-2-1.7z"/><path d="M8.5 8V6.5a3.5 3.5 0 0 1 7 0V8"/></svg><span class="pl-n">מרכזי קניות</span></span></li>
+      <li class="pl-it"><img src="assets/img/storage/au-malls.webp" alt="" width="1400" height="1050" loading="lazy" decoding="async"><span class="pl-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 21V9l9-5 9 5v12"/><path d="M3 21h18M7 21v-6h10v6M7 11h2M11 11h2M15 11h2"/></svg><span class="pl-n">קניונים</span></span></li>
+      <li class="pl-it"><img src="assets/img/storage/au-factories.webp" alt="" width="1400" height="1050" loading="lazy" decoding="async"><span class="pl-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 21V11l5 3v-3l5 3v-3l5 3V4h3v17z"/><path d="M7 18h2M12 18h2"/></svg><span class="pl-n">מפעלים</span></span></li>
+      <li class="pl-it"><img src="assets/img/storage/au-hotels.webp" alt="" width="1400" height="1050" loading="lazy" decoding="async"><span class="pl-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 21V3h14v18"/><path d="M3 21h18M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2M11 21v-3h2v3"/></svg><span class="pl-n">מלונות</span></span></li>
+      <li class="pl-it"><img src="assets/img/storage/au-fuel.webp" alt="" width="1400" height="1050" loading="lazy" decoding="async"><span class="pl-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/><path d="M3 21h12M6 8h6"/><path d="M14 10h2a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0V8l-2.5-2.5"/></svg><span class="pl-n">תחנות דלק</span></span></li>
+      <li class="pl-it"><img src="assets/img/storage/au-towns.webp" alt="" width="1400" height="1050" loading="lazy" decoding="async"><span class="pl-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 21h20"/><path d="M4 21v-8l4-3 4 3v8"/><path d="M12 21V9l4-3 4 3v12"/><path d="M7 16h2M15 12h2M15 16h2"/></svg><span class="pl-n">יישובים/רשויות</span></span></li>
+    </ul>
+    <a class="btn" href="#contact">בדוק האם הנכס שלך מתאים<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
+  </section>
+</div>
+
+<!-- the benefits: a faint thread of the trail on the start rail beside them, and each benefit's icon lights as it passes -->
+<div class="dp-tail">
+  <svg class="tail-trail" aria-hidden="true" focusable="false"></svg>
+  <section class="bn" id="benefits" aria-labelledby="bn-h">
+    <div class="bn-main">
+      <h2 id="bn-h" data-drift="30">היתרונות של מערכת אגירה</h2>
+      <ul class="bn-list">
+        <li class="bn-it"><span class="bn-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="ic" aria-hidden="true" focusable="false"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span><h3>מקסום הערך הכלכלי</h3><p>אגירה מאפשרת לנהל את האנרגיה בהתאם למחירים, לתעריפים ולתנאי השוק, ולממש אותה בזמן שבו הערך שלה גבוה יותר.</p></li>
+        <li class="bn-it"><span class="bn-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="ic" aria-hidden="true" focusable="false"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M12.8 8l-2.6 4.2h3.4L11.2 16"/></svg></span><h3>חוסן ורציפות אנרגטית</h3><p>בתכנון המתאים, אגירה מאפשרת גיבוי והמשכיות תפעולית, מפחיתה את התלות ברשת ומחזקת את הביטחון האנרגטי של הנכס.</p></li>
+        <li class="bn-it"><span class="bn-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="ic" aria-hidden="true" focusable="false"><path d="M4 7h11M4 17h7"/><circle cx="18" cy="7" r="2.5"/><circle cx="14" cy="17" r="2.5"/><path d="M20.5 7H21M16.5 17H21"/></svg></span><h3>גמישות אנרגטית</h3><p>היכולת להפריד בין מועד הייצור, הצריכה וההזרמה מאפשרת להגיב בזמן אמת לצורכי הנכס ולשינויים במשק החשמל.</p></li>
+        <li class="bn-it"><span class="bn-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="ic" aria-hidden="true" focusable="false"><path d="M5 21l3-18M19 21L16 3M8 3h8M6.7 9h10.6M5.5 15h13"/><path d="M8 3l8 6M16 3L8 9M6.7 9l11.8 6M17.3 9L5.5 15"/></svg></span><h3>אופטימיזציה של התשתית</h3><p>ניהול עומסים באמצעות אגירה מאפשר למצות טוב יותר חיבורים ותשתיות קיימות, ובמקרים המתאימים לצמצם או לדחות השקעות בהגדלת תשתית החשמל</p></li>
+      </ul>
+    </div>
+    <figure class="bn-fig" aria-hidden="true"><img src="assets/img/dom/storage.webp" alt="" width="1400" height="923" loading="lazy" decoding="async" data-drift="-24"></figure>
+  </section>
+</div>
+
+<div class="proc-wrap">
+<div class="proc-bg" aria-hidden="true"></div>
+<section class="proc" id="process" data-axis="start" aria-labelledby="proc-h">
+  <header class="proc-head rv-wait">
+    <h2 id="proc-h" class="rv">התהליך לאגירת אנרגיה</h2>
+  </header>
+  <div class="proc-run" data-line="info">
+    <svg class="proc-trail"></svg>
+    <ol class="steps">
+      <li class="step"><i class="step-node" aria-hidden="true"></i><span class="step-hd"><span class="step-n num"><span class="sr">שלב </span>01</span><i class="step-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></i></span><h3>בדיקת היתכנות ראשונית</h3><p>בשלב הראשון נבדוק את התאמת הנכס לשילוב אגירה, נבחן את חיבור החשמל, הצריכה ונאפיין את סוג המערכת הנדרשת.</p></li>
+      <li class="step"><i class="step-node" aria-hidden="true"></i><span class="step-hd"><span class="step-n num"><span class="sr">שלב </span>02</span><i class="step-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M10 13l2 2 3-3.5"/></svg></i></span><h3>תהליך רישוי וחשמל</h3><p>אנו נחל בתהליך רישוי מול חברת החשמל והרשויות הנדרשות על מנת להסדיר את המערכת שלכם בהתאם לרגולציה.</p></li>
+      <li class="step"><i class="step-node" aria-hidden="true"></i><span class="step-hd"><span class="step-n num"><span class="sr">שלב </span>03</span><i class="step-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="5" r="1.6"/><path d="M11.2 6.5L6 20M12.8 6.5L18 20M8 15h8"/></svg></i></span><h3>תכנון הנדסי וסגירה פיננסית</h3><p>מיטב המהנדסים והכלכלנים שלנו יערכו תכנון מקיף למערכת האגירה ותכנון כלכלי על מנת שהמערכת תהיה מדויקת לפרופיל הנכס והלקוח.</p></li>
+      <li class="step"><i class="step-node" aria-hidden="true"></i><span class="step-hd"><span class="step-n num"><span class="sr">שלב </span>04</span><i class="step-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 3v5M15 3v5M7 8h10v3a5 5 0 0 1-10 0z"/><path d="M12 16v5"/></svg></i></span><h3>הקמת המתקן וחיבור לרשת החשמל</h3><p>ניהול ופיקוח מלא על כל שלבי ההקמה, תוך הקפדה על איכות ביצוע גבוהה, עמידה בסטנדרטים הנדסיים מחמירים ובקרת איכות שוטפת עד להפעלה מסחרית של הפרויקט.</p></li>
+      <li class="step"><i class="step-node" aria-hidden="true"></i><span class="step-hd"><span class="step-n num"><span class="sr">שלב </span>05</span><i class="step-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M6 11h3l2-3 2 5 2-2h3"/></svg></i></span><h3>ניטור, ניהול ותחזוקה</h3><p>מעקב שוטף אחר ביצועי המערכת, ביצוע תחזוקה ואופטימיזציה של ביצועי המערכת לאורך שנות הפרויקט.</p></li>
+    </ol>
+  </div>
+</section>
+</div>
+
+<!-- FAQ: reserved spot. The client's questions come from Gilad; the solar page's questions section is the shape it takes -->
+
+<div class="close-wrap">
+<div class="close-bg" aria-hidden="true"><i></i></div>
+<section class="close" id="contact" data-axis="start" aria-labelledby="close-h" data-cta-end>
+  <svg class="close-trail"></svg>
+  <div class="close-say" data-drift="40">
+    <h2 id="close-h">תנו למומחים שלנו לבדוק אם ניתן לשלב <span class="gword">אגירה</span> בנכס שלכם</h2>
+    <p class="close-p">בדיקת היתכנות ללא עלות בליווי הצוות המקצועי של טרינרג'י כדי להבין את הפוטנציאל, החלופות והכדאיות לקידום פרויקט אגירה בנכס שבבעלותכם.</p>
+  </div>
+  <!-- the arc round the charged socket: two pairs of moving noise, displacing a plain ring (after React Bits' Electric Border) -->
+  <svg class="fx-defs" aria-hidden="true" focusable="false"><filter id="arc" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+    <feTurbulence type="turbulence" baseFrequency=".03" numOctaves="6" seed="1" result="n1"/><feOffset in="n1" result="o1"><animate attributeName="dy" values="600;0" dur="5s" repeatCount="indefinite"/></feOffset>
+    <feTurbulence type="turbulence" baseFrequency=".03" numOctaves="6" seed="1" result="n2"/><feOffset in="n2" result="o2"><animate attributeName="dy" values="0;-600" dur="5s" repeatCount="indefinite"/></feOffset>
+    <feTurbulence type="turbulence" baseFrequency=".03" numOctaves="6" seed="2" result="n3"/><feOffset in="n3" result="o3"><animate attributeName="dx" values="420;0" dur="5s" repeatCount="indefinite"/></feOffset>
+    <feTurbulence type="turbulence" baseFrequency=".03" numOctaves="6" seed="2" result="n4"/><feOffset in="n4" result="o4"><animate attributeName="dx" values="0;-420" dur="5s" repeatCount="indefinite"/></feOffset>
+    <feComposite in="o1" in2="o2" result="p1"/><feComposite in="o3" in2="o4" result="p2"/>
+    <feBlend in="p1" in2="p2" mode="color-dodge" result="mix"/>
+    <feDisplacementMap in="SourceGraphic" in2="mix" scale="22" xChannelSelector="R" yChannelSelector="B"/>
+  </filter></svg>
+  <a class="plug" href="#contact-lead"><span class="plug-arc" aria-hidden="true"></span><span class="plug-t">בדוק כמה תוכל להרוויח</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
+
+  <div class="reach">
+    <form class="lf lead-c" id="contact-lead" novalidate data-lead="storage">
+      <p class="lead-h">השאירו פרטים ונחזור אליכם</p>
+      <fieldset class="topic">
+        <legend class="sr">מה מעניין אתכם</legend>
+        <label><input type="checkbox" name="topic" value="solar"><span>סולארי</span></label>
+        <label><input type="checkbox" name="topic" value="storage" checked><span>אגירה</span></label>
+        <label><input type="checkbox" name="topic" value="charge"><span>טעינה</span></label>
+      </fieldset>
+      <div class="fld"><label for="ct-name">שם מלא</label><input id="ct-name" name="name" type="text" autocomplete="name" required></div>
+      <div class="fld"><label for="ct-tel">טלפון</label><input id="ct-tel" name="phone" type="tel" inputmode="tel" autocomplete="tel" required></div>
+      <button class="btn btn-lg" type="submit">שליחה<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
+      <p class="lead-msg" role="status"></p>
+      <p class="reach-tel">או חייגו <a class="num" href="tel:*6223">6223*</a></p>
+    </form>
+  </div>
+</section>
+</div>
+
+</main>
+
+<footer class="ft" id="ft">
+  <div class="ft-cols">
+    <nav class="ft-col" aria-label="ניווט מהיר"><p class="ft-k">ניווט מהיר</p><a href="index.html#about">אודות</a><a href="index.html#knowledge">מרכז הידע</a><a href="#contact">יצירת קשר</a></nav>
+    <nav class="ft-col" aria-label="תחומי פעילות"><p class="ft-k">תחומי פעילות</p><a href="solar.html">אנרגיה סולארית</a><a href="index.html#dom-charge">טעינת רכבים</a><a href="storage.html" aria-current="page">אגירת אנרגיה</a></nav>
+    <div class="ft-col"><p class="ft-k">דברו איתנו</p><a href="tel:*6223">חייגו <span class="num">6223*</span></a><a class="lat" href="mailto:info@treenergy.co.il">info@treenergy.co.il</a><span>ישורון 3, תל אביב</span></div>
+    <div class="ft-col"><p class="ft-k">עקבו אחרינו</p><a href="https://www.facebook.com/treenergygroup" target="_blank" rel="noopener">פייסבוק</a><a href="https://www.instagram.com/treenergygroup" target="_blank" rel="noopener">אינסטגרם</a></div>
+  </div>
+  <div class="ft-sky" aria-hidden="true"><i class="ft-glow"></i><i class="ft-rim"></i></div>
+  <div class="ft-base">
+    <p>© <span data-year>2026</span> כל הזכויות שמורות לרמי לוי טרינרג'י בע"מ</p>
+    <nav class="ft-legal" aria-label="מידע משפטי"><a href="#ft">מדיניות פרטיות</a><a href="#ft">הצהרת נגישות</a><a href="#ft">תקנון</a></nav>
+  </div>
+</footer>
+
+<!-- phones: the two ways on, once the opening's button has left the screen -->
+<div class="mbar" data-mbar inert>
+  <a class="mbar-tel" href="tel:*6223"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>חייגו</a>
+  <a class="mbar-go" href="#contact">לבדיקת התאמה</a>
+</div>
+
+<!-- accessibility: a quiet disc in the corner; the panel holds the display choices, kept for the next visit -->
+<button class="ax-btn" type="button" aria-label="נגישות: התאמות תצוגה" aria-expanded="false" aria-controls="ax"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="7" r="1.3" fill="currentColor" stroke="none"/><path d="M7.4 9.7c3.1.8 6.1.8 9.2 0M12 10.6v3.5l-2.4 4.2M12 14.1l2.4 4.2"/></svg></button>
+<div class="ax-scrim" aria-hidden="true"></div>
+<div class="ax" id="ax" role="dialog" aria-modal="true" aria-labelledby="ax-h" inert>
+  <div class="ax-top">
+    <h2 id="ax-h">התאמות נגישות</h2>
+    <button class="ax-x" type="button" aria-label="סגירת התאמות הנגישות"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="ax-size" role="group" aria-labelledby="ax-size-l">
+    <p class="ax-lbl" id="ax-size-l">גודל הטקסט</p>
+    <div class="ax-seg"><button type="button" data-text="0" aria-pressed="true">רגיל</button><button type="button" data-text="1" aria-pressed="false">גדול</button><button type="button" data-text="2" aria-pressed="false">גדול מאוד</button></div>
+  </div>
+  <ul class="ax-list">
+    <li><button type="button" data-ax="contrast" aria-pressed="false"><span>ניגודיות גבוהה</span><i aria-hidden="true"></i></button></li>
+    <li><button type="button" data-ax="links" aria-pressed="false"><span>הדגשת קישורים</span><i aria-hidden="true"></i></button></li>
+    <li><button type="button" data-ax="read" aria-pressed="false"><span>גופן קריא</span><i aria-hidden="true"></i></button></li>
+    <li><button type="button" data-ax="still" aria-pressed="false"><span>עצירת תנועה</span><i aria-hidden="true"></i></button></li>
+  </ul>
+  <div class="ax-foot"><button class="ax-reset" type="button">איפוס הבחירות</button><p>נשמר לביקור הבא</p></div>
+</div>
+</body>
+</html>

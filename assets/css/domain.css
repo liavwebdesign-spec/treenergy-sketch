@@ -1,0 +1,243 @@
+/* Treenergy · a domain page (solar first; storage and charging are built on it).
+   Everything else (the night, the header, the menu, the process, the close, the footer) is site.css. Here: the opening
+   on the station the home tour landed on, the panel cells, the places, what sets us apart and the questions. */
+
+.dp{--lane:clamp(40px,3.4vw,96px)}
+.dp-flow,.dp-tail{position:relative}
+.dp-trail,.tail-trail{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+
+/* ---------- the opening: the solar stop, close, under the night ---------- */
+.sh{position:relative;min-height:max(100svh,560px);display:flex;align-items:center;overflow:hidden;
+  padding:calc(var(--hd-h) + 24px) var(--gutter) clamp(56px,9vh,112px)}
+/* the picture never ends on an edge: its lower part dissolves into the live night behind the page (a mask, not a
+   painted colour, so it matches the sky wherever the sky is), and the reasons' backdrop rises into the same stretch */
+.sh-pic{position:absolute;inset:0;overflow:hidden;will-change:opacity;
+  -webkit-mask-image:linear-gradient(to bottom,#000 0,#000 52%,rgba(0,0,0,.55) 76%,transparent 100%);
+  mask-image:linear-gradient(to bottom,#000 0,#000 52%,rgba(0,0,0,.55) 76%,transparent 100%)}
+.sh-pic img{width:100%;height:100%;object-fit:cover;display:block;filter:brightness(.52) saturate(.8);will-change:transform}
+/* the start side darkens under the words, a little at the top under the header and towards the bottom */
+.sh-pic::after{content:"";position:absolute;inset:0;pointer-events:none;background:
+  linear-gradient(to top,rgba(var(--n0),.5) 0%,rgba(var(--n0),.22) 34%,transparent 62%),
+  linear-gradient(to bottom,rgba(var(--n0),.55),transparent 22%),
+  linear-gradient(to left,rgba(var(--n0),.7) 0%,rgba(var(--n0),.38) 40%,transparent 66%)}
+/* the green wave: a WebGL layer that lights the picture's own lines and runs slow pulses along them (domain.js) */
+.sh-glow{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;mix-blend-mode:screen;
+  opacity:0;transition:opacity 1.6s var(--ease-out);will-change:transform}
+.sh-glow.is-on{opacity:1}
+.ax-still .sh-glow{display:none}
+.sh-say{position:relative;z-index:2;max-width:min(58%,1120px)}
+.crumb{display:flex;align-items:center;gap:10px;font-size:var(--fs-small);color:var(--muted);margin-bottom:clamp(16px,2.4vh,28px)}
+.crumb a{color:var(--ink-soft);text-decoration:none;transition:color .3s var(--ease)}
+.crumb a:hover{color:var(--accent)}
+.sh h1{font-size:calc(var(--fs-hero) * .66);line-height:1.06}
+.sh-l{display:block}
+.sh-lead{margin-top:clamp(18px,2.6vh,30px);max-width:52ch;font-size:var(--fs-lead);line-height:1.5;color:var(--ink-soft);text-wrap:pretty}
+.sh-say .btn{margin-top:clamp(26px,4vh,44px)}
+/* the words come up out of the night once, line by line */
+.js .sh-l,.js .crumb,.js .sh-lead,.js .sh-say .btn{animation:sh-in 1.2s var(--ease-out) backwards}
+.js .crumb{animation-delay:.15s}
+.js .sh-l:nth-child(1){animation-delay:.3s}
+.js .sh-l:nth-child(2){animation-delay:.45s}
+.js .sh-lead{animation-delay:.7s}
+.js .sh-say .btn{animation-delay:.85s}
+@keyframes sh-in{from{opacity:0;transform:translateY(22px);filter:blur(8px)}}
+
+/* ---------- why now: six cells of one panel ---------- */
+.sw,.spl,.uq,.faq{position:relative;z-index:1;padding:var(--sec) var(--gutter)}
+.sw{padding-top:clamp(150px,18vh,260px)}
+.sw h2,.spl h2,.uq h2,.faq h2{font-size:var(--fs-h2);line-height:1.06;transform:translateY(var(--dy,0))}
+.pcells{list-style:none;margin:clamp(48px,7vh,96px) 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  column-gap:clamp(16px,1.6vw,40px);row-gap:clamp(104px,12vh,150px)}
+/* the backdrop behind the reasons: the agro field under clouds, in the night's blue, melting into the page top and bottom.
+   It is a sibling under the section (z 0, below the trail's canvas), so the trail still runs over it */
+.sw-wrap{position:relative;--sw-up:clamp(180px,34vh,380px)}
+.sw-bg{position:absolute;inset:calc(-1 * var(--sw-up)) 0 0;z-index:0;overflow:hidden;pointer-events:none;
+  -webkit-mask:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.5) calc(var(--sw-up) * .8),#000 calc(var(--sw-up) * 1.5),#000 74%,transparent 100%);
+  mask:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.5) calc(var(--sw-up) * .8),#000 calc(var(--sw-up) * 1.5),#000 74%,transparent 100%)}
+.sw-bg img{width:100%;height:100%;object-fit:cover;display:block;opacity:.62}
+.sw-bg::after{content:"";position:absolute;inset:0;background:radial-gradient(90% 70% at 50% 55%,rgba(var(--n0),.25),rgba(var(--n0),.7) 100%)}
+/* a cell: a quiet night card with its own line icon, which lights as neon when the current reaches it */
+.pc{position:relative;border-radius:8px;padding:clamp(26px,2.6vw,52px) clamp(22px,2.2vw,44px) clamp(30px,3vw,56px);
+  background:rgba(var(--n1),.74);box-shadow:inset 0 0 0 1px rgba(143,176,255,.12);transition:box-shadow .9s var(--ease),background-color .9s var(--ease)}
+.pc-ic{display:block;width:clamp(38px,2.6vw,56px);height:clamp(38px,2.6vw,56px);margin-bottom:clamp(16px,2vh,26px);color:rgba(143,176,255,.5);transition:color .9s var(--ease)}
+.pc-ic .ic{width:100%;height:100%;display:block;overflow:visible}
+.pc h3{position:relative;font-family:var(--display);font-weight:var(--dw);font-size:clamp(25px,2vw + .1rem,54px);line-height:1.1;color:var(--ink-soft);transition:color .9s var(--ease)}
+.pc p{position:relative;margin-top:clamp(12px,1.6vh,20px);max-width:38ch;font-size:var(--fs-body);line-height:1.55;color:var(--muted);text-wrap:pretty;transition:color .9s var(--ease)}
+.pc.on{background:rgba(var(--n1),.8);box-shadow:inset 0 0 0 1px rgba(143,176,255,.2)}
+.pc.on .pc-ic{color:#C8FFDE;filter:drop-shadow(0 0 1.5px var(--accent)) drop-shadow(0 0 7px rgba(48,247,123,.7)) drop-shadow(0 0 18px rgba(48,247,123,.3));
+  transition:none;animation:ic-strike 1s linear both,ic-hum 5s 1s ease-in-out infinite}
+.pc.on h3{color:var(--ink)}
+.pc.on p{color:var(--ink-soft)}
+.is-far .pc.on .pc-ic{animation-play-state:paused}
+@keyframes ic-strike{0%,9%,15%,31%{color:rgba(143,176,255,.5);filter:none}6%,12%,24%,40%,100%{color:#C8FFDE;filter:drop-shadow(0 0 1.5px var(--accent)) drop-shadow(0 0 7px rgba(48,247,123,.7)) drop-shadow(0 0 18px rgba(48,247,123,.3))}35%{color:rgba(200,255,222,.6);filter:drop-shadow(0 0 4px rgba(48,247,123,.4))}}
+
+/* ---------- where: the places as tall columns of their pictures; the one the scroll is on (or the pointer) opens wide ---------- */
+.pl{list-style:none;margin:clamp(40px,6vh,80px) 0 0;padding:0;display:flex;gap:clamp(8px,.7vw,16px);height:clamp(420px,min(72vh,52vw),760px)}
+.pl-it{position:relative;flex:1 1 0;min-width:0;overflow:hidden;border-radius:8px;background:var(--night-1);
+  box-shadow:inset 0 0 0 1px rgba(143,176,255,.12);transition:flex-grow .8s var(--ease)}
+.pl-it img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;opacity:.6;transform:scale(1.06);
+  transition:opacity .8s var(--ease),transform 1.2s var(--ease)}
+.pl-it::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top,rgba(var(--n0),.92) 0%,rgba(var(--n0),.35) 42%,transparent 70%)}
+.pl-t{position:absolute;z-index:1;inset-inline:clamp(14px,1.3vw,28px);bottom:clamp(16px,2.2vh,30px);display:flex;flex-direction:column;align-items:flex-start;gap:clamp(10px,1.2vh,16px)}
+.pl-t svg{flex:none;width:clamp(28px,2vw,40px);height:clamp(28px,2vw,40px);color:rgba(143,176,255,.75);transition:color .8s var(--ease)}
+.pl-n{display:flex;flex-direction:column;gap:6px;font-family:var(--display);font-weight:var(--dw);font-size:clamp(20px,1.5vw + .2rem,44px);line-height:1.08;color:var(--ink-soft);transition:color .8s var(--ease)}
+.pl-sub{font-family:var(--text);font-weight:400;font-size:var(--fs-small);line-height:1.4;color:var(--ink-soft);opacity:0;max-height:0;overflow:hidden;transition:opacity .6s var(--ease),max-height .6s var(--ease)}
+.pl-it.is-on{flex-grow:3.4}
+.pl-it.is-on img{opacity:1;transform:none}
+.pl-it.is-on .pl-n{color:var(--ink)}
+.pl-it.is-on .pl-t svg{color:var(--accent)}
+.pl-it.is-on .pl-sub{opacity:1;max-height:3em}
+/* the pointer takes over from the scroll while it is over the columns */
+@media (hover:hover) and (min-width:1024px){
+  .pl:hover .pl-it.is-on{flex-grow:1}
+  .pl:hover .pl-it.is-on img{opacity:.6;transform:scale(1.06)}
+  .pl:hover .pl-it.is-on .pl-n{color:var(--ink-soft)}
+  .pl:hover .pl-it.is-on .pl-t svg{color:rgba(143,176,255,.75)}
+  .pl:hover .pl-it.is-on .pl-sub{opacity:0;max-height:0}
+  .pl:hover .pl-it:hover{flex-grow:3.4}
+  .pl:hover .pl-it:hover img{opacity:1;transform:none}
+  .pl:hover .pl-it:hover .pl-n{color:var(--ink)}
+  .pl:hover .pl-it:hover .pl-t svg{color:var(--accent)}
+  .pl:hover .pl-it:hover .pl-sub{opacity:1;max-height:3em}
+}
+.spl .btn{margin-top:clamp(40px,6vh,72px)}
+
+/* ---------- the process: the home page's, numbers lit as neon when the current reaches them ---------- */
+.step.on .step-n{color:#C8FFDE;text-shadow:0 0 2px var(--accent),0 0 10px rgba(48,247,123,.8),0 0 28px rgba(48,247,123,.45),0 0 64px rgba(48,247,123,.2);transition:none;animation:n-strike 1s linear both,ic-hum 5s 1s ease-in-out infinite}
+.is-far .step.on .step-n{animation-play-state:paused}
+@keyframes n-strike{0%,9%,15%,31%{color:rgba(243,246,252,.42);text-shadow:none}6%,12%,24%,40%,100%{color:#C8FFDE;text-shadow:0 0 2px var(--accent),0 0 10px rgba(48,247,123,.8),0 0 28px rgba(48,247,123,.45),0 0 64px rgba(48,247,123,.2)}35%{color:rgba(200,255,222,.6);text-shadow:0 0 8px rgba(48,247,123,.4)}}
+@keyframes ic-hum{0%,100%{opacity:1}50%{opacity:.86}}
+/* each step's own icon beside its number, a ring that lights with it */
+.step-hd{display:flex;align-items:center;gap:clamp(12px,1vw,18px)}
+.step-ic{flex:none;display:grid;place-items:center;width:clamp(40px,2.9vw,56px);height:clamp(40px,2.9vw,56px);border-radius:50%;
+  box-shadow:inset 0 0 0 1px var(--line-strong);color:rgba(243,246,252,.5);transition:color .7s var(--ease),box-shadow .7s var(--ease)}
+.step-ic svg{width:48%;height:48%;overflow:visible}
+.step.on .step-ic{color:#C8FFDE;box-shadow:inset 0 0 0 1px rgba(48,247,123,.55),0 0 18px rgba(48,247,123,.22);filter:drop-shadow(0 0 4px rgba(48,247,123,.45))}
+/* behind the process: faint survey contours of open ground and a soft glow of the brand's blue (under the trail) */
+/* every backdrop reaches past its own section and dissolves at both ends, so no section starts or stops on a straight edge */
+.proc-wrap{position:relative;--bg-up:clamp(120px,20vh,240px)}
+.proc-bg{position:absolute;inset:calc(-1 * var(--bg-up)) 0;z-index:0;pointer-events:none;overflow:hidden;
+  -webkit-mask:linear-gradient(to bottom,transparent 0,#000 calc(var(--bg-up) * 1.7),#000 calc(100% - var(--bg-up) * 1.7),transparent 100%);
+  mask:linear-gradient(to bottom,transparent 0,#000 calc(var(--bg-up) * 1.7),#000 calc(100% - var(--bg-up) * 1.7),transparent 100%);
+  background:radial-gradient(60% 55% at 70% 45%,rgba(10,58,154,.32),transparent 70%),radial-gradient(45% 50% at 20% 70%,rgba(0,32,96,.45),transparent 72%)}
+.proc-bg::before{content:"";position:absolute;inset:0;background:url(../img/solar/topo.svg) center/cover no-repeat;opacity:.1;
+  -webkit-mask:radial-gradient(75% 70% at 50% 50%,#000 30%,transparent 100%);mask:radial-gradient(75% 70% at 50% 50%,#000 30%,transparent 100%)}
+
+/* ---------- the close: the brand's blue round the socket, with faint rings (not green) ---------- */
+.close-wrap{position:relative;--bg-up:clamp(180px,30vh,360px)}
+.close-bg{position:absolute;inset:calc(-1 * var(--bg-up)) 0 0;z-index:0;pointer-events:none;overflow:hidden;
+  -webkit-mask:linear-gradient(to bottom,transparent 0,#000 calc(var(--bg-up) * 1.8),#000 78%,transparent 100%);
+  mask:linear-gradient(to bottom,transparent 0,#000 calc(var(--bg-up) * 1.8),#000 78%,transparent 100%);
+  background:radial-gradient(70% 80% at var(--qx,30%) var(--qy,50%),rgba(10,58,154,.5),rgba(0,32,96,.32) 45%,transparent 78%)}
+.close-bg i{position:absolute;left:var(--qx,30%);top:var(--qy,50%);width:min(150vw,1900px);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
+  background:repeating-radial-gradient(circle,transparent 0 58px,rgba(143,176,255,.07) 58px 59px);
+  -webkit-mask:radial-gradient(circle,#000 18%,transparent 62%);mask:radial-gradient(circle,#000 18%,transparent 62%)}
+
+/* ---------- what sets us apart, the questions: a heading column and the lines on hairlines ---------- */
+.uq,.faq{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr);column-gap:clamp(40px,6vw,160px);align-items:start}
+.faq{padding-top:0}
+.uq-list{list-style:none;margin:0;padding:0}
+.uq-list li{position:relative;padding:clamp(18px,2.4vh,28px) 0;font-size:calc(var(--fs-lead) * 1.08);font-weight:500;line-height:1.35}
+.uq-list li::before,.faq details::before{content:"";position:absolute;top:0;inset-inline:0;height:1px;background:var(--line-strong);transform-origin:right}
+.rv-wait .uq-list li::before,.uq-list.rv-wait li::before{transform:scaleX(0);transition:transform 1.1s var(--ease-out) calc(var(--i,0) * 90ms)}
+.uq-list.rv-wait.is-in li::before{transform:none}
+.faq details{position:relative}
+.faq details:last-child{border-bottom:1px solid var(--line-strong)}
+.faq summary{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:48px;padding:clamp(18px,2.4vh,28px) 0;
+  list-style:none;cursor:pointer;font-size:calc(var(--fs-lead) * 1.08);font-weight:500;line-height:1.35;transition:color .3s var(--ease)}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary:hover{color:var(--accent)}
+.faq summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px}
+.faq summary i{position:relative;flex:none;width:18px;height:18px}
+.faq summary i::before,.faq summary i::after{content:"";position:absolute;top:50%;inset-inline:0;height:1.5px;margin-top:-.75px;background:currentColor;border-radius:1px;transition:transform .45s var(--ease)}
+.faq summary i::after{transform:rotate(90deg)}
+.faq details[open] summary i::after{transform:rotate(0)}
+.faq details p{max-width:56ch;padding-bottom:clamp(20px,2.8vh,32px);font-size:var(--fs-body);line-height:1.6;color:var(--ink-soft)}
+.faq details[open] p{animation:faq-in .5s var(--ease) both}
+@keyframes faq-in{from{opacity:0;transform:translateY(-6px)}}
+
+/* ---------- a cell that opens (storage's types): the title and its line are the button, the text unfolds under them ---------- */
+.sh-lead+.sh-lead{margin-top:.8em}
+.js .sh-lead+.sh-lead{animation-delay:.8s}
+.pc-d summary{display:block;list-style:none;cursor:pointer;position:relative;padding-inline-end:36px;border-radius:4px}
+.pc-d summary::-webkit-details-marker{display:none}
+.pc-d summary:focus-visible{outline:2px solid var(--accent);outline-offset:6px}
+.pc-d summary:hover h3{color:var(--ink)}
+.pc-sub{display:block;margin-top:clamp(8px,1.2vh,14px);font-size:var(--fs-lead);line-height:1.4;color:var(--ink-soft);transition:color .9s var(--ease)}
+.pc.on .pc-sub{color:var(--ink)}
+.pc-d summary i{position:absolute;inset-inline-end:0;bottom:.35em;width:18px;height:18px;color:var(--ink-soft)}
+.pc-d summary i::before,.pc-d summary i::after{content:"";position:absolute;top:50%;inset-inline:0;height:1.5px;margin-top:-.75px;background:currentColor;border-radius:1px;transition:transform .45s var(--ease)}
+.pc-d summary i::after{transform:rotate(90deg)}
+.pc-d[open] summary i::after{transform:rotate(0)}
+.pc-d summary:hover i{color:var(--accent)}
+.pc-d[open] p{animation:faq-in .5s var(--ease) both}
+.pcells-3{grid-template-columns:repeat(3,minmax(0,1fr));align-items:start}
+
+/* ---------- the benefits (storage): the heading and four lines on hairlines, each with a neon icon the thread lights;
+   a cabinet beside them, floating in the dark ---------- */
+.bn{position:relative;z-index:1;padding:var(--sec) var(--gutter);display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);
+  column-gap:clamp(40px,5vw,140px);align-items:center}
+.bn h2{font-size:var(--fs-h2);line-height:1.06;transform:translateY(var(--dy,0))}
+.bn-list{list-style:none;margin:clamp(36px,5vh,64px) 0 0;padding:0}
+.bn-it{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:clamp(18px,1.6vw,32px);padding:clamp(20px,2.8vh,34px) 0}
+.bn-it::before{content:"";position:absolute;top:0;inset-inline:0;height:1px;background:var(--line-strong)}
+.bn-it:last-child{border-bottom:1px solid var(--line-strong)}
+.bn-ic{grid-row:span 2;width:clamp(34px,2.4vw,48px);height:clamp(34px,2.4vw,48px);color:rgba(143,176,255,.5);transition:color .9s var(--ease)}
+.bn-ic .ic{width:100%;height:100%;display:block;overflow:visible}
+.bn-it h3{font-family:var(--display);font-weight:var(--dw);font-size:clamp(23px,1.6vw + .2rem,44px);line-height:1.12;color:var(--ink-soft);transition:color .9s var(--ease)}
+.bn-it p{margin-top:clamp(8px,1.2vh,14px);max-width:56ch;font-size:var(--fs-body);line-height:1.6;color:var(--muted);text-wrap:pretty;transition:color .9s var(--ease)}
+.bn-it.on .bn-ic{color:#C8FFDE;filter:drop-shadow(0 0 1.5px var(--accent)) drop-shadow(0 0 7px rgba(48,247,123,.7)) drop-shadow(0 0 18px rgba(48,247,123,.3));
+  transition:none;animation:ic-strike 1s linear both,ic-hum 5s 1s ease-in-out infinite}
+.bn-it.on h3{color:var(--ink)}
+.bn-it.on p{color:var(--ink-soft)}
+.is-far .bn-it.on .bn-ic{animation-play-state:paused}
+.bn-fig{position:relative;margin:0;align-self:center}
+.bn-fig img{width:100%;height:auto;display:block;filter:brightness(.82) saturate(.9);transform:translateY(var(--dy,0))}
+.bn-fig::after{content:"";position:absolute;inset:auto 8% -4% 8%;height:22%;border-radius:50%;pointer-events:none;
+  background:radial-gradient(closest-side,rgba(48,247,123,.12),transparent);filter:blur(10px);z-index:-1}
+
+/* ---------- wide: lanes for the trail on both sides of the cells and the places ---------- */
+@media (min-width:1024px){
+  .sw,.spl,.bn{padding-inline:calc(var(--gutter) + var(--lane))}
+  .sw{padding-top:clamp(200px,25vh,340px)}
+  .spl{padding-top:clamp(40px,6vh,80px)}
+}
+
+/* ---------- below 1024: one column, the words off the start rail ---------- */
+@media (max-width:1023px){
+  .sh-say{max-width:none;margin-inline-start:var(--rail-pad)}
+  .sh h1{font-size:var(--fs-hero)}
+  .sw>*,.spl>*{margin-inline-start:var(--rail-pad)}
+  .pcells{grid-template-columns:minmax(0,1fr);row-gap:clamp(12px,2vw,20px)}
+  .uq,.faq{grid-template-columns:minmax(0,1fr);row-gap:clamp(28px,5vh,48px)}
+  .uq>*,.faq>*{margin-inline-start:var(--rail-pad)}
+  .sw{padding-top:var(--sec)}
+  /* the places as rows, one above the other; the one the scroll is on opens tall (the whole keeps its height) */
+  .pl{flex-direction:column;height:calc(5 * 76px + 300px + 5 * 8px);gap:8px}
+  .pl-it.is-on{flex-grow:4}
+  .pl-t{flex-direction:row;align-items:center;gap:12px;bottom:16px}
+  .pl-n{font-size:clamp(22px,5.6vw,30px)}
+  .pl-7{height:calc(6 * 76px + 300px + 6 * 8px)}
+  .bn{grid-template-columns:minmax(0,1fr);row-gap:clamp(28px,5vh,48px)}
+  .bn>*{margin-inline-start:var(--rail-pad)}
+  .bn-fig{max-width:520px}
+}
+@media (min-width:768px) and (max-width:1023px){
+  .pcells{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px}
+  .pcells-3{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:767px){
+  .sh{padding-bottom:clamp(40px,8vh,72px)}
+  .sh-say .btn{width:100%}
+}
+
+/* ---------- still: everything in place, nothing moves ---------- */
+@media (prefers-reduced-motion:reduce){
+  .js .sh-l,.js .crumb,.js .sh-lead,.js .sh-say .btn{animation:none}
+  .step.on .step-n,.pc.on .pc-ic,.faq details[open] p,.pc-d[open] p,.bn-it.on .bn-ic{animation:none}
+  .pl-it,.pl-it img,.pl-sub,.pl-n,.pl-t svg{transition:none}
+  .uq-list.rv-wait li::before{transform:none;transition:none}
+}
+.ax-still .sh-l,.ax-still .crumb,.ax-still .sh-lead,.ax-still .sh-say .btn,.ax-still .step.on .step-n,.ax-still .pc.on .pc-ic,.ax-still .bn-it.on .bn-ic,.ax-still .pc-d[open] p{animation:none!important}
+.ax-still .pl-it,.ax-still .pl-it img,.ax-still .pl-sub{transition:none!important}
+.ax-still .uq-list.rv-wait li::before{transform:none;transition:none}
