@@ -22,14 +22,14 @@
     if (ax.text) d.classList.add("ax-t" + ax.text); })(document.documentElement);
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 </script>
-<link rel="stylesheet" href="assets/css/site.css?v=r30">
-<link rel="stylesheet" href="assets/css/domain.css?v=r30">
+<link rel="stylesheet" href="assets/css/site.css?v=r31">
+<link rel="stylesheet" href="assets/css/domain.css?v=r31">
 <!-- the page's own files carry the round (?v=), so a visitor never gets this round's code with pieces of the last one from the cache -->
-<script type="importmap">{"imports":{"./assets/js/ribbon.js":"./assets/js/ribbon.js?v=r30","./assets/js/arc-rings.js":"./assets/js/arc-rings.js?v=r30","./assets/js/sky.js":"./assets/js/sky.js?v=r30"}}</script>
+<script type="importmap">{"imports":{"./assets/js/ribbon.js":"./assets/js/ribbon.js?v=r31","./assets/js/arc-rings.js":"./assets/js/arc-rings.js?v=r31","./assets/js/sky.js":"./assets/js/sky.js?v=r31"}}</script>
 <script defer src="vendor/gsap/gsap.min.js"></script>
 <script defer src="vendor/lenis/lenis.min.js"></script>
-<script type="module" src="assets/js/page.js?v=r30"></script>
-<script type="module" src="assets/js/domain.js?v=r30"></script>
+<script type="module" src="assets/js/page.js?v=r31"></script>
+<script type="module" src="assets/js/domain.js?v=r31"></script>
 </head>
 <body>
 <canvas id="sky" aria-hidden="true"></canvas>
@@ -42,11 +42,11 @@
   </div>
   <nav class="hd-rail" aria-label="ניווט באתר">
     <span class="hd-wire" aria-hidden="true"><i class="hd-fill"></i></span>
-    <a class="hd-node" href="index.html#about"><i aria-hidden="true"></i><span>אודות</span></a>
+    <a class="hd-node" href="about.html"><i aria-hidden="true"></i><span>אודות</span></a>
     <a class="hd-node is-here" href="solar.html" aria-current="page"><i aria-hidden="true"></i><span>סולארי</span></a>
     <a class="hd-node" href="storage.html"><i aria-hidden="true"></i><span>אגירה</span></a>
-    <a class="hd-node" href="index.html#dom-charge"><i aria-hidden="true"></i><span>טעינה</span></a>
-    <a class="hd-node" href="index.html#knowledge"><i aria-hidden="true"></i><span>מרכז ידע</span></a>
+    <a class="hd-node" href="charge.html"><i aria-hidden="true"></i><span>טעינה</span></a>
+    <a class="hd-node" href="knowledge.html"><i aria-hidden="true"></i><span>מרכז ידע</span></a>
     <a class="hd-node" href="#contact"><i aria-hidden="true"></i><span>צור קשר</span></a>
   </nav>
   <div class="hd-end">
@@ -67,11 +67,11 @@
     <nav class="mn-nav" aria-label="ניווט ראשי">
       <ol class="mn-list">
         <li class="mn-it"><a class="is-on" href="solar.html" aria-current="page"><span class="mn-t">אנרגיה סולארית</span></a></li>
-        <li class="mn-it"><a href="index.html#dom-charge"><span class="mn-t">טעינת רכבים</span></a></li>
+        <li class="mn-it"><a href="charge.html"><span class="mn-t">טעינת רכבים</span></a></li>
         <li class="mn-it"><a href="storage.html"><span class="mn-t">אגירת אנרגיה</span></a></li>
-        <li class="mn-it"><a href="index.html#about"><span class="mn-t">אודות</span></a></li>
-        <li class="mn-it"><a href="index.html#knowledge"><span class="mn-t">מרכז הידע</span></a></li>
-        <li class="mn-it"><a href="#contact"><span class="mn-t">יצירת קשר</span></a></li>
+        <li class="mn-it"><a href="about.html"><span class="mn-t">אודות</span></a></li>
+        <li class="mn-it"><a href="knowledge.html"><span class="mn-t">מרכז הידע</span></a></li>
+        <li class="mn-it"><a href="contact.html"><span class="mn-t">יצירת קשר</span></a></li>
       </ol>
     </nav>
     <div class="mn-side">
@@ -230,15 +230,15 @@
 
 <footer class="ft" id="ft">
   <div class="ft-cols">
-    <nav class="ft-col" aria-label="ניווט מהיר"><p class="ft-k">ניווט מהיר</p><a href="index.html#about">אודות</a><a href="index.html#knowledge">מרכז הידע</a><a href="#contact">יצירת קשר</a></nav>
-    <nav class="ft-col" aria-label="תחומי פעילות"><p class="ft-k">תחומי פעילות</p><a href="solar.html" aria-current="page">אנרגיה סולארית</a><a href="index.html#dom-charge">טעינת רכבים</a><a href="storage.html">אגירת אנרגיה</a></nav>
+    <nav class="ft-col" aria-label="ניווט מהיר"><p class="ft-k">ניווט מהיר</p><a href="about.html">אודות</a><a href="knowledge.html">מרכז הידע</a><a href="contact.html">יצירת קשר</a></nav>
+    <nav class="ft-col" aria-label="תחומי פעילות"><p class="ft-k">תחומי פעילות</p><a href="solar.html" aria-current="page">אנרגיה סולארית</a><a href="charge.html">טעינת רכבים</a><a href="storage.html">אגירת אנרגיה</a></nav>
     <div class="ft-col"><p class="ft-k">דברו איתנו</p><a href="tel:*6223">חייגו <span class="num">6223*</span></a><a class="lat" href="mailto:info@treenergy.co.il">info@treenergy.co.il</a><span>ישורון 3, תל אביב</span></div>
     <div class="ft-col"><p class="ft-k">עקבו אחרינו</p><a href="https://www.facebook.com/treenergygroup" target="_blank" rel="noopener">פייסבוק</a><a href="https://www.instagram.com/treenergygroup" target="_blank" rel="noopener">אינסטגרם</a></div>
   </div>
   <div class="ft-sky" aria-hidden="true"><i class="ft-glow"></i><i class="ft-rim"></i></div>
   <div class="ft-base">
     <p>© <span data-year>2026</span> כל הזכויות שמורות לרמי לוי טרינרג'י בע"מ</p>
-    <nav class="ft-legal" aria-label="מידע משפטי"><a href="#ft">מדיניות פרטיות</a><a href="#ft">הצהרת נגישות</a><a href="#ft">תקנון</a></nav>
+    <nav class="ft-legal" aria-label="מידע משפטי"><a href="privacy.html">מדיניות פרטיות</a><a href="accessibility.html">הצהרת נגישות</a><a href="terms.html">תקנון</a></nav>
   </div>
 </footer>
 

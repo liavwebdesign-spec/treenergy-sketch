@@ -128,6 +128,12 @@ if (ty) {
   try { name = (sessionStorage.getItem("lead-name") || "").trim().split(/\s+/)[0].slice(0, 24); } catch (e) {}
   const nm = $("[data-name]", ty), wrap = $("[data-name-wrap]", ty);
   if (name) nm.textContent = name; else wrap.remove();
+  // a job applicant gets the applicant's line, not the energy check
+  const cvl = $('[data-for="cv"]', ty), ldl = $('[data-for="lead"]', ty);
+  if (new URLSearchParams(location.search).get("from") === "cv" && cvl && ldl) {
+    ldl.remove(); cvl.hidden = false;
+    ty.querySelectorAll('.ty-more a[href^="index.html#"]').forEach((a) => a.remove());
+  } else if (cvl) cvl.remove();
   const p2 = (n) => String(n).padStart(2, "0"), d = new Date();
   $("[data-now]", ty).textContent = p2(d.getHours()) + ":" + p2(d.getMinutes());
   // the stations light in turn; the script hides them first, so without it they simply stand

@@ -162,12 +162,15 @@ const flow = $(".dp-flow"), sh = $(".sh", flow), shPic = $(".sh-pic", sh), shImg
 const shGlow = $(".sh-glow", sh);
 // (the same points the glow map's pulses start from, so the wave and the trail leave the roof's corner together)
 // (a page whose picture is another place gives its own points: data-birth="wide x,wide y,tall x,tall y")
+// (and a picture of another size gives its two sizes: data-size="wide w,wide h,tall w,tall h")
 const bp = (sh.dataset.birth || "462,926,78,992").split(",").map(Number);
-const BIRTH = { wide: { w: 2400, h: 1340, x: bp[0], y: bp[1] }, tall: { w: 1080, h: 1935, x: bp[2], y: bp[3] } };
+const bs = (sh.dataset.size || "2400,1340,1080,1935").split(",").map(Number);
+const BIRTH = { wide: { w: bs[0], h: bs[1], x: bp[0], y: bp[1] }, tall: { w: bs[2], h: bs[3], x: bp[2], y: bp[3] } };
+const shSrc = $("picture source", sh);
 let birth = { x: 0, y: 0 }, shH = 1, shP = -1;
 function layoutHero() {
-  const r = sh.getBoundingClientRect(), W = r.width, H = r.height, src = shImg.currentSrc || "";
-  const k = src ? (src.includes("hero-w") ? BIRTH.wide : BIRTH.tall) : (W / H >= 0.9 ? BIRTH.wide : BIRTH.tall);
+  const r = sh.getBoundingClientRect(), W = r.width, H = r.height;
+  const k = (shSrc && shSrc.media ? matchMedia(shSrc.media).matches : W / H >= 0.9) ? BIRTH.wide : BIRTH.tall;
   const s = Math.max(W / k.w, H / k.h);
   birth = { x: (W - k.w * s) / 2 + k.x * s, y: (H - k.h * s) / 2 + k.y * s };
   shImg.style.transformOrigin = `${birth.x.toFixed(1)}px ${birth.y.toFixed(1)}px`;
@@ -193,7 +196,12 @@ function heroTick(y) {
 // back in. The busbar is level, so the scroll is given a stretch of its own there (a fifth of the screen): the head
 // keeps moving while the page climbs. Below 1024: down the start rail beside the words and the one column of cells,
 // and round out by the start side under the places.
-const sw = $(".sw", flow), swH = $("h2", sw), pcs = $$(".pc", sw), spl = $(".spl", flow), plItems = $$(".pl li", spl);
+// (a page without the cells: the trail comes down the open side, sweeps to the start side's lane above the first
+// heading and runs down that rail beside the sections to the end mark, data-flow-end, then rounds out by that side;
+// anything marked .lit lights as the head passes it)
+const sw = $(".sw", flow), fsec = sw || $$(":scope > section", flow).find((q) => q !== sh) || sh;
+const swH = $("h2", fsec) || shSay, pcs = $$(".pc, .lit", flow), spl = $(".spl", flow), plItems = spl ? $$(".pl li", spl) : [];
+const flowEndEl = $("[data-flow-end]", flow) || (spl && $(".btn", spl)) || $$(":scope > section", flow).pop();
 const flowSvg = $(".dp-trail", flow);
 const flowRibbon = new Ribbon(flowSvg, { ...BAND, amp: trailAmp, wave: 500, taperStart: 70, taperEnd: 0, sparks: 4, seed: 4 });
 let vY = null, cellF = [], flowEnd = 0;
@@ -202,10 +210,27 @@ function layoutMain() {
   flowSvg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   const rel = (el) => { const b = el.getBoundingClientRect(); return { t: b.top - r.top, b: b.bottom - r.top, l: b.left - r.left, r: b.right - r.left, w: b.width, h: b.height }; };
   const say = rel(shSay), head = rel(swH), off = Math.max(120, trailAmp() * 6), sw0 = doc.clientWidth;
-  const last = rel($(".btn", spl)), segs = [];
+  const last = rel(flowEndEl), segs = [];
   const B = { x: birth.x, y: birth.y };
   vY = null;
-  if (wide()) {
+  if (wide() && !sw) {
+    // no cells: down the open side, across the gap to the start lane above the first heading, down the rail, out by that side
+    const pr = px(fsec, "paddingRight"), xR = W - pr / 2;
+    const x0 = Math.min(B.x, say.l - 72), yv = B.y + 150, hT = head.t - (parseFloat(swH.style.getPropertyValue("--dy")) || 0);
+    const y1 = say.b + 18, y2 = Math.max(y1 + 120, Math.max(yv, y1) + 140, hT - 110);
+    if (Math.abs(x0 - B.x) > 2) segs.push(["C", B.x, B.y, B.x, B.y + (yv - B.y) * 0.55, x0, yv - (yv - B.y) * 0.45, x0, yv]);
+    else segs.push(["L", B.x, B.y, B.x, yv]);
+    if (y1 > yv + 1) segs.push(["L", x0, yv, x0, y1]);
+    const ya = Math.max(yv, y1), hS = y2 - ya;
+    segs.push(["C", x0, ya, x0, ya + hS * 0.62, xR, y2 - hS * 0.62, xR, y2]);
+    const yE = Math.max(y2 + 60, last.b + 30), R = 52, kk = R * 0.5523, xo = sw0 - r.left + off;
+    segs.push(["L", xR, y2, xR, yE]);
+    segs.push(["C", xR, yE, xR, yE + kk, xR + R - kk, yE + R, xR + R, yE + R]);
+    segs.push(["L", xR + R, yE + R, xo, yE + R]);
+    flowEnd = yE + R;
+    flowRibbon.setPath(segs);
+    cellF = pcs.map((q) => { const b = rel(q); return flowRibbon.fracAtY(b.t + Math.min(36, b.h * 0.3)); });
+  } else if (wide()) {
     const pr = px(sw, "paddingRight"), pl = px(sw, "paddingLeft"), xR = W - pr / 2, xL = pl / 2, R = Math.min(64, pl / 2 + 20), k = 0.5523;
     const c = pcs.map(rel), cols = Math.max(1, c.filter((q) => Math.abs(q.t - c[0].t) < 4).length);
     const row1 = c.slice(0, cols), row2 = c.slice(cols);
@@ -237,7 +262,7 @@ function layoutMain() {
     cellF = c.map((q) => flowRibbon.nearest(q.l + q.w / 2, yc));
     void L;
   } else {
-    const x = W - (px(sw, "paddingRight") + (parseFloat(getComputedStyle(doc).getPropertyValue("--rail-pad")) || 28)) / 2;
+    const x = W - (px(fsec, "paddingRight") + (parseFloat(getComputedStyle(doc).getPropertyValue("--rail-pad")) || 28)) / 2;
     // a station hidden behind the words (tablets): the line is born on the rail itself, above the crumb, not across it
     // (also a station on the far side at the words' height: the way across to the rail would cross them)
     if (B.x < say.r + 24 && B.y > say.t - 60) { B.x = x; B.y = Math.min(B.y, say.t - 30); }
@@ -278,11 +303,11 @@ function mainTick() {
 }
 
 /* ---------- the places: the scroll walks a reading line down the columns, and the place under it opens ---------- */
-const plList = $(".pl", spl);
+const plList = spl && $(".pl", spl);
 let plTop = 0, plH = 1, plOn = 0;
-function layoutPlaces() { const b = plList.getBoundingClientRect(); plTop = b.top + scrollY; plH = Math.max(1, b.height); }
+function layoutPlaces() { if (!plList) return; const b = plList.getBoundingClientRect(); plTop = b.top + scrollY; plH = Math.max(1, b.height); }
 function placesTick() {
-  if (reduce) return;
+  if (reduce || !plList) return;
   const ih = innerHeight, p = clamp01((frameY + ih * 0.85 - plTop) / (plH + ih * 0.5));
   const k = Math.min(plItems.length - 1, Math.floor(p * plItems.length));
   if (k === plOn) return;
@@ -290,11 +315,12 @@ function placesTick() {
 }
 
 /* ---------- the process (the home page's, as it is there) ---------- */
-const proc = $("#process"), procRun = $(".proc-run", proc), procSvg = $(".proc-trail", proc);
-const steps = $$(".step", proc), stepNodes = steps.map((s) => $(".step-node", s));
-const procRibbon = new Ribbon(procSvg, { ...BAND, amp: trailAmp, wave: 420, taperStart: 0, taperEnd: 0, sparks: 4, seed: 5 });
+const proc = $("#process"), procRun = proc && $(".proc-run", proc), procSvg = proc && $(".proc-trail", proc);
+const steps = proc ? $$(".step", proc) : [], stepNodes = steps.map((s) => $(".step-node", s));
+const procRibbon = !proc ? null : new Ribbon(procSvg, { ...BAND, amp: trailAmp, wave: 420, taperStart: 0, taperEnd: 0, sparks: 4, seed: 5 });
 let stepF = [], procTop = 0, procY0 = 0, procOut = 0;
 function layoutProc() {
+  if (!proc) return;
   const r = procRun.getBoundingClientRect(), W = r.width, H = r.height;
   procSvg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   const pts = stepNodes.map((n) => { const b = n.getBoundingClientRect(); return { x: b.left - r.left + b.width / 2, y: b.top - r.top + b.height / 2 }; });
@@ -342,7 +368,7 @@ function layoutProc() {
   procY0 = pts[0].y;
 }
 function procTick() {
-  if (reduce) return;
+  if (reduce || !proc) return;
   const r = rectOf(procRun), ih = innerHeight;
   if (r.top > ih * 1.4 || r.bottom < -ih * 0.4) return;
   let f;
@@ -361,42 +387,75 @@ function procTick() {
 // went out by that side, so there is one trail on the screen at a time.
 // (any sections: solar has what sets us apart and the questions after the process; storage has the benefits before it,
 // whose items light as the thread passes them)
-const tail = $(".dp-tail"), tailSecs = $$(":scope > section", tail), tailSvg = $(".tail-trail", tail);
-const bnItems = $$(".bn-it", tail);
-const tailFirst = !!(tail.compareDocumentPosition(procRun) & Node.DOCUMENT_POSITION_FOLLOWING);
-const gutW = () => px(tailSecs[0], "paddingRight") || 40;
+const tail = $(".dp-tail"), tailSecs = tail ? $$(":scope > section", tail) : [], tailSvg = tail && $(".tail-trail", tail);
+const bnItems = tail ? $$(".bn-it, .lit", tail) : [];
+const tailFirst = !procRun || !!(tail && tail.compareDocumentPosition(procRun) & Node.DOCUMENT_POSITION_FOLLOWING);
+const gutW = () => (tailSecs[0] ? px(tailSecs[0], "paddingRight") : px(fsec, "paddingRight")) || 40;
 const thinAmp = () => (wide() ? Math.min(9, gutW() * 0.16) : innerWidth < 768 ? 6 : 8);
 const railSway = () => {
   const room = (wide() ? gutW() : gutW() + (parseFloat(getComputedStyle(doc).getPropertyValue("--rail-pad")) || 28)) / 2;
   return Math.max(0, Math.min(wide() ? 13 : innerWidth < 768 ? 9 : 12, room - thinAmp() * 1.55 - 4));
 };
-const tailRibbon = new Ribbon(tailSvg, { strands: 16, amp: thinAmp, taperStart: 0, taperEnd: 0, sparks: 2, dim: 0.55, wave: 460, seed: 7, sway: railSway, swayWave: 560 });
-tailRibbon.headK = 0.55;
+const tailRibbon = !tail ? null : new Ribbon(tailSvg, { strands: 16, amp: thinAmp, taperStart: 0, taperEnd: 0, sparks: 2, dim: 0.55, wave: 460, seed: 7, sway: railSway, swayWave: 560 });
+if (tailRibbon) tailRibbon.headK = 0.55;
 let tailEnd = 0, bnF = [];
 function layoutTail() {
+  if (!tail) return;
   const r = tail.getBoundingClientRect(), W = r.width;
   tailSvg.setAttribute("viewBox", `0 0 ${W} ${r.height}`);
   const rp = parseFloat(getComputedStyle(doc).getPropertyValue("--rail-pad")) || 28;
   const x = W - (wide() ? gutW() : gutW() + rp) / 2, sx = doc.clientWidth - r.left + Math.max(120, trailAmp() * 6);
-  const lastSec = tailSecs[tailSecs.length - 1], lastList = $(".faq-list,.bn-list,.uq-list", lastSec) || lastSec;
+  const lastSec = tailSecs[tailSecs.length - 1], lastList = $(".tail-end", lastSec) || $(".faq-list,.bn-list,.uq-list", lastSec) || lastSec;
   const head = $("h2", tail).getBoundingClientRect().top - r.top, end = lastList.getBoundingClientRect().bottom - r.top;
   // below 1024 the thread starts only under where the trail before it went out by the same side
   const po = wide() ? -Infinity : tailFirst ? flow.getBoundingClientRect().top + flowEnd - r.top + 12 : procRun.getBoundingClientRect().top + procOut - r.top + 12;
   const y0 = Math.max(head - 280, po), y1 = Math.max(head - 10, y0 + 60), y2 = end + 40, y3 = end + 240, k = (sx - x) * 0.55;
   tailRibbon.setPath([["C", sx, y0, x + k, y0 + 30, x, y0 + (y1 - y0) * 0.4, x, y1], ["L", x, y1, x, y2], ["C", x, y2, x, y2 + (y3 - y2) * 0.6, x + k, y3 - 20, sx, y3]], null, [0.8, 1, 0.8]);
   tailEnd = y3;
-  bnF = bnItems.map((it) => { const ic = $(".bn-ic", it) || it, b = ic.getBoundingClientRect(); return tailRibbon.fracAtY(b.top - r.top + b.height / 2); });
+  bnF = bnItems.map((it) => { const ic = $(".bn-ic, .lit-ic", it) || it, b = ic.getBoundingClientRect(); return tailRibbon.fracAtY(b.top - r.top + b.height / 2); });
 }
 function tailTick() {
-  if (reduce) return;
+  if (reduce || !tail) return;
   const r = rectOf(tailSvg), ih = innerHeight;
   if (r.top > ih * 1.4 || r.top + tailEnd < -ih * 0.4) return;
   const f = tailRibbon.fracAtY(ih * HEAD - r.top);
   tailRibbon.draw(f);
   for (let i = 0; i < bnItems.length; i++) { const on = f >= bnF[i] - 0.003; if (bnItems[i]._on !== on) { bnItems[i]._on = on; bnItems[i].classList.toggle("on", on); } }
+  if (cmp) cmpTo(cmpVals.reduce((n, v, i) => (v._on ? i : n), -1));
+}
+// about: the compass of values turns its needle to the last value the thread has lit
+const cmp = $(".cmp"), cmpL = cmp ? $$(".cmp-l", cmp) : [], cmpVals = cmp ? $$(".vals-list > li") : [];
+let cmpN = -2;
+function cmpTo(n) {
+  if (n === cmpN) return;
+  cmpN = n;
+  cmp.style.setProperty("--n", Math.max(0, n));
+  cmp.classList.toggle("on", n >= 0);
+  cmpL.forEach((l, i) => l.classList.toggle("on", i === n));
 }
 // a question (or a cell) opened or closed moves everything under it
-$$("details", tail).concat($$("details", sw)).forEach((d) => d.addEventListener("toggle", () => { clearTimeout(rz); rz = setTimeout(relayout, 30); }));
+$$("main details").forEach((d) => d.addEventListener("toggle", () => { clearTimeout(rz); rz = setTimeout(relayout, 30); }));
+
+/* ---------- the stations (charging): a pin opens its row, an open row lights its pin, a coming place lights its dot ---------- */
+const stRows = $$(".st[data-st]"), pins = $$(".pin[data-st]"), dots = $$(".dot[data-st]");
+if (stRows.length) {
+  const rowOf = (k) => stRows.find((d) => d.dataset.st === k);
+  const sync = () => { const open = stRows.find((d) => d.open); pins.forEach((p) => p.classList.toggle("is-on", !!open && p.dataset.st === open.dataset.st)); };
+  stRows.forEach((d) => d.addEventListener("toggle", sync));
+  pins.forEach((p) => p.addEventListener("click", () => {
+    const d = rowOf(p.dataset.st); if (!d) return;
+    d.open = true; sync();
+    const b = d.getBoundingClientRect();
+    if (b.top < 70 || b.bottom > innerHeight - 70) d.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
+    $("summary", d).focus({ preventScroll: true });
+  }));
+  $$(".st-soon li[data-st]").forEach((li) => {
+    const dot = dots.find((x) => x.dataset.st === li.dataset.st); if (!dot) return;
+    const on = () => dot.classList.add("is-hl"), off = () => dot.classList.remove("is-hl");
+    li.addEventListener("pointerenter", on); li.addEventListener("pointerleave", off);
+  });
+  sync();
+}
 
 /* ---------- leads: the form (to Monday once the client's details come) ---------- */
 function sendLead(data) {
@@ -408,10 +467,12 @@ $$("form[data-lead]").forEach((f) => {
   const msg = $(".lead-msg", f), btn = $("button", f);
   f.addEventListener("submit", (e) => {
     e.preventDefault();
-    const name = f.elements.name, phone = f.elements.phone, bad = [];
-    [name, phone].forEach((el) => el.removeAttribute("aria-invalid"));
-    if (name.value.trim().length < 2) bad.push([name, "נא למלא שם"]);
-    if (!phoneOK(phone.value)) bad.push([phone, "נא לבדוק את מספר הטלפון"]);
+    const name = f.elements.name, phone = f.elements.phone, email = f.elements.email, cv = f.elements.cv, bad = [];
+    [name, phone, email, cv].forEach((el) => el && el.removeAttribute("aria-invalid"));
+    if (name && name.value.trim().length < 2) bad.push([name, "נא למלא שם"]);
+    if (phone && (phone.required || phone.value.trim()) && !phoneOK(phone.value)) bad.push([phone, "נא לבדוק את מספר הטלפון"]);
+    if (email && (email.required || email.value.trim()) && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.value.trim())) bad.push([email, "נא לבדוק את כתובת המייל"]);
+    if (cv && cv.required && !cv.files.length) bad.push([cv, "נא לצרף קורות חיים"]);
     msg.classList.toggle("is-err", bad.length > 0);
     if (bad.length) {
       bad.forEach(([el]) => el.setAttribute("aria-invalid", "true"));
@@ -419,21 +480,33 @@ $$("form[data-lead]").forEach((f) => {
       bad[0][0].focus();
       return;
     }
-    const data = { source: f.dataset.lead, name: name.value.trim(), phone: phone.value.trim(), at: new Date().toISOString() };
+    const data = { source: f.dataset.lead, at: new Date().toISOString() };
+    $$("input[name], textarea[name], select[name]", f).forEach((el) => {
+      if (el.name === "topic") return;
+      if (el.type === "file") data[el.name] = Array.from(el.files).map((x) => x.name);
+      else if (el.type !== "checkbox" || el.checked) data[el.name] = el.value.trim();
+    });
     data.topics = $$('input[name="topic"]:checked', f).map((i) => i.value);
     btn.disabled = true; msg.textContent = "שולחים...";
     sendLead(data).then(
-      () => { f.classList.add("is-sent"); msg.textContent = "קיבלנו, תודה."; try { sessionStorage.setItem("lead-name", name.value.trim().split(/\s+/)[0]); sessionStorage.removeItem("lead-fired"); } catch (e) {}
+      () => { f.classList.add("is-sent"); msg.textContent = "קיבלנו, תודה."; try { if (name) sessionStorage.setItem("lead-name", name.value.trim().split(/\s+/)[0]); sessionStorage.removeItem("lead-fired"); } catch (e) {}
         location.href = "thanks.html?from=" + f.dataset.lead; },
       () => { btn.disabled = false; msg.classList.add("is-err"); msg.textContent = "השליחה לא עברה. אפשר לנסות שוב, או לחייג 6223*."; }
     );
   });
 });
 
+// a CV zone says which file was picked (or dropped on it)
+$$(".cv-file input").forEach((i) => {
+  const t = $(".cv-t", i.parentNode), d = t.textContent;
+  i.addEventListener("change", () => { const has = i.files.length > 0; t.textContent = has ? i.files[0].name : d; i.parentNode.classList.toggle("has-file", has); if (has) i.removeAttribute("aria-invalid"); });
+});
+
 /* ---------- the close: the trail comes in for the last time and lights the socket ---------- */
-const closeWrap = $(".close-wrap"), closeBg = $(".close-bg"), closeSec = $("#contact"), closeSvg = $(".close-trail", closeSec), plug = $(".plug", closeSec);
-const closeRibbon = new Ribbon(closeSvg, { ...BAND, amp: trailAmp, wave: 520, taperStart: 0, taperEnd: 50, sparks: 4, seed: 11 });
+const closeWrap = $(".close-wrap"), closeBg = $(".close-bg"), closeSec = closeWrap && $(".close", closeWrap), closeSvg = closeSec && $(".close-trail", closeSec), plug = closeSec && $(".plug", closeSec);
+const closeRibbon = !closeSec ? null : new Ribbon(closeSvg, { ...BAND, amp: trailAmp, wave: 520, taperStart: 0, taperEnd: 50, sparks: 4, seed: 11 });
 function layoutClose() {
+  if (!closeSec) return;
   const r = closeSec.getBoundingClientRect(), W = r.width, H = r.height, b = plug.getBoundingClientRect();
   closeSvg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   const qx = b.left - r.left + b.width / 2, qy = b.top - r.top + b.height / 2, off = Math.max(120, trailAmp() * 6);
@@ -450,7 +523,7 @@ function layoutClose() {
   closeBg.style.setProperty("--qy", Math.round(b.top - wr.top + b.height / 2) + "px");
 }
 function closeTick() {
-  if (reduce) return;
+  if (reduce || !closeSec) return;
   const r = rectOf(closeSec), ih = innerHeight;
   if (r.top > ih * 1.2 || r.bottom < -ih * 0.2) return;
   const f = closeRibbon.fracAtY(ih * 0.7 - r.top);
@@ -483,7 +556,7 @@ const mbar = $("[data-mbar]"), ctaOrigin = $("[data-cta-origin]"), ctaEnds = $$(
 let typing = false;
 function mbarRead() {
   if (wide()) return null;
-  const ih = innerHeight, past = ctaOrigin.getBoundingClientRect().bottom < 8;
+  const ih = innerHeight, past = ctaOrigin ? ctaOrigin.getBoundingClientRect().bottom < 8 : scrollY > ih * 0.6;
   const atEnd = ctaEnds.some((el) => { const r = el.getBoundingClientRect(); return r.top < ih * 0.7 && r.bottom > ih * 0.1; }) || ft.getBoundingClientRect().top < ih;
   return past && !atEnd;
 }
@@ -504,6 +577,7 @@ if (apple) { document.documentElement.classList.add("is-apple"); $(".fx-defs")?.
 const fx = $(".fx-defs"), canPause = !!(fx && fx.pauseAnimations);
 let arcFar = true, arcT = 0, rings = false;
 function arcRun() {
+  if (!closeSec) return;
   if (apple && !arcFar && !rings) { rings = true; import("./arc-rings.js").then((m) => m.mountArcRings($(".plug-arc", closeSec))); }
   if (!canPause) return;
   clearTimeout(arcT);
@@ -515,7 +589,7 @@ const farIO = "IntersectionObserver" in window ? new IntersectionObserver((es) =
   e.target.classList.toggle("is-far", !e.isIntersecting);
   if (e.target === closeSec) { arcFar = !e.isIntersecting; arcRun(); }
 }), { rootMargin: "25% 0px" }) : null;
-if (farIO) [sw, procRun, tail, closeSec, ft].forEach((el) => farIO.observe(el));
+if (farIO) [sw || fsec, procRun, tail, closeSec, ft].filter(Boolean).forEach((el) => farIO.observe(el));
 else arcFar = false;
 arcRun();
 
@@ -547,8 +621,9 @@ function relayout() {
   layoutTail();
   layoutClose();
   if (reduce) {
-    flowRibbon.draw(1); procRibbon.draw(1); tailRibbon.draw(1); closeRibbon.draw(1);
-    pcs.forEach((c) => c.classList.add("on")); steps.forEach((s) => s.classList.add("on")); bnItems.forEach((b) => b.classList.add("on")); plug.classList.add("is-lit");
+    [flowRibbon, procRibbon, tailRibbon, closeRibbon].forEach((rb) => rb && rb.draw(1));
+    pcs.forEach((c) => c.classList.add("on")); steps.forEach((s) => s.classList.add("on")); bnItems.forEach((b) => b.classList.add("on")); if (plug) plug.classList.add("is-lit");
+    if (cmp) { cmp.classList.add("on"); cmpL.forEach((l) => l.classList.add("on")); }
   }
   tick();
   if (lenis) requestAnimationFrame(() => lenis.resize());

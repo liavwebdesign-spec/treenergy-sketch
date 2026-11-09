@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl" data-bg="brand">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>מרכז הידע | טרינרג'י</title>
+<meta name="description" content="כתבות, מאמרים, טיפים והמלצות על אנרגיה סולארית, אגירה וטעינת רכבים, ממרכז הידע של טרינרג'י.">
+<meta name="theme-color" content="#000B26">
+<link rel="icon" href="assets/brand/mark.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/hatzor-regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/almoni-medium-aaa.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/almoni-regular-aaa.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/img/scene/wide-on.webp" as="image" media="(min-aspect-ratio:9/10)">
+<link rel="preload" href="assets/img/scene/tall-on.webp" as="image" media="(max-aspect-ratio:9/10)">
+<script>
+  document.documentElement.classList.add("js");
+  // the visitor's display choices (the accessibility panel) hold here too; "stop motion" counts as reduced motion
+  (function (d) { var ax = {}; try { ax = JSON.parse(localStorage.getItem("tr-ax") || "{}"); } catch (e) {}
+    window.__still = !!ax.still;
+    ["contrast", "links", "read", "still"].forEach(function (k) { if (ax[k]) d.classList.add("ax-" + k); });
+    if (ax.text) d.classList.add("ax-t" + ax.text); })(document.documentElement);
+  if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+</script>
+<link rel="stylesheet" href="assets/css/site.css?v=r31">
+<link rel="stylesheet" href="assets/css/domain.css?v=r31">
+<!-- the page's own files carry the round (?v=), so a visitor never gets this round's code with pieces of the last one from the cache -->
+<script type="importmap">{"imports":{"./assets/js/ribbon.js":"./assets/js/ribbon.js?v=r31","./assets/js/arc-rings.js":"./assets/js/arc-rings.js?v=r31","./assets/js/sky.js":"./assets/js/sky.js?v=r31"}}</script>
+<script defer src="vendor/gsap/gsap.min.js"></script>
+<script defer src="vendor/lenis/lenis.min.js"></script>
+<script type="module" src="assets/js/page.js?v=r31"></script>
+<script type="module" src="assets/js/domain.js?v=r31"></script>
+</head>
+<body>
+<canvas id="sky" aria-hidden="true"></canvas>
+<a class="hskip" href="#main">דלג לתוכן</a>
+
+<header class="hd" id="hd">
+  <div class="hd-start">
+    <button class="mn-btn" type="button" aria-expanded="false" aria-controls="mn"><span class="mn-ic" aria-hidden="true"><i></i><i></i></span><span class="mn-lbl">תפריט</span></button>
+  </div>
+  <nav class="hd-rail" aria-label="ניווט באתר">
+    <span class="hd-wire" aria-hidden="true"><i class="hd-fill"></i></span>
+    <a class="hd-node" href="about.html"><i aria-hidden="true"></i><span>אודות</span></a>
+    <a class="hd-node" href="solar.html"><i aria-hidden="true"></i><span>סולארי</span></a>
+    <a class="hd-node" href="storage.html"><i aria-hidden="true"></i><span>אגירה</span></a>
+    <a class="hd-node" href="charge.html"><i aria-hidden="true"></i><span>טעינה</span></a>
+    <a class="hd-node is-here" href="knowledge.html" aria-current="page"><i aria-hidden="true"></i><span>מרכז ידע</span></a>
+    <a class="hd-node" href="contact.html"><i aria-hidden="true"></i><span>צור קשר</span></a>
+  </nav>
+  <div class="hd-end">
+    <a class="hd-cta" href="#contact">כמה תוכל להרוויח</a>
+    <a class="hd-tel" href="tel:*6223" aria-label="חייגו 6223*"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></a>
+    <a class="hd-logo" href="index.html"><img src="assets/brand/logo-on-dark.svg" alt="טרינרג'י, לעמוד הבית" width="507" height="125"></a>
+  </div>
+</header>
+
+<div class="mn" id="mn" role="dialog" aria-modal="true" aria-label="תפריט">
+  <div class="mn-bg" aria-hidden="true"></div>
+  <div class="mn-in">
+    <div class="mn-top">
+      <button class="mn-close" type="button"><span class="mn-x" aria-hidden="true"><i></i><i></i></span><span class="mn-lbl">סגירה</span></button>
+      <img class="mn-logo" src="assets/brand/logo-on-dark.svg" alt="" width="507" height="125">
+    </div>
+    <nav class="mn-nav" aria-label="ניווט ראשי">
+      <ol class="mn-list">
+        <li class="mn-it"><a href="solar.html"><span class="mn-t">אנרגיה סולארית</span></a></li>
+        <li class="mn-it"><a href="charge.html"><span class="mn-t">טעינת רכבים</span></a></li>
+        <li class="mn-it"><a href="storage.html"><span class="mn-t">אגירת אנרגיה</span></a></li>
+        <li class="mn-it"><a href="about.html"><span class="mn-t">אודות</span></a></li>
+        <li class="mn-it"><a class="is-on" href="knowledge.html" aria-current="page"><span class="mn-t">מרכז הידע</span></a></li>
+        <li class="mn-it"><a href="contact.html"><span class="mn-t">יצירת קשר</span></a></li>
+      </ol>
+    </nav>
+    <div class="mn-side">
+      <div class="mn-contact">
+        <a class="mn-tel" href="tel:*6223"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>חייגו <span class="num">6223*</span></a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<main id="main" class="dp dp-kh">
+
+<!-- the knowledge centre (client doc, 5.11: "no changes" to the page, the background in the brand's blue: data-bg="brand"
+     on <html> turns the living night to the brand palette). The trail is born at the lit city of the home tour's picture,
+     comes down the open side past the words and runs down the start rail beside the articles.
+     SKETCH ONLY: the first article is the draft's; the other five are the home page's proposed topics, waiting for the
+     client's articles. Until then every card opens the sample article page (article.html). -->
+<div class="dp-flow">
+  <svg class="dp-trail" aria-hidden="true" focusable="false"></svg>
+
+  <section class="sh" aria-labelledby="sh-h" data-birth="1293,852,845,1582" data-size="2752,1536,1536,2752">
+    <div class="sh-pic" aria-hidden="true">
+      <picture>
+        <source media="(min-aspect-ratio:9/10)" srcset="assets/img/scene/wide-on.webp" width="2752" height="1536">
+        <img src="assets/img/scene/tall-on.webp" alt="" width="1536" height="2752" fetchpriority="high" decoding="async">
+      </picture>
+    </div>
+    <div class="sh-say">
+      <nav class="crumb" aria-label="מיקום באתר"><a href="index.html">דף הבית</a><span aria-hidden="true">/</span><span aria-current="page">מרכז הידע</span></nav>
+      <h1 id="sh-h"><span class="sh-l">מרכז <span class="gword">הידע</span> שלנו</span></h1>
+      <p class="sh-lead">ריכזנו עבורכם את הנושאים החשובים והחמים ביותר: כתבות, מאמרים, טיפים והמלצות שישאירו אתכם תמיד בעניינים.</p>
+    </div>
+  </section>
+
+  <!-- the articles: the newest one large on the start side, two beside it, three under them -->
+  <section class="kh" id="articles" aria-labelledby="kh-h">
+    <h2 id="kh-h" data-drift="30">הכתבות האחרונות</h2>
+    <ul class="kh-grid" data-flow-end>
+      <li class="kh-it kh-lead">
+        <a class="art" href="article.html">
+          <figure class="art-img"><img src="assets/img/kn-1-1200.webp" alt="" width="1200" height="799" loading="lazy" decoding="async"></figure>
+          <span class="art-t-wrap"><time class="kh-date" datetime="2026-01-26">26 בינואר 2026</time><span class="art-t">איך לבחור מערכת סולארית לבית פרטי</span><span class="art-d">מדריך מעשי למי שיש גג ורוצה להתחיל לחסוך, שלב אחר שלב.</span><span class="art-go">לקריאה<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></span></span>
+        </a>
+      </li>
+      <li class="kh-it">
+        <a class="art" href="article.html">
+          <figure class="art-img"><img src="assets/img/dom-solar-1200.webp" alt="" width="1200" height="675" loading="lazy" decoding="async" style="object-position:30% 60%"></figure>
+          <span class="art-t-wrap"><span class="art-t">כמה עולה מערכת סולארית לעסק, ומתי היא מחזירה את עצמה</span><span class="art-d">על מה משלמים, ואיך מחשבים תוך כמה שנים המערכת מחזירה את ההשקעה.</span><span class="art-go">לקריאה<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></span></span>
+        </a>
+      </li>
+      <li class="kh-it">
+        <a class="art" href="article.html">
+          <figure class="art-img"><img src="assets/img/dom-storage-1200.webp" alt="" width="1200" height="670" loading="lazy" decoding="async"></figure>
+          <span class="art-t-wrap"><span class="art-t">מתי משתלם להוסיף אגירה למערכת סולארית קיימת</span><span class="art-d">מה מרוויחים מסוללה לצד מערכת שכבר עובדת, ובאילו מקרים זה לא שווה את ההשקעה.</span><span class="art-go">לקריאה<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></span></span>
+        </a>
+      </li>
+      <li class="kh-it">
+        <a class="art" href="article.html">
+          <figure class="art-img"><img src="assets/img/dom-charge-1200.webp" alt="" width="1200" height="675" loading="lazy" decoding="async" style="object-position:50% 40%"></figure>
+          <span class="art-t-wrap"><span class="art-t">עמדות טעינה בבניין משותף</span><span class="art-d">מי צריך לאשר את ההתקנה, ואיך מתחלקים בתשלום בין הדיירים.</span><span class="art-go">לקריאה<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></span></span>
+        </a>
+      </li>
+      <li class="kh-it">
+        <a class="art" href="article.html">
+          <figure class="art-img"><img src="assets/img/prj-2-1200.webp" alt="" width="1200" height="899" loading="lazy" decoding="async"></figure>
+          <span class="art-t-wrap"><span class="art-t">השכרת קרקע לחווה סולארית</span><span class="art-d">כמה זמן נמשך החוזה, ומה קורה עם הקרקע כשהוא נגמר.</span><span class="art-go">לקריאה<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></span></span>
+        </a>
+      </li>
+      <li class="kh-it">
+        <a class="art" href="article.html">
+          <figure class="art-img"><img src="assets/img/prj-1-1200.webp" alt="" width="1200" height="675" loading="lazy" decoding="async" style="object-position:70% 30%"></figure>
+          <span class="art-t-wrap"><span class="art-t">החיבור לרשת של חברת החשמל</span><span class="art-d">אילו אישורים צריך, וכמה זמן זה לוקח בדרך כלל.</span><span class="art-go">לקריאה<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></span></span>
+        </a>
+      </li>
+    </ul>
+  </section>
+</div>
+
+<div class="close-wrap">
+<div class="close-bg" aria-hidden="true"><i></i></div>
+<section class="close" id="contact" data-axis="start" aria-labelledby="close-h" data-cta-end>
+  <svg class="close-trail"></svg>
+  <div class="close-say" data-drift="40">
+    <h2 id="close-h">בדוק כמה תוכל להרוויח עם <span class="gword">טרינרג'י</span></h2>
+  </div>
+  <svg class="fx-defs" aria-hidden="true" focusable="false"><filter id="arc" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+    <feTurbulence type="turbulence" baseFrequency=".03" numOctaves="6" seed="1" result="n1"/><feOffset in="n1" result="o1"><animate attributeName="dy" values="600;0" dur="5s" repeatCount="indefinite"/></feOffset>
+    <feTurbulence type="turbulence" baseFrequency=".03" numOctaves="6" seed="1" result="n2"/><feOffset in="n2" result="o2"><animate attributeName="dy" values="0;-600" dur="5s" repeatCount="indefinite"/></feOffset>
+    <feTurbulence type="turbulence" baseFrequency=".03" numOctaves="6" seed="2" result="n3"/><feOffset in="n3" result="o3"><animate attributeName="dx" values="420;0" dur="5s" repeatCount="indefinite"/></feOffset>
+    <feTurbulence type="turbulence" baseFrequency=".03" numOctaves="6" seed="2" result="n4"/><feOffset in="n4" result="o4"><animate attributeName="dx" values="0;-420" dur="5s" repeatCount="indefinite"/></feOffset>
+    <feComposite in="o1" in2="o2" result="p1"/><feComposite in="o3" in2="o4" result="p2"/>
+    <feBlend in="p1" in2="p2" mode="color-dodge" result="mix"/>
+    <feDisplacementMap in="SourceGraphic" in2="mix" scale="22" xChannelSelector="R" yChannelSelector="B"/>
+  </filter></svg>
+  <a class="plug" href="#contact-lead"><span class="plug-arc" aria-hidden="true"></span><span class="plug-t">השאירו פרטים</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
+
+  <div class="reach">
+    <form class="lf lead-c" id="contact-lead" novalidate data-lead="knowledge">
+      <p class="lead-h">השאירו פרטים ונחזור אליכם</p>
+      <fieldset class="topic">
+        <legend class="sr">מה מעניין אתכם</legend>
+        <label><input type="checkbox" name="topic" value="solar"><span>סולארי</span></label>
+        <label><input type="checkbox" name="topic" value="storage"><span>אגירה</span></label>
+        <label><input type="checkbox" name="topic" value="charge"><span>טעינה</span></label>
+      </fieldset>
+      <div class="fld"><label for="ct-name">שם מלא</label><input id="ct-name" name="name" type="text" autocomplete="name" required></div>
+      <div class="fld"><label for="ct-tel">טלפון</label><input id="ct-tel" name="phone" type="tel" inputmode="tel" autocomplete="tel" required></div>
+      <button class="btn btn-lg" type="submit">שליחה<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
+      <p class="lead-msg" role="status"></p>
+      <p class="reach-tel">או חייגו <a class="num" href="tel:*6223">6223*</a></p>
+    </form>
+  </div>
+</section>
+</div>
+
+</main>
+
+<footer class="ft" id="ft">
+  <div class="ft-cols">
+    <nav class="ft-col" aria-label="ניווט מהיר"><p class="ft-k">ניווט מהיר</p><a href="about.html">אודות</a><a href="knowledge.html" aria-current="page">מרכז הידע</a><a href="contact.html">יצירת קשר</a></nav>
+    <nav class="ft-col" aria-label="תחומי פעילות"><p class="ft-k">תחומי פעילות</p><a href="solar.html">אנרגיה סולארית</a><a href="charge.html">טעינת רכבים</a><a href="storage.html">אגירת אנרגיה</a></nav>
+    <div class="ft-col"><p class="ft-k">דברו איתנו</p><a href="tel:*6223">חייגו <span class="num">6223*</span></a><a class="lat" href="mailto:info@treenergy.co.il">info@treenergy.co.il</a><span>ישורון 3, תל אביב</span></div>
+    <div class="ft-col"><p class="ft-k">עקבו אחרינו</p><a href="https://www.facebook.com/treenergygroup" target="_blank" rel="noopener">פייסבוק</a><a href="https://www.instagram.com/treenergygroup" target="_blank" rel="noopener">אינסטגרם</a></div>
+  </div>
+  <div class="ft-sky" aria-hidden="true"><i class="ft-glow"></i><i class="ft-rim"></i></div>
+  <div class="ft-base">
+    <p>© <span data-year>2026</span> כל הזכויות שמורות לרמי לוי טרינרג'י בע"מ</p>
+    <nav class="ft-legal" aria-label="מידע משפטי"><a href="privacy.html">מדיניות פרטיות</a><a href="accessibility.html">הצהרת נגישות</a><a href="terms.html">תקנון</a></nav>
+  </div>
+</footer>
+
+<div class="mbar" data-mbar inert>
+  <a class="mbar-tel" href="tel:*6223"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>חייגו</a>
+  <a class="mbar-go" href="#contact">בדוק כמה תוכל להרוויח</a>
+</div>
+
+<button class="ax-btn" type="button" aria-label="נגישות: התאמות תצוגה" aria-expanded="false" aria-controls="ax"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="7" r="1.3" fill="currentColor" stroke="none"/><path d="M7.4 9.7c3.1.8 6.1.8 9.2 0M12 10.6v3.5l-2.4 4.2M12 14.1l2.4 4.2"/></svg></button>
+<div class="ax-scrim" aria-hidden="true"></div>
+<div class="ax" id="ax" role="dialog" aria-modal="true" aria-labelledby="ax-h" inert>
+  <div class="ax-top">
+    <h2 id="ax-h">התאמות נגישות</h2>
+    <button class="ax-x" type="button" aria-label="סגירת התאמות הנגישות"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="ax-size" role="group" aria-labelledby="ax-size-l">
+    <p class="ax-lbl" id="ax-size-l">גודל הטקסט</p>
+    <div class="ax-seg"><button type="button" data-text="0" aria-pressed="true">רגיל</button><button type="button" data-text="1" aria-pressed="false">גדול</button><button type="button" data-text="2" aria-pressed="false">גדול מאוד</button></div>
+  </div>
+  <ul class="ax-list">
+    <li><button type="button" data-ax="contrast" aria-pressed="false"><span>ניגודיות גבוהה</span><i aria-hidden="true"></i></button></li>
+    <li><button type="button" data-ax="links" aria-pressed="false"><span>הדגשת קישורים</span><i aria-hidden="true"></i></button></li>
+    <li><button type="button" data-ax="read" aria-pressed="false"><span>גופן קריא</span><i aria-hidden="true"></i></button></li>
+    <li><button type="button" data-ax="still" aria-pressed="false"><span>עצירת תנועה</span><i aria-hidden="true"></i></button></li>
+  </ul>
+  <div class="ax-foot"><button class="ax-reset" type="button">איפוס הבחירות</button><p>נשמר לביקור הבא</p></div>
+</div>
+</body>
+</html>

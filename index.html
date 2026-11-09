@@ -22,17 +22,17 @@
   if (!window.__still && matchMedia("(prefers-reduced-motion:no-preference)").matches) document.documentElement.classList.add("open-anim");
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 </script>
-<link rel="stylesheet" href="assets/css/site.css?v=r30">
-<link rel="stylesheet" href="assets/css/scene.css?v=r30">
+<link rel="stylesheet" href="assets/css/site.css?v=r31">
+<link rel="stylesheet" href="assets/css/scene.css?v=r31">
 <link rel="preload" href="assets/img/scene/wide-on.webp" as="image" media="(min-aspect-ratio:9/10)">
 <link rel="preload" href="assets/img/scene/tall-on.webp" as="image" media="(max-aspect-ratio:9/10)">
 <!-- the page's own files carry the round (?v=), so a visitor never gets this round's code with pieces of the last one from the cache -->
-<script type="importmap">{"imports":{"./assets/js/ribbon.js":"./assets/js/ribbon.js?v=r30","./assets/js/arc-rings.js":"./assets/js/arc-rings.js?v=r30","./assets/js/sky.js":"./assets/js/sky.js?v=r30","./assets/js/scene-dom.js":"./assets/js/scene-dom.js?v=r30","./assets/js/scene-marks.js":"./assets/js/scene-marks.js?v=r30","./assets/js/scene-trail.js":"./assets/js/scene-trail.js?v=r30","./assets/js/menu-dots.js":"./assets/js/menu-dots.js?v=r30"}}</script>
+<script type="importmap">{"imports":{"./assets/js/ribbon.js":"./assets/js/ribbon.js?v=r31","./assets/js/arc-rings.js":"./assets/js/arc-rings.js?v=r31","./assets/js/sky.js":"./assets/js/sky.js?v=r31","./assets/js/scene-dom.js":"./assets/js/scene-dom.js?v=r31","./assets/js/scene-marks.js":"./assets/js/scene-marks.js?v=r31","./assets/js/scene-trail.js":"./assets/js/scene-trail.js?v=r31","./assets/js/menu-dots.js":"./assets/js/menu-dots.js?v=r31"}}</script>
 <script defer src="vendor/gsap/gsap.min.js"></script>
 <script defer src="vendor/gsap/SplitText.min.js"></script>
 <script defer src="vendor/lenis/lenis.min.js"></script>
-<script type="module" src="assets/js/site.js?v=r30"></script>
-<script type="module" src="assets/js/scene.js?v=r30"></script>
+<script type="module" src="assets/js/site.js?v=r31"></script>
+<script type="module" src="assets/js/scene.js?v=r31"></script>
 </head>
 <body>
 <!-- the living night: one field behind the whole page -->
@@ -72,11 +72,11 @@
     <nav class="mn-nav" aria-label="ניווט ראשי">
       <ol class="mn-list">
         <li class="mn-it"><a href="solar.html"><span class="mn-t">אנרגיה סולארית</span></a></li>
-        <li class="mn-it"><a href="#dom-charge"><span class="mn-t">טעינת רכבים</span></a></li>
+        <li class="mn-it"><a href="charge.html"><span class="mn-t">טעינת רכבים</span></a></li>
         <li class="mn-it"><a href="storage.html"><span class="mn-t">אגירת אנרגיה</span></a></li>
-        <li class="mn-it"><a href="#about"><span class="mn-t">אודות</span></a></li>
-        <li class="mn-it"><a href="#knowledge"><span class="mn-t">מרכז הידע</span></a></li>
-        <li class="mn-it"><a href="#contact"><span class="mn-t">יצירת קשר</span></a></li>
+        <li class="mn-it"><a href="about.html"><span class="mn-t">אודות</span></a></li>
+        <li class="mn-it"><a href="knowledge.html"><span class="mn-t">מרכז הידע</span></a></li>
+        <li class="mn-it"><a href="contact.html"><span class="mn-t">יצירת קשר</span></a></li>
       </ol>
     </nav>
     <!-- the Earth of the opening, turned to the item the visitor points at (the list is the way for the keyboard and for
@@ -133,7 +133,7 @@
       <article class="lb-stop" data-k="chg" aria-labelledby="st-chg-h">
         <h2 id="st-chg-h">טעינת רכבים</h2>
         <p class="lb-stop-p">הפעלת רשת טעינת רכבים אולטרה מהירה בפריסה ארצית.</p>
-        <a class="lnk" href="#contact-lead" data-topic="charge">מידע נוסף<span class="sr"> על טעינת רכבים</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
+        <a class="lnk" href="charge.html">מידע נוסף<span class="sr"> על טעינת רכבים</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
         <ol class="lb-ticks" aria-hidden="true"><li class="done"></li><li class="done"></li><li class="now"></li><li></li></ol>
       </article>
       <article class="lb-stop" data-k="srv" aria-labelledby="st-srv-h">
@@ -198,7 +198,7 @@
     <div class="sc-copy">
       <h3 class="rv" id="dom-charge-h">טעינת רכבים</h3>
       <p class="rv">הפעלת רשת טעינת רכבים אולטרה מהירה בפריסה ארצית.</p>
-      <a class="lnk rv" href="#contact-lead" data-topic="charge">מידע נוסף<span class="sr"> על טעינת רכבים</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
+      <a class="lnk rv" href="charge.html">מידע נוסף<span class="sr"> על טעינת רכבים</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
     </div>
     <figure class="shot" data-obj="charger" aria-hidden="true">
       <span class="obj" style="--ar:760/1352">
@@ -362,32 +362,32 @@
       <h2 id="kn-h" class="rv">מרכז הידע שלנו</h2>
       <div class="kn-say rv">
         <p>ריכזנו עבורכם את הנושאים החשובים והחמים ביותר: כתבות, מאמרים, טיפים והמלצות שישאירו אתכם תמיד בעניינים.</p>
-        <a class="lnk" href="#knowledge">בקרו בבלוג שלנו<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
+        <a class="lnk" href="knowledge.html">בקרו בבלוג שלנו<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
       </div>
     </header>
     <div class="kn-view">
       <div class="kn-track">
-        <a class="art" href="#knowledge">
+        <a class="art" href="article.html">
           <figure class="art-img"><img src="assets/img/kn-1-1200.webp" alt="" loading="lazy" fetchpriority="low" data-early decoding="async" style="object-position:50% 50%"></figure>
           <span class="art-t-wrap"><span class="art-t">איך לבחור מערכת סולארית לבית פרטי</span><span class="art-d">מדריך מעשי למי שיש גג ורוצה להתחיל לחסוך, שלב אחר שלב.</span><span class="art-go">לקריאה<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></span></span>
         </a>
-        <a class="art" href="#knowledge">
+        <a class="art" href="article.html">
           <figure class="art-img"><img src="assets/img/dom-solar-1200.webp" alt="" loading="lazy" fetchpriority="low" data-early decoding="async" style="object-position:30% 60%"></figure>
           <span class="art-t-wrap"><span class="art-t">כמה עולה מערכת סולארית לעסק, ומתי היא מחזירה את עצמה</span><span class="art-d">על מה משלמים, ואיך מחשבים תוך כמה שנים המערכת מחזירה את ההשקעה.</span><span class="art-go">לקריאה<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></span></span>
         </a>
-        <a class="art" href="#knowledge">
+        <a class="art" href="article.html">
           <figure class="art-img"><img src="assets/img/dom-storage-1200.webp" alt="" loading="lazy" fetchpriority="low" data-early decoding="async" style="object-position:50% 50%"></figure>
           <span class="art-t-wrap"><span class="art-t">מתי משתלם להוסיף אגירה למערכת סולארית קיימת</span><span class="art-d">מה מרוויחים מסוללה לצד מערכת שכבר עובדת, ובאילו מקרים זה לא שווה את ההשקעה.</span><span class="art-go">לקריאה<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></span></span>
         </a>
-        <a class="art" href="#knowledge">
+        <a class="art" href="article.html">
           <figure class="art-img"><img src="assets/img/dom-charge-1200.webp" alt="" loading="lazy" fetchpriority="low" data-early decoding="async" style="object-position:50% 40%"></figure>
           <span class="art-t-wrap"><span class="art-t">עמדות טעינה בבניין משותף</span><span class="art-d">מי צריך לאשר את ההתקנה, ואיך מתחלקים בתשלום בין הדיירים.</span><span class="art-go">לקריאה<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></span></span>
         </a>
-        <a class="art" href="#knowledge">
+        <a class="art" href="article.html">
           <figure class="art-img"><img src="assets/img/prj-2-1200.webp" alt="" loading="lazy" fetchpriority="low" data-early decoding="async" style="object-position:50% 50%"></figure>
           <span class="art-t-wrap"><span class="art-t">השכרת קרקע לחווה סולארית</span><span class="art-d">כמה זמן נמשך החוזה, ומה קורה עם הקרקע כשהוא נגמר.</span><span class="art-go">לקריאה<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></span></span>
         </a>
-        <a class="art" href="#knowledge">
+        <a class="art" href="article.html">
           <figure class="art-img"><img src="assets/img/prj-1-1200.webp" alt="" loading="lazy" fetchpriority="low" data-early decoding="async" style="object-position:70% 30%"></figure>
           <span class="art-t-wrap"><span class="art-t">החיבור לרשת של חברת החשמל</span><span class="art-d">אילו אישורים צריך, וכמה זמן זה לוקח בדרך כלל.</span><span class="art-go">לקריאה<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></span></span>
         </a>
@@ -440,15 +440,15 @@
 <!-- the footer: a giant closer. The mark the trail started from, the ways in, and the small print -->
 <footer class="ft" id="ft">
   <div class="ft-cols">
-    <nav class="ft-col" style="--ci:0" aria-label="ניווט מהיר"><p class="ft-k">ניווט מהיר</p><a href="#about">אודות</a><a href="#knowledge">מרכז הידע</a><a href="#contact">יצירת קשר</a></nav>
-    <nav class="ft-col" style="--ci:1" aria-label="תחומי פעילות"><p class="ft-k">תחומי פעילות</p><a href="solar.html">אנרגיה סולארית</a><a href="#dom-charge">טעינת רכבים</a><a href="storage.html">אגירת אנרגיה</a></nav>
+    <nav class="ft-col" style="--ci:0" aria-label="ניווט מהיר"><p class="ft-k">ניווט מהיר</p><a href="about.html">אודות</a><a href="knowledge.html">מרכז הידע</a><a href="contact.html">יצירת קשר</a></nav>
+    <nav class="ft-col" style="--ci:1" aria-label="תחומי פעילות"><p class="ft-k">תחומי פעילות</p><a href="solar.html">אנרגיה סולארית</a><a href="charge.html">טעינת רכבים</a><a href="storage.html">אגירת אנרגיה</a></nav>
     <div class="ft-col" style="--ci:2"><p class="ft-k">דברו איתנו</p><a href="tel:*6223">חייגו <span class="num">6223*</span></a><a class="lat" href="mailto:info@treenergy.co.il">info@treenergy.co.il</a><span>ישורון 3, תל אביב</span></div>
     <div class="ft-col" style="--ci:3"><p class="ft-k">עקבו אחרינו</p><a href="https://www.facebook.com/treenergygroup" target="_blank" rel="noopener">פייסבוק</a><a href="https://www.instagram.com/treenergygroup" target="_blank" rel="noopener">אינסטגרם</a></div>
   </div>
   <div class="ft-sky" aria-hidden="true"><i class="ft-glow"></i><i class="ft-rim"></i></div>
   <div class="ft-base">
     <p>© <span data-year>2026</span> כל הזכויות שמורות לרמי לוי טרינרג'י בע"מ</p>
-    <nav class="ft-legal" aria-label="מידע משפטי"><a href="#ft">מדיניות פרטיות</a><a href="#ft">הצהרת נגישות</a><a href="#ft">תקנון</a></nav>
+    <nav class="ft-legal" aria-label="מידע משפטי"><a href="privacy.html">מדיניות פרטיות</a><a href="accessibility.html">הצהרת נגישות</a><a href="terms.html">תקנון</a></nav>
   </div>
 </footer>
 

@@ -18,8 +18,8 @@
     ["contrast", "links", "read", "still"].forEach(function (k) { if (ax[k]) d.classList.add("ax-" + k); });
     if (ax.text) d.classList.add("ax-t" + ax.text); })(document.documentElement);
 </script>
-<link rel="stylesheet" href="assets/css/site.css?v=r30">
-<script type="module" src="assets/js/page.js?v=r30"></script>
+<link rel="stylesheet" href="assets/css/site.css?v=r31">
+<script type="module" src="assets/js/page.js?v=r31"></script>
 </head>
 <body>
 <canvas id="sky" aria-hidden="true"></canvas>
@@ -33,15 +33,15 @@
   </div>
   <nav class="hd-rail" aria-label="המסע בעמוד">
     <span class="hd-wire" aria-hidden="true"><i class="hd-fill"></i></span>
-    <a class="hd-node" href="index.html#about"><i aria-hidden="true"></i><span>אודות</span></a>
+    <a class="hd-node" href="about.html"><i aria-hidden="true"></i><span>אודות</span></a>
     <a class="hd-node" href="solar.html"><i aria-hidden="true"></i><span>סולארי</span></a>
     <a class="hd-node" href="storage.html"><i aria-hidden="true"></i><span>אגירה</span></a>
-    <a class="hd-node" href="index.html#dom-charge"><i aria-hidden="true"></i><span>טעינה</span></a>
-    <a class="hd-node" href="index.html#knowledge"><i aria-hidden="true"></i><span>מרכז ידע</span></a>
-    <a class="hd-node" href="index.html#contact"><i aria-hidden="true"></i><span>צור קשר</span></a>
+    <a class="hd-node" href="charge.html"><i aria-hidden="true"></i><span>טעינה</span></a>
+    <a class="hd-node" href="knowledge.html"><i aria-hidden="true"></i><span>מרכז ידע</span></a>
+    <a class="hd-node" href="contact.html"><i aria-hidden="true"></i><span>צור קשר</span></a>
   </nav>
   <div class="hd-end">
-    <a class="hd-cta" href="index.html#contact">כמה תוכל להרוויח</a>
+    <a class="hd-cta" href="contact.html">כמה תוכל להרוויח</a>
     <a class="hd-tel" href="tel:*6223" aria-label="חייגו 6223*"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></a>
     <a class="hd-logo" href="index.html"><img src="assets/brand/logo-on-dark.svg" alt="טרינרג'י, לעמוד הבית" width="507" height="125"></a>
   </div>
@@ -58,11 +58,11 @@
     <nav class="mn-nav" aria-label="ניווט ראשי">
       <ol class="mn-list">
         <li class="mn-it"><a href="solar.html"><span class="mn-t">אנרגיה סולארית</span></a></li>
-        <li class="mn-it"><a href="index.html#dom-charge"><span class="mn-t">טעינת רכבים</span></a></li>
+        <li class="mn-it"><a href="charge.html"><span class="mn-t">טעינת רכבים</span></a></li>
         <li class="mn-it"><a href="storage.html"><span class="mn-t">אגירת אנרגיה</span></a></li>
-        <li class="mn-it"><a href="index.html#about"><span class="mn-t">אודות</span></a></li>
-        <li class="mn-it"><a href="index.html#knowledge"><span class="mn-t">מרכז הידע</span></a></li>
-        <li class="mn-it"><a href="index.html#contact"><span class="mn-t">יצירת קשר</span></a></li>
+        <li class="mn-it"><a href="about.html"><span class="mn-t">אודות</span></a></li>
+        <li class="mn-it"><a href="knowledge.html"><span class="mn-t">מרכז הידע</span></a></li>
+        <li class="mn-it"><a href="contact.html"><span class="mn-t">יצירת קשר</span></a></li>
       </ol>
     </nav>
     <div class="mn-side">
@@ -81,7 +81,13 @@
     <h1><span class="gword">תודה</span><span data-name-wrap>, <span data-name></span></span>. הפרטים אצלנו.</h1>
     <p class="ty-lead">ככה זה ממשיך מכאן, כדי שלא תצטרכו לנחש.</p>
   </div>
-  <ol class="ty-line">
+  <!-- SKETCH ONLY: the job applicant's line (from=cv), our wording; the lead's line below stays as it was -->
+  <ol class="ty-line" data-for="cv" hidden>
+    <li class="is-done"><i aria-hidden="true"></i><div><h2>קיבלנו את קורות החיים</h2><p>היום, <span class="num" data-now></span></p></div></li>
+    <li class="is-now"><i aria-hidden="true"></i><div><h2>קריאה ובדיקה</h2><p>הצוות שלנו יעבור על הפרטים ויבדוק התאמה לתפקידים הפתוחים.</p></div></li>
+    <li><i aria-hidden="true"></i><div><h2>שיחת היכרות</h2><p>אם יש התאמה, נחזור אליכם בטלפון לתיאום שיחה.</p></div></li>
+  </ol>
+  <ol class="ty-line" data-for="lead">
     <li class="is-done"><i aria-hidden="true"></i><div><h2>קיבלנו את הפרטים</h2><p>היום, <span class="num" data-now></span></p></div></li>
     <li class="is-now"><i aria-hidden="true"></i><div><h2>שיחה קצרה איתכם</h2><p>יועץ אנרגיה יחזור אליכם בטלפון, כדי להכיר ולתאם את הבדיקה.</p></div></li>
     <li><i aria-hidden="true"></i><div><h2>בדיקת היתכנות ראשונית</h2><p>אחד מיועצי האנרגיה שלנו יגיע עד אליכם לבדיקת התאמה, בחירת מודל והצגה ראשונית של המערכת האפשרית בנכס שלכם.</p></div></li>
@@ -96,15 +102,15 @@
 
 <footer class="ft" id="ft">
   <div class="ft-cols">
-    <nav class="ft-col" aria-label="ניווט מהיר"><p class="ft-k">ניווט מהיר</p><a href="index.html#about">אודות</a><a href="index.html#knowledge">מרכז הידע</a><a href="index.html#contact">יצירת קשר</a></nav>
-    <nav class="ft-col" aria-label="תחומי פעילות"><p class="ft-k">תחומי פעילות</p><a href="solar.html">אנרגיה סולארית</a><a href="index.html#dom-charge">טעינת רכבים</a><a href="storage.html">אגירת אנרגיה</a></nav>
+    <nav class="ft-col" aria-label="ניווט מהיר"><p class="ft-k">ניווט מהיר</p><a href="about.html">אודות</a><a href="knowledge.html">מרכז הידע</a><a href="contact.html">יצירת קשר</a></nav>
+    <nav class="ft-col" aria-label="תחומי פעילות"><p class="ft-k">תחומי פעילות</p><a href="solar.html">אנרגיה סולארית</a><a href="charge.html">טעינת רכבים</a><a href="storage.html">אגירת אנרגיה</a></nav>
     <div class="ft-col"><p class="ft-k">דברו איתנו</p><a href="tel:*6223">חייגו <span class="num">6223*</span></a><a class="lat" href="mailto:info@treenergy.co.il">info@treenergy.co.il</a><span>ישורון 3, תל אביב</span></div>
     <div class="ft-col"><p class="ft-k">עקבו אחרינו</p><a href="https://www.facebook.com/treenergygroup" target="_blank" rel="noopener">פייסבוק</a><a href="https://www.instagram.com/treenergygroup" target="_blank" rel="noopener">אינסטגרם</a></div>
   </div>
   <div class="ft-sky" aria-hidden="true"><i class="ft-glow"></i><i class="ft-rim"></i></div>
   <div class="ft-base">
     <p>© <span data-year>2026</span> כל הזכויות שמורות לרמי לוי טרינרג'י בע"מ</p>
-    <nav class="ft-legal" aria-label="מידע משפטי"><a href="#ft">מדיניות פרטיות</a><a href="#ft">הצהרת נגישות</a><a href="#ft">תקנון</a></nav>
+    <nav class="ft-legal" aria-label="מידע משפטי"><a href="privacy.html">מדיניות פרטיות</a><a href="accessibility.html">הצהרת נגישות</a><a href="terms.html">תקנון</a></nav>
   </div>
 </footer>
 
