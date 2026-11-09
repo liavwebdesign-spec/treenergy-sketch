@@ -22,17 +22,17 @@
   if (!window.__still && matchMedia("(prefers-reduced-motion:no-preference)").matches) document.documentElement.classList.add("open-anim");
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 </script>
-<link rel="stylesheet" href="assets/css/site.css?v=r29">
-<link rel="stylesheet" href="assets/css/scene.css?v=r29">
+<link rel="stylesheet" href="assets/css/site.css?v=r30">
+<link rel="stylesheet" href="assets/css/scene.css?v=r30">
 <link rel="preload" href="assets/img/scene/wide-on.webp" as="image" media="(min-aspect-ratio:9/10)">
 <link rel="preload" href="assets/img/scene/tall-on.webp" as="image" media="(max-aspect-ratio:9/10)">
 <!-- the page's own files carry the round (?v=), so a visitor never gets this round's code with pieces of the last one from the cache -->
-<script type="importmap">{"imports":{"./assets/js/ribbon.js":"./assets/js/ribbon.js?v=r29","./assets/js/arc-rings.js":"./assets/js/arc-rings.js?v=r29","./assets/js/sky.js":"./assets/js/sky.js?v=r29","./assets/js/scene-dom.js":"./assets/js/scene-dom.js?v=r29","./assets/js/scene-marks.js":"./assets/js/scene-marks.js?v=r29","./assets/js/scene-trail.js":"./assets/js/scene-trail.js?v=r29","./assets/js/menu-dots.js":"./assets/js/menu-dots.js?v=r29"}}</script>
+<script type="importmap">{"imports":{"./assets/js/ribbon.js":"./assets/js/ribbon.js?v=r30","./assets/js/arc-rings.js":"./assets/js/arc-rings.js?v=r30","./assets/js/sky.js":"./assets/js/sky.js?v=r30","./assets/js/scene-dom.js":"./assets/js/scene-dom.js?v=r30","./assets/js/scene-marks.js":"./assets/js/scene-marks.js?v=r30","./assets/js/scene-trail.js":"./assets/js/scene-trail.js?v=r30","./assets/js/menu-dots.js":"./assets/js/menu-dots.js?v=r30"}}</script>
 <script defer src="vendor/gsap/gsap.min.js"></script>
 <script defer src="vendor/gsap/SplitText.min.js"></script>
 <script defer src="vendor/lenis/lenis.min.js"></script>
-<script type="module" src="assets/js/site.js?v=r29"></script>
-<script type="module" src="assets/js/scene.js?v=r29"></script>
+<script type="module" src="assets/js/site.js?v=r30"></script>
+<script type="module" src="assets/js/scene.js?v=r30"></script>
 </head>
 <body>
 <!-- the living night: one field behind the whole page -->
@@ -71,9 +71,9 @@
     </div>
     <nav class="mn-nav" aria-label="ניווט ראשי">
       <ol class="mn-list">
-        <li class="mn-it"><a href="#dom-solar"><span class="mn-t">אנרגיה סולארית</span></a></li>
+        <li class="mn-it"><a href="solar.html"><span class="mn-t">אנרגיה סולארית</span></a></li>
         <li class="mn-it"><a href="#dom-charge"><span class="mn-t">טעינת רכבים</span></a></li>
-        <li class="mn-it"><a href="#dom-storage"><span class="mn-t">אגירת אנרגיה</span></a></li>
+        <li class="mn-it"><a href="storage.html"><span class="mn-t">אגירת אנרגיה</span></a></li>
         <li class="mn-it"><a href="#about"><span class="mn-t">אודות</span></a></li>
         <li class="mn-it"><a href="#knowledge"><span class="mn-t">מרכז הידע</span></a></li>
         <li class="mn-it"><a href="#contact"><span class="mn-t">יצירת קשר</span></a></li>
@@ -121,13 +121,13 @@
       <article class="lb-stop" data-k="sol" aria-labelledby="st-sol-h">
         <h2 id="st-sol-h">אנרגיה סולארית</h2>
         <p class="lb-stop-p">ייזום, תכנון והקמת מערכות סולאריות על שלל תשתיות ואלמנטים.</p>
-        <a class="lnk" href="#contact-lead" data-topic="solar">מידע נוסף<span class="sr"> על אנרגיה סולארית</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
+        <a class="lnk" href="solar.html">מידע נוסף<span class="sr"> על אנרגיה סולארית</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
         <ol class="lb-ticks" aria-hidden="true"><li class="now"></li><li></li><li></li><li></li></ol>
       </article>
       <article class="lb-stop" data-k="sto" aria-labelledby="st-sto-h">
         <h2 id="st-sto-h">אגירת אנרגיה</h2>
         <p class="lb-stop-p">ייזום, תכנון והקמת מערכות אגירת אנרגיה בשילוב סולארי, לצריכה עצמית ולייצור חשמל.</p>
-        <a class="lnk" href="#contact-lead" data-topic="storage">מידע נוסף<span class="sr"> על אגירת אנרגיה</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
+        <a class="lnk" href="storage.html">מידע נוסף<span class="sr"> על אגירת אנרגיה</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
         <ol class="lb-ticks" aria-hidden="true"><li class="done"></li><li class="now"></li><li></li><li></li></ol>
       </article>
       <article class="lb-stop" data-k="chg" aria-labelledby="st-chg-h">
@@ -160,7 +160,7 @@
     <div class="sc-copy">
       <h3 class="rv" id="dom-solar-h">אנרגיה סולארית</h3>
       <p class="rv">ייזום, תכנון והקמת מערכות סולאריות על שלל תשתיות ואלמנטים.</p>
-      <a class="lnk rv" href="#contact-lead" data-topic="solar">מידע נוסף<span class="sr"> על אנרגיה סולארית</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
+      <a class="lnk rv" href="solar.html">מידע נוסף<span class="sr"> על אנרגיה סולארית</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
     </div>
     <figure class="shot" data-obj="solar" aria-hidden="true">
       <span class="obj" style="--ar:1600/672">
@@ -179,7 +179,7 @@
     <div class="sc-copy">
       <h3 class="rv" id="dom-storage-h">אגירת אנרגיה</h3>
       <p class="rv">ייזום, תכנון והקמת מערכות אגירת אנרגיה בשילוב סולארי, לצריכה עצמית ולייצור חשמל.</p>
-      <a class="lnk rv" href="#contact-lead" data-topic="storage">מידע נוסף<span class="sr"> על אגירת אנרגיה</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
+      <a class="lnk rv" href="storage.html">מידע נוסף<span class="sr"> על אגירת אנרגיה</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
     </div>
     <figure class="shot" data-obj="storage" aria-hidden="true">
       <span class="obj" style="--ar:1400/923">
@@ -441,7 +441,7 @@
 <footer class="ft" id="ft">
   <div class="ft-cols">
     <nav class="ft-col" style="--ci:0" aria-label="ניווט מהיר"><p class="ft-k">ניווט מהיר</p><a href="#about">אודות</a><a href="#knowledge">מרכז הידע</a><a href="#contact">יצירת קשר</a></nav>
-    <nav class="ft-col" style="--ci:1" aria-label="תחומי פעילות"><p class="ft-k">תחומי פעילות</p><a href="#dom-solar">אנרגיה סולארית</a><a href="#dom-charge">טעינת רכבים</a><a href="#dom-storage">אגירת אנרגיה</a></nav>
+    <nav class="ft-col" style="--ci:1" aria-label="תחומי פעילות"><p class="ft-k">תחומי פעילות</p><a href="solar.html">אנרגיה סולארית</a><a href="#dom-charge">טעינת רכבים</a><a href="storage.html">אגירת אנרגיה</a></nav>
     <div class="ft-col" style="--ci:2"><p class="ft-k">דברו איתנו</p><a href="tel:*6223">חייגו <span class="num">6223*</span></a><a class="lat" href="mailto:info@treenergy.co.il">info@treenergy.co.il</a><span>ישורון 3, תל אביב</span></div>
     <div class="ft-col" style="--ci:3"><p class="ft-k">עקבו אחרינו</p><a href="https://www.facebook.com/treenergygroup" target="_blank" rel="noopener">פייסבוק</a><a href="https://www.instagram.com/treenergygroup" target="_blank" rel="noopener">אינסטגרם</a></div>
   </div>
