@@ -42,6 +42,33 @@
 .js .sh-say .btn{animation-delay:.85s}
 @keyframes sh-in{from{opacity:0;transform:translateY(22px);filter:blur(8px)}}
 
+/* ---------- the charger (data-spark, the charging page): its screen comes on, the energy lands at its foot ---------- */
+/* placed and sized by domain.js on the charger in the picture; the scroll fades them with the picture */
+.sh[data-spark] .sh-pic img{filter:brightness(.64) saturate(.86)}
+.sh-spark,.sh-pool{position:absolute;z-index:0;pointer-events:none;mix-blend-mode:screen;transform:translate(-50%,-50%)}
+.sh-spark::before,.sh-pool::before,.sh-pool::after{content:"";position:absolute;inset:0;border-radius:50%;opacity:0}
+/* the screen: a green glow on the face and a halo round it */
+.sh-spark::before{background:radial-gradient(closest-side,rgba(150,255,190,.62),rgba(48,247,123,.34) 38%,rgba(48,247,123,.1) 66%,transparent)}
+.sh.is-lit .sh-spark::before{animation:sk-on .95s linear forwards,sk-hum 4.2s ease-in-out .95s infinite}
+@keyframes sk-on{0%{opacity:0}8%{opacity:.85}12%{opacity:.08}20%{opacity:.6}25%{opacity:.18}34%{opacity:1}100%{opacity:1}}
+@keyframes sk-hum{0%,100%{opacity:1}50%{opacity:.74}}
+/* the foot: a pool of light on the ground, and one ring that runs out from it when the energy lands */
+.sh-pool::before{background:radial-gradient(closest-side,rgba(48,247,123,.5),rgba(48,247,123,.16) 52%,transparent)}
+.sh-pool::after{border:1.5px solid rgba(48,247,123,.7);box-shadow:0 0 18px rgba(48,247,123,.35)}
+.sh.is-landed .sh-pool::before{animation:pl-on 1.6s var(--ease-out) forwards}
+.sh.is-landed .sh-pool::after{animation:pl-ring 1.5s var(--ease-out) forwards}
+@keyframes pl-on{0%{opacity:0;transform:scale(.3)}22%{opacity:1;transform:scale(1.08)}100%{opacity:.62;transform:scale(1)}}
+@keyframes pl-ring{0%{opacity:.9;transform:scale(.2)}100%{opacity:0;transform:scale(1.7)}}
+.sh-nw{white-space:nowrap}
+/* phones: the size at which "אולטרה-מהירות." stays one word on one line */
+@media (max-width:767px){.sh[data-spark] h1{font-size:min(var(--fs-hero),10.2vw)}}
+/* the tall picture (phones, tall tablets): the charger stands above the words, which sit low; the ground fades sooner */
+@media not all and (min-aspect-ratio:9/10){
+  .sh[data-spark]{align-items:flex-end;padding-top:calc(var(--hd-h) + clamp(180px,27svh,330px))}
+  .sh[data-spark] .sh-pic{-webkit-mask-image:linear-gradient(to bottom,#000 0,#000 34%,rgba(0,0,0,.5) 58%,transparent 84%);
+    mask-image:linear-gradient(to bottom,#000 0,#000 34%,rgba(0,0,0,.5) 58%,transparent 84%)}
+}
+
 /* ---------- why now: six cells of one panel ---------- */
 .sw,.spl,.uq,.faq{position:relative;z-index:1;padding:var(--sec) var(--gutter)}
 .sw{padding-top:clamp(150px,18vh,260px)}
@@ -423,6 +450,12 @@
   .sw,.spl,.bn,.app,.map{padding-inline:calc(var(--gutter) + var(--lane))}
   .sw{padding-top:clamp(200px,25vh,340px)}
   .spl{padding-top:clamp(40px,6vh,80px)}
+  /* the stations: the words and the list on the start side, Israel beside them from the heading down (no empty half next to the heading) */
+  .map{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.72fr);column-gap:clamp(40px,6vw,160px);align-content:start}
+  .map>h2,.map>.map-p,.map>.map-note,.map-side{grid-column:1}
+  .map-grid{display:contents}
+  .map-side{margin-top:clamp(36px,5.5vh,72px)}
+  .map-fig{grid-column:2;grid-row:1 / span 4;align-self:center;width:min(100%,360px,calc(84svh * .4))}
 }
 
 /* ---------- below 1024: one column, the words off the start rail ---------- */
@@ -653,7 +686,13 @@ html[data-page=article] .hd::after{display:none}
   .who-fig img,.who-fig::before,.mate-pic img,.mate h3,.adv-ln::after,.cmp-needle,.cmp-l{transition:none}
   .way.on .lit-ic,.soc.on .lit-ic{animation:none}
   .way a::after,.soc a::after,.soc-in::after,.way .lit-ic,.soc .lit-ic{transition:none}
+  .sh.is-lit .sh-spark::before{animation:none;opacity:1}
+  .sh.is-landed .sh-pool::before{animation:none;opacity:.62}
+  .sh.is-landed .sh-pool::after{animation:none;opacity:0}
 }
+.ax-still .sh.is-lit .sh-spark::before{animation:none!important;opacity:1}
+.ax-still .sh.is-landed .sh-pool::before{animation:none!important;opacity:.62}
+.ax-still .sh.is-landed .sh-pool::after{animation:none!important;opacity:0}
 .ax-still .way.on .lit-ic,.ax-still .soc.on .lit-ic{animation:none!important}
 .ax-still .way a::after,.ax-still .soc a::after,.ax-still .soc-in::after,.ax-still .way .lit-ic,.ax-still .soc .lit-ic{transition:none!important}
 .ax-still .who-fig img,.ax-still .who-fig::before,.ax-still .mate-pic img,.ax-still .mate h3,.ax-still .adv-ln::after,.ax-still .cmp-needle,.ax-still .cmp-l{transition:none!important}

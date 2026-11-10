@@ -167,25 +167,62 @@ const bp = (sh.dataset.birth || "462,926,78,992").split(",").map(Number);
 const bs = (sh.dataset.size || "2400,1340,1080,1935").split(",").map(Number);
 const BIRTH = { wide: { w: bs[0], h: bs[1], x: bp[0], y: bp[1] }, tall: { w: bs[2], h: bs[3], x: bp[2], y: bp[3] } };
 const shSrc = $("picture source", sh);
-let birth = { x: 0, y: 0 }, shH = 1, shP = -1;
+// a charger (data-spark, the charging page): the trail is born at its screen, which lights first, runs down its post to
+// the ground (data-foot: the foot's height in the picture, wide and tall) and waits there for the scroll. In the tall
+// picture the charger stands small in the middle, behind the words: the picture leans in on it (a zoom about a point
+// chosen so its foot lands just above the words, which sit low in that shape)
+const spark = sh.hasAttribute("data-spark");
+const footY = (sh.dataset.foot || "0,0").split(",").map(Number);
+const skEl = $(".sh-spark", sh), plEl = $(".sh-pool", sh);
+let birth = { x: 0, y: 0 }, foot = null, shH = 1, shP = -1, shZ = null;
+let skCap = spark && !reduce ? 0 : -1;   // how far the intro lets the trail be drawn, px (-1: no limit)
 function layoutHero() {
   const r = sh.getBoundingClientRect(), W = r.width, H = r.height;
-  const k = (shSrc && shSrc.media ? matchMedia(shSrc.media).matches : W / H >= 0.9) ? BIRTH.wide : BIRTH.tall;
-  const s = Math.max(W / k.w, H / k.h);
-  birth = { x: (W - k.w * s) / 2 + k.x * s, y: (H - k.h * s) / 2 + k.y * s };
-  shImg.style.transformOrigin = `${birth.x.toFixed(1)}px ${birth.y.toFixed(1)}px`;
+  const isW = shSrc && shSrc.media ? matchMedia(shSrc.media).matches : W / H >= 0.9, k = isW ? BIRTH.wide : BIRTH.tall;
+  const s = Math.max(W / k.w, H / k.h), ox = (W - k.w * s) / 2, oy = (H - k.h * s) / 2;
+  birth = { x: ox + k.x * s, y: oy + k.y * s };
+  shZ = null; foot = null;
+  if (spark) {
+    let fy = oy + footY[isW ? 0 : 1] * s, Z = 1, ss = s;
+    if (!isW) {
+      const T = shSay.getBoundingClientRect().top - r.top - 44, top = (($("#hd") || {}).offsetHeight || 80);
+      // the charger, screen to foot, is about 190px of the picture
+      Z = Math.min(Math.max(1.3, 0.75 / s),Math.max(1, (T - top - 14) / (190 * s)));
+      if (Z > 1.01) {
+        const O = { x: birth.x, y: (Z * fy - T) / (Z - 1) };
+        shZ = { Z, ox: O.x, oy: O.y, bx: birth.x, by: O.y + Z * (birth.y - O.y) };
+        birth = { x: shZ.bx, y: shZ.by }; fy = T; ss = s * Z;
+      }
+    }
+    foot = { x: birth.x, y: fy };
+    const put = (el, x, y, w, h) => { if (el) el.style.cssText = `left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;width:${w.toFixed(1)}px;height:${h.toFixed(1)}px`; };
+    put(skEl, birth.x, birth.y, (isW ? 170 : 230) * ss, (isW ? 220 : 260) * ss);
+    put(plEl, foot.x, foot.y, (isW ? 420 : 520) * ss, (isW ? 80 : 110) * ss);
+  }
+  shImg.style.transformOrigin = shZ ? "0 0" : `${birth.x.toFixed(1)}px ${birth.y.toFixed(1)}px`;
   if (shGlow) shGlow.style.transformOrigin = shImg.style.transformOrigin;
   shH = H; shP = -1;
-  glow.layout(W, H, k === BIRTH.wide);
+  glow.layout(W, H, isW);
+  heroPut(0);
+}
+// the picture at p (0..1 through the opening): it leans in on the birth point a little
+function heroPut(p) {
+  const m = 1 + 0.08 * p;
+  if (shZ) {
+    // the lean-in about the charger's screen, after the zoom about O: one translate and one scale about 0 0
+    const S = m * shZ.Z, tx = shZ.bx * (1 - m) + m * shZ.ox * (1 - shZ.Z), ty = shZ.by * (1 - m) + m * shZ.oy * (1 - shZ.Z);
+    shImg.style.transform = `translate(${tx.toFixed(2)}px,${ty.toFixed(2)}px) scale(${S.toFixed(4)})`;
+  } else shImg.style.transform = p ? `scale(${m.toFixed(4)})` : "";
+  if (shGlow) shGlow.style.transform = shImg.style.transform;
 }
 function heroTick(y) {
   if (reduce) return;
   const p = Math.round(clamp01(y / shH) * 1000) / 1000;
   if (p === shP) return; shP = p;
-  shImg.style.transform = `scale(${(1 + 0.08 * p).toFixed(4)})`;
-  if (shGlow) shGlow.style.transform = shImg.style.transform;
+  heroPut(p);
   // the picture thins into the page's night rather than being covered by a darker one, so nothing edges the opening
   shPic.style.opacity = (1 - p * 0.75).toFixed(3);
+  if (skEl) { const o = (1 - p * 0.9).toFixed(3); skEl.style.opacity = o; plEl.style.opacity = o; skEl.style.visibility = plEl.style.visibility = p > 0.97 ? "hidden" : ""; }
   glow.past(p > 0.92);
 }
 
@@ -203,8 +240,8 @@ const sw = $(".sw", flow), fsec = sw || $$(":scope > section", flow).find((q) =>
 const swH = $("h2", fsec) || shSay, pcs = $$(".pc, .lit", flow), spl = $(".spl", flow), plItems = spl ? $$(".pl li", spl) : [];
 const flowEndEl = $("[data-flow-end]", flow) || (spl && $(".btn", spl)) || $$(":scope > section", flow).pop();
 const flowSvg = $(".dp-trail", flow);
-const flowRibbon = new Ribbon(flowSvg, { ...BAND, amp: trailAmp, wave: 500, taperStart: 70, taperEnd: 0, sparks: 4, seed: 4 });
-let vY = null, cellF = [], flowEnd = 0;
+const flowRibbon = new Ribbon(flowSvg, { ...BAND, amp: trailAmp, wave: 500, taperStart: spark ? 16 : 70, taperEnd: 0, sparks: 4, seed: 4 });
+let vY = null, cellF = [], flowEnd = 0, fFoot = 0;
 function layoutMain() {
   const r = flow.getBoundingClientRect(), W = r.width, H = r.height, ih = innerHeight;
   flowSvg.setAttribute("viewBox", `0 0 ${W} ${H}`);
@@ -212,11 +249,13 @@ function layoutMain() {
   const say = rel(shSay), head = rel(swH), off = Math.max(120, trailAmp() * 6), sw0 = doc.clientWidth;
   const last = rel(flowEndEl), segs = [];
   const B = { x: birth.x, y: birth.y };
+  // the charger: first down its post to the ground, and the rest of the way from its foot
+  if (foot) { segs.push(["L", birth.x, birth.y, foot.x, foot.y]); B.x = foot.x; B.y = foot.y; }
   vY = null;
   if (wide() && !sw) {
     // no cells: down the open side, across the gap to the start lane above the first heading, down the rail, out by that side
     const pr = px(fsec, "paddingRight"), xR = W - pr / 2;
-    const x0 = Math.min(B.x, say.l - 72), yv = B.y + 150, hT = head.t - (parseFloat(swH.style.getPropertyValue("--dy")) || 0);
+    const x0 = Math.min(B.x - (foot ? 44 : 0), say.l - 72), yv = B.y + 150, hT = head.t - (parseFloat(swH.style.getPropertyValue("--dy")) || 0);
     const y1 = say.b + 18, y2 = Math.max(y1 + 120, Math.max(yv, y1) + 140, hT - 110);
     if (Math.abs(x0 - B.x) > 2) segs.push(["C", B.x, B.y, B.x, B.y + (yv - B.y) * 0.55, x0, yv - (yv - B.y) * 0.45, x0, yv]);
     else segs.push(["L", B.x, B.y, B.x, yv]);
@@ -265,10 +304,12 @@ function layoutMain() {
     const x = W - (px(fsec, "paddingRight") + (parseFloat(getComputedStyle(doc).getPropertyValue("--rail-pad")) || 28)) / 2;
     // a station hidden behind the words (tablets): the line is born on the rail itself, above the crumb, not across it
     // (also a station on the far side at the words' height: the way across to the rail would cross them)
-    if (B.x < say.r + 24 && B.y > say.t - 60) { B.x = x; B.y = Math.min(B.y, say.t - 30); }
-    const ys = Math.max(B.y + 40, Math.min(Math.max(B.y + 60, B.y + Math.abs(x - B.x) * 0.9), say.t - 20));
+    if (!foot && B.x < say.r + 24 && B.y > say.t - 60) { B.x = x; B.y = Math.min(B.y, say.t - 30); }
+    const ys = foot ? B.y + 96 : Math.max(B.y + 40, Math.min(Math.max(B.y + 60, B.y + Math.abs(x - B.x) * 0.9), say.t - 20));
+    // the charger: off its foot along the ground, round onto the rail
+    if (foot && Math.abs(x - B.x) > 2) segs.push(["C", B.x, B.y, B.x, B.y + 44, x, ys - 70, x, ys]);
     // when the station sits above the words, cross to the rail at its height and only then turn down, clear of the crumb
-    if (Math.abs(x - B.x) > 2 && B.y + 30 < say.t) segs.push(["C", B.x, B.y, B.x + (x - B.x) * 0.75, B.y, x, B.y + Math.min(40, (ys - B.y) * 0.5), x, ys]);
+    else if (Math.abs(x - B.x) > 2 && B.y + 30 < say.t) segs.push(["C", B.x, B.y, B.x + (x - B.x) * 0.75, B.y, x, B.y + Math.min(40, (ys - B.y) * 0.5), x, ys]);
     else if (Math.abs(x - B.x) > 2) segs.push(["C", B.x, B.y, B.x, B.y + (ys - B.y) * 0.5, x, ys - (ys - B.y) * 0.5, x, ys]);
     else segs.push(["L", B.x, B.y, x, ys]);
     const yE = last.b + 30, R = 52, k = R * 0.5523, xo = sw0 - r.left + off;
@@ -279,6 +320,7 @@ function layoutMain() {
     flowRibbon.setPath(segs);
     cellF = pcs.map((q) => { const b = rel(q); return flowRibbon.fracAtY(b.t + Math.min(36, b.h * 0.3)); });
   }
+  fFoot = foot ? flowRibbon.marks[1] / flowRibbon.L : 0;
 }
 // the fraction drawn when the head is at h (in the frame): on the busbar, by the stretched heights
 function fracAt(h) {
@@ -297,7 +339,14 @@ function mainTick() {
   if (reduce) return;
   const r = rectOf(flow), ih = innerHeight;
   if (r.top > ih * 1.4 || r.top + flowEnd < -ih * 0.4) return;
-  const f = fracAt(ih * HEAD - r.top);
+  let f = fracAt(ih * HEAD - r.top);
+  if (spark) {
+    // the energy waits at the charger's foot, and the first third of a screen of scroll hands it over to the head's line;
+    // the intro (below) caps it while the screen lights and the energy runs down the post
+    const k = smooth(0, ih * 0.35, -r.top);
+    f = fFoot + (Math.max(f, fFoot) - fFoot) * k;
+    if (skCap >= 0) f = Math.min(f, skCap / flowRibbon.L);
+  }
   flowRibbon.draw(f);
   for (let i = 0; i < pcs.length; i++) { const on = f >= cellF[i] - 0.003; if (pcs[i]._on !== on) { pcs[i]._on = on; pcs[i].classList.toggle("on", on); } }
 }
@@ -405,7 +454,7 @@ function layoutTail() {
   tailSvg.setAttribute("viewBox", `0 0 ${W} ${r.height}`);
   const rp = parseFloat(getComputedStyle(doc).getPropertyValue("--rail-pad")) || 28;
   const x = W - (wide() ? gutW() : gutW() + rp) / 2, sx = doc.clientWidth - r.left + Math.max(120, trailAmp() * 6);
-  const lastSec = tailSecs[tailSecs.length - 1], lastList = $(".tail-end", lastSec) || $(".faq-list,.bn-list,.uq-list", lastSec) || lastSec;
+  const lastSec = tailSecs[tailSecs.length - 1], lastList = [".tail-end", ".map-side", ".faq-list,.bn-list,.uq-list"].map((s) => $(s, lastSec)).find((e) => e && e.getClientRects().length) || lastSec;
   const head = $("h2", tail).getBoundingClientRect().top - r.top, end = lastList.getBoundingClientRect().bottom - r.top;
   // below 1024 the thread starts only under where the trail before it went out by the same side
   const po = wide() ? -Infinity : tailFirst ? flow.getBoundingClientRect().top + flowEnd - r.top + 12 : procRun.getBoundingClientRect().top + procOut - r.top + 12;
@@ -641,3 +690,31 @@ relayout();
 if (!shImg.complete) shImg.addEventListener("load", relayout, { once: true });
 Promise.race([document.fonts ? document.fonts.ready : Promise.resolve(), new Promise((r) => setTimeout(r, 1500))]).then(relayout);
 addEventListener("load", relayout);
+
+/* ---------- the charger comes on: its screen flickers alight, the energy runs down the post and waits at the foot ---------- */
+// (once the picture is in, at most 2.6s after the start; a page opened further down, or still, starts with it all on)
+if (spark) {
+  if (skCap < 0 || scrollY > innerHeight * 0.5) { sh.classList.add("is-lit", "is-landed"); skCap = -1; mainTick(); }
+  else {
+    let t0 = 0, tl = 0;
+    const run = (now) => {
+      if (!t0) t0 = now;
+      const t = now - t0, Lf = fFoot * flowRibbon.L;
+      if (t > 420 && !sh.classList.contains("is-lit")) sh.classList.add("is-lit");
+      const d = (t - 1150) / 620;
+      if (d <= 0) skCap = 0;
+      else if (d < 1) skCap = Lf * d * d;            // it falls: slow off the screen, fast into the ground
+      else {
+        if (!tl) { tl = t; sh.classList.add("is-landed"); }
+        skCap = Lf + (t - tl) * 2.4;                 // and from there the scroll has it (a quick catch-up if it already moved)
+      }
+      mainTick();
+      if (skCap > flowRibbon.L) { skCap = -1; mainTick(); return; }
+      requestAnimationFrame(run);
+    };
+    let started = false;
+    const go = () => { if (!started) { started = true; requestAnimationFrame(run); } };
+    if (shImg.complete) setTimeout(go, 160); else shImg.addEventListener("load", () => setTimeout(go, 160), { once: true });
+    setTimeout(go, 2600);
+  }
+}

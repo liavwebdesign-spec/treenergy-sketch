@@ -22,14 +22,14 @@
     if (ax.text) d.classList.add("ax-t" + ax.text); })(document.documentElement);
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 </script>
-<link rel="stylesheet" href="assets/css/site.css?v=r31">
-<link rel="stylesheet" href="assets/css/domain.css?v=r31">
+<link rel="stylesheet" href="assets/css/site.css?v=r32">
+<link rel="stylesheet" href="assets/css/domain.css?v=r32">
 <!-- the page's own files carry the round (?v=), so a visitor never gets this round's code with pieces of the last one from the cache -->
-<script type="importmap">{"imports":{"./assets/js/ribbon.js":"./assets/js/ribbon.js?v=r31","./assets/js/arc-rings.js":"./assets/js/arc-rings.js?v=r31","./assets/js/sky.js":"./assets/js/sky.js?v=r31"}}</script>
+<script type="importmap">{"imports":{"./assets/js/ribbon.js":"./assets/js/ribbon.js?v=r32","./assets/js/arc-rings.js":"./assets/js/arc-rings.js?v=r32","./assets/js/sky.js":"./assets/js/sky.js?v=r32"}}</script>
 <script defer src="vendor/gsap/gsap.min.js"></script>
 <script defer src="vendor/lenis/lenis.min.js"></script>
-<script type="module" src="assets/js/page.js?v=r31"></script>
-<script type="module" src="assets/js/domain.js?v=r31"></script>
+<script type="module" src="assets/js/page.js?v=r32"></script>
+<script type="module" src="assets/js/domain.js?v=r32"></script>
 </head>
 <body>
 <canvas id="sky" aria-hidden="true"></canvas>
@@ -90,16 +90,20 @@
   <svg class="dp-trail" aria-hidden="true" focusable="false"></svg>
 
   <!-- SKETCH: the client's own charger render replaces this picture when it arrives (document, cover row) -->
-  <section class="sh" aria-labelledby="sh-h" data-birth="805,730,540,1040">
+  <!-- data-spark: the charger's screen lights first, the energy runs down its post to the ground (data-foot: the foot's
+       height in the picture, wide and tall) and waits there for the scroll -->
+  <section class="sh" aria-labelledby="sh-h" data-birth="805,724,540,1044" data-foot="820,1188" data-spark>
     <div class="sh-pic" aria-hidden="true">
       <picture>
         <source media="(min-aspect-ratio:9/10)" srcset="assets/img/charge/hero-w.webp" width="2400" height="1340">
         <img src="assets/img/charge/hero-t.webp" alt="" width="1080" height="1935" fetchpriority="high" decoding="async">
       </picture>
     </div>
+    <span class="sh-spark" aria-hidden="true"></span>
+    <span class="sh-pool" aria-hidden="true"></span>
     <div class="sh-say">
       <nav class="crumb" aria-label="מיקום באתר"><a href="index.html">דף הבית</a><span aria-hidden="true">/</span><span aria-current="page">טעינת רכבים</span></nav>
-      <h1 id="sh-h"><span class="sh-l">תחנות טעינה אולטרה-מהירות.</span> <span class="sh-l">בכל מקום. לכל <span class="gword">רכב</span>.</span></h1>
+      <h1 id="sh-h"><span class="sh-l">תחנות טעינה <span class="sh-nw">אולטרה-מהירות.</span></span> <span class="sh-l">בכל מקום. לכל <span class="gword">רכב</span>.</span></h1>
       <p class="sh-lead">רשת הטעינה האולטרה-מהירה של טרינרג'י תוכננה סביב מה שחשוב באמת לנוהגים ברכב חשמלי, מהירות, זמינות ונוחות. יותר עמדות בכל מתחם, זמינות חניות וטעינה מהירה, במיקומים אטרקטיביים שמאפשרים לכם לעשות קניות וסידורים בזמן שהרכב שלכם נטען.</p>
       <a class="btn btn-lg" href="#app" data-cta-origin>להורדת האפליקציה<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
     </div>
