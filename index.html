@@ -22,17 +22,17 @@
   if (!window.__still && matchMedia("(prefers-reduced-motion:no-preference)").matches) document.documentElement.classList.add("open-anim");
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 </script>
-<link rel="stylesheet" href="assets/css/site.css?v=r34">
-<link rel="stylesheet" href="assets/css/scene.css?v=r34">
+<link rel="stylesheet" href="assets/css/site.css?v=r35">
+<link rel="stylesheet" href="assets/css/scene.css?v=r35">
 <link rel="preload" href="assets/img/scene/wide-on.webp" as="image" media="(min-aspect-ratio:9/10)">
 <link rel="preload" href="assets/img/scene/tall-on.webp" as="image" media="(max-aspect-ratio:9/10)">
 <!-- the page's own files carry the round (?v=), so a visitor never gets this round's code with pieces of the last one from the cache -->
-<script type="importmap">{"imports":{"./assets/js/ribbon.js":"./assets/js/ribbon.js?v=r34","./assets/js/arc-rings.js":"./assets/js/arc-rings.js?v=r34","./assets/js/sky.js":"./assets/js/sky.js?v=r34","./assets/js/scene-dom.js":"./assets/js/scene-dom.js?v=r34","./assets/js/scene-marks.js":"./assets/js/scene-marks.js?v=r34","./assets/js/scene-trail.js":"./assets/js/scene-trail.js?v=r34","./assets/js/menu-dots.js":"./assets/js/menu-dots.js?v=r34"}}</script>
+<script type="importmap">{"imports":{"./assets/js/ribbon.js":"./assets/js/ribbon.js?v=r35","./assets/js/arc-rings.js":"./assets/js/arc-rings.js?v=r35","./assets/js/sky.js":"./assets/js/sky.js?v=r35","./assets/js/scene-dom.js":"./assets/js/scene-dom.js?v=r35","./assets/js/scene-marks.js":"./assets/js/scene-marks.js?v=r35","./assets/js/scene-trail.js":"./assets/js/scene-trail.js?v=r35","./assets/js/menu-dots.js":"./assets/js/menu-dots.js?v=r35"}}</script>
 <script defer src="vendor/gsap/gsap.min.js"></script>
 <script defer src="vendor/gsap/SplitText.min.js"></script>
 <script defer src="vendor/lenis/lenis.min.js"></script>
-<script type="module" src="assets/js/site.js?v=r34"></script>
-<script type="module" src="assets/js/scene.js?v=r34"></script>
+<script type="module" src="assets/js/site.js?v=r35"></script>
+<script type="module" src="assets/js/scene.js?v=r35"></script>
 </head>
 <body>
 <!-- the living night: one field behind the whole page -->
@@ -224,7 +224,7 @@
   <div class="intro-in">
     <h2 id="about-h" class="intro-kick rv" data-drift="40">נעים להכיר, אנחנו <span class="lat">TREENERGY</span>, <span class="intro-tag">מובילי פרויקטי אנרגיה ותשתיות בארץ ובעולם</span></h2>
     <p class="intro-say">טרינרג'י היא חברת אנרגיה מקבוצת רמי לוי נדל"ן, אחת מהקבוצות המובילות במשק הישראלי. אנחנו פועלים לקידום פתרונות אנרגיה חכמים, חדשניים וברי קיימא מתוך מחויבות אמיתית למקצועיות, לערכים שלנו ולסביבה.</p>
-    <a class="lnk rv" href="#why">מידע נוסף עלינו<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
+    <a class="lnk rv" href="about.html">מידע נוסף עלינו<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>
   </div>
 </section>
 
@@ -235,21 +235,8 @@
   <svg class="why-trail"></svg>
   <h2 id="why-h" class="why-h" data-drift="60">למה דווקא טרינרג'י?</h2>
 
-  <!-- the readout: three figures from the client's own pages, rolled in by the scroll -->
-  <dl class="figs">
-    <div class="fig">
-      <dt class="fig-v"><small>מעל</small><span class="odo" data-odo>15</span><em>%</em></dt>
-      <dd>תשואה שמערכת סולארית מסוגלת להביא</dd>
-    </div>
-    <div class="fig">
-      <dt class="fig-v"><small>עד</small><span class="odo" data-odo>100</span><em>%</em></dt>
-      <dd>מימון למערכת סולארית, בתנאים נוחים</dd>
-    </div>
-    <div class="fig">
-      <dt class="fig-v"><span class="odo" data-odo>24</span><em>/</em><span class="odo" data-odo>7</span></dt>
-      <dd>מוקד זמין לנהגים</dd>
-    </div>
-  </dl>
+  <!-- the readout of figures came off (10.11.2026: the client has no such numbers); the empty box keeps the space the trail swings through -->
+  <div class="figs" aria-hidden="true"></div>
 
   <!-- the battery -->
   <ol class="cells" data-line="info">

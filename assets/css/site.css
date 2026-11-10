@@ -1040,3 +1040,15 @@ html.lenis,html.lenis body{height:auto}
 .ax-contrast .trails{opacity:.6}
 /* endless loops hold still while their section is out of sight (round 7, for speed: site.js marks it .is-far) */
 .is-far .plug::after,.is-far .ft-rim::before,.is-far .ft-glow,.is-far .obj,.is-far .sp,.is-far .cell-ic,.is-far .step-n{animation-play-state:paused}
+
+/* between pages (10.11.2026, promised to the client: "a nice little transition between the pages"): the browser's own
+   cross-document view transition, a short dissolve with a slight rise (no blur: a full-screen filter is heavy on phones); no script, so it never holds a navigation
+   back, and browsers without it simply navigate as before. Off when motion is reduced */
+@view-transition{navigation:auto}
+::view-transition-old(root){animation:vt-out .28s cubic-bezier(.4,0,1,1) both}
+::view-transition-new(root){animation:vt-in .42s cubic-bezier(.16,1,.3,1) both}
+@keyframes vt-out{to{opacity:0}}
+@keyframes vt-in{from{opacity:0;transform:translateY(14px)}}
+@media (prefers-reduced-motion:reduce){@view-transition{navigation:none}}
+/* the figures came off (10.11.2026): on wide screens the trail enters the battery from the side, so the empty box needs no room */
+@media (min-width:1280px){.figs{margin-top:0}}
