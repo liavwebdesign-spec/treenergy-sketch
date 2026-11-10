@@ -35,7 +35,8 @@ function measureStations() {
   docH = doc.scrollHeight;
   const maxProbe = docH - innerHeight * 0.5, n = hdNodes.length;
   stations = hdNodes.map((a, i) => {
-    const t = $(a.getAttribute("href"));
+    // a node may lead to its own page (href) and still mark its place here (data-at, the home page 10.11)
+    const at = a.dataset.at || a.getAttribute("href"), t = at.startsWith("#") ? $(at) : null;
     const y = t ? t.getBoundingClientRect().top + scrollY : maxProbe;
     return Math.min(y, maxProbe - (n - i) * 2);
   });

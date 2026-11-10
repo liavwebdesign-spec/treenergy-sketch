@@ -22,17 +22,17 @@
   if (!window.__still && matchMedia("(prefers-reduced-motion:no-preference)").matches) document.documentElement.classList.add("open-anim");
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 </script>
-<link rel="stylesheet" href="assets/css/site.css?v=r32">
-<link rel="stylesheet" href="assets/css/scene.css?v=r32">
+<link rel="stylesheet" href="assets/css/site.css?v=r33">
+<link rel="stylesheet" href="assets/css/scene.css?v=r33">
 <link rel="preload" href="assets/img/scene/wide-on.webp" as="image" media="(min-aspect-ratio:9/10)">
 <link rel="preload" href="assets/img/scene/tall-on.webp" as="image" media="(max-aspect-ratio:9/10)">
 <!-- the page's own files carry the round (?v=), so a visitor never gets this round's code with pieces of the last one from the cache -->
-<script type="importmap">{"imports":{"./assets/js/ribbon.js":"./assets/js/ribbon.js?v=r32","./assets/js/arc-rings.js":"./assets/js/arc-rings.js?v=r32","./assets/js/sky.js":"./assets/js/sky.js?v=r32","./assets/js/scene-dom.js":"./assets/js/scene-dom.js?v=r32","./assets/js/scene-marks.js":"./assets/js/scene-marks.js?v=r32","./assets/js/scene-trail.js":"./assets/js/scene-trail.js?v=r32","./assets/js/menu-dots.js":"./assets/js/menu-dots.js?v=r32"}}</script>
+<script type="importmap">{"imports":{"./assets/js/ribbon.js":"./assets/js/ribbon.js?v=r33","./assets/js/arc-rings.js":"./assets/js/arc-rings.js?v=r33","./assets/js/sky.js":"./assets/js/sky.js?v=r33","./assets/js/scene-dom.js":"./assets/js/scene-dom.js?v=r33","./assets/js/scene-marks.js":"./assets/js/scene-marks.js?v=r33","./assets/js/scene-trail.js":"./assets/js/scene-trail.js?v=r33","./assets/js/menu-dots.js":"./assets/js/menu-dots.js?v=r33"}}</script>
 <script defer src="vendor/gsap/gsap.min.js"></script>
 <script defer src="vendor/gsap/SplitText.min.js"></script>
 <script defer src="vendor/lenis/lenis.min.js"></script>
-<script type="module" src="assets/js/site.js?v=r32"></script>
-<script type="module" src="assets/js/scene.js?v=r32"></script>
+<script type="module" src="assets/js/site.js?v=r33"></script>
+<script type="module" src="assets/js/scene.js?v=r33"></script>
 </head>
 <body>
 <!-- the living night: one field behind the whole page -->
@@ -47,12 +47,12 @@
   </div>
   <nav class="hd-rail" aria-label="המסע בעמוד">
     <span class="hd-wire" aria-hidden="true"><i class="hd-fill"></i></span>
-    <a class="hd-node" href="#dom-solar"><i aria-hidden="true"></i><span>סולארי</span></a>
-    <a class="hd-node" href="#dom-storage"><i aria-hidden="true"></i><span>אגירה</span></a>
-    <a class="hd-node" href="#dom-charge"><i aria-hidden="true"></i><span>טעינה</span></a>
-    <a class="hd-node" href="#about"><i aria-hidden="true"></i><span>אודות</span></a>
-    <a class="hd-node" href="#knowledge"><i aria-hidden="true"></i><span>מרכז ידע</span></a>
-    <a class="hd-node" href="#contact"><i aria-hidden="true"></i><span>צור קשר</span></a>
+    <a class="hd-node" href="solar.html" data-at="#dom-solar"><i aria-hidden="true"></i><span>סולארי</span></a>
+    <a class="hd-node" href="storage.html" data-at="#dom-storage"><i aria-hidden="true"></i><span>אגירה</span></a>
+    <a class="hd-node" href="charge.html" data-at="#dom-charge"><i aria-hidden="true"></i><span>טעינה</span></a>
+    <a class="hd-node" href="about.html" data-at="#about"><i aria-hidden="true"></i><span>אודות</span></a>
+    <a class="hd-node" href="knowledge.html" data-at="#knowledge"><i aria-hidden="true"></i><span>מרכז ידע</span></a>
+    <a class="hd-node" href="contact.html" data-at="#contact"><i aria-hidden="true"></i><span>צור קשר</span></a>
   </nav>
   <div class="hd-end">
     <a class="hd-cta" href="#contact">כמה תוכל להרוויח</a>
