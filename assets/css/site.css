@@ -107,7 +107,6 @@ html.lenis,html.lenis body{height:auto}
 .lnk svg{width:17px;height:17px;transition:transform .4s var(--ease-out)}
 @media (hover:hover) and (pointer:fine){.lnk:hover{background-size:100% 1px}.lnk:hover svg{transform:translateX(-5px)}}
 .kick{font-size:var(--fs-small);font-weight:400;color:var(--muted);display:flex;align-items:center;gap:12px;letter-spacing:.01em}
-.kick::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
 
 /* ---------- header: the power line ---------- */
 .hskip{position:absolute;inset-inline-start:16px;top:-64px;z-index:90;box-shadow:0 0 0 3px rgba(var(--n0),.85);display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:999px;
@@ -425,7 +424,6 @@ html.lenis,html.lenis body{height:auto}
 
 /* ---------- shared bits ---------- */
 .tag{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:400;color:var(--accent);letter-spacing:.01em}
-.tag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px rgba(48,247,123,.7)}
 .tmp{position:absolute;z-index:2;top:14px;inset-inline-start:14px;display:inline-flex;align-items:center;min-height:26px;padding:0 12px;border-radius:999px;
   background:rgba(0,32,96,.78);color:#fff;font-size:12px;font-weight:400;letter-spacing:.02em}
 .hole{font-size:var(--fs-body);color:var(--ink-soft);text-decoration:underline dotted var(--line-strong);text-underline-offset:5px}
