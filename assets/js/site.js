@@ -716,10 +716,11 @@ $$("form[data-lead]").forEach((f) => {
   const msg = $(".lead-msg", f), btn = $("button", f);
   f.addEventListener("submit", (e) => {
     e.preventDefault();
-    const name = f.elements.name, phone = f.elements.phone, bad = [];
-    [name, phone].forEach((el) => el.removeAttribute("aria-invalid"));
+    const name = f.elements.name, phone = f.elements.phone, email = f.elements.email, bad = [];
+    [name, phone, email].forEach((el) => el && el.removeAttribute("aria-invalid"));
     if (name.value.trim().length < 2) bad.push([name, "נא למלא שם"]);
     if (!phoneOK(phone.value)) bad.push([phone, "נא לבדוק את מספר הטלפון"]);
+    if (email && email.value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.value.trim())) bad.push([email, "נא לבדוק את כתובת המייל"]);
     msg.classList.toggle("is-err", bad.length > 0);
     if (bad.length) {
       bad.forEach(([el]) => el.setAttribute("aria-invalid", "true"));
@@ -727,7 +728,7 @@ $$("form[data-lead]").forEach((f) => {
       bad[0][0].focus();
       return;
     }
-    const data = { source: f.dataset.lead, name: name.value.trim(), phone: phone.value.trim(), at: new Date().toISOString() };
+    const data = { source: f.dataset.lead, name: name.value.trim(), phone: phone.value.trim(), email: email ? email.value.trim() : "", at: new Date().toISOString() };
     data.topics = $$('input[name="topic"]:checked', f).map((i) => i.value);
     btn.disabled = true; msg.textContent = "שולחים...";
     sendLead(data).then(

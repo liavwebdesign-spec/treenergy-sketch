@@ -471,7 +471,9 @@ function placePins(v, alpha) {
     // it opens under the point too when above it would cover the opening's words, if there is room below
     const l = x + shift - half, r = x + shift + half, top = y - gap - p.ch;
     const onTitle = r > titleBox.l && l < titleBox.r && top < titleBox.b && y - gap > titleBox.t;
-    const below = top < pad + 64 || (onTitle && y + gap + p.ch < H - pad);
+    // or the client's line (round 8, 18.11: a wide screen showed "אנרגיה סולארית" on its words)
+    const onSub = subBox.on && r > subBox.l && l < subBox.r && top < subBox.b && y - gap > subBox.t;
+    const below = top < pad + 64 || ((onTitle || onSub) && y + gap + p.ch < H - pad);
     if (below !== p.below) { p.below = below; p.el.classList.toggle("is-below", below); }
   }
 }
@@ -480,8 +482,17 @@ const titleBox = { l: 0, r: 0, t: 0, b: 0 };
 // the opening lowers the picture (DROP, a fraction of the screen) so its land starts under the title with a little
 // room between them (Idan 25.10: "שהכותרת לא יושבת על הכדור עצמו... שיהיה טיפה מרווח"); the first flight takes it back
 let DROP = 0;
+// the client's line: on a wide screen it sits under the title (the client 18.11: "אולי להעביר את התיאור על קבוצת
+// טרינרג'י שיהיה מתחת לכותרת"), out of the lit land where the places' labels open; a tall screen keeps it low
+const subBox = { on: false, l: 0, r: 0, t: 0, b: 0 };
 function boxTitle() {
   titleBox.l = h1.offsetLeft - 12; titleBox.r = h1.offsetLeft + h1.offsetWidth + 12; titleBox.t = h1.offsetTop; titleBox.b = h1.offsetTop + h1.offsetHeight + 8;
+  if (!sub) return;
+  const under = W >= 1024 && stage.dataset.fmt !== "tall";
+  sub.classList.toggle("is-under", under);
+  if (under) sub.style.setProperty("--sub-y", (h1.offsetTop + h1.offsetHeight + Math.max(14, H * 0.022)).toFixed(0) + "px");
+  subBox.on = true;
+  subBox.l = sub.offsetLeft - 12; subBox.r = sub.offsetLeft + sub.offsetWidth + 12; subBox.t = sub.offsetTop - 8; subBox.b = sub.offsetTop + sub.offsetHeight + 8;
 }
 function measureTitle() {
   boxTitle();

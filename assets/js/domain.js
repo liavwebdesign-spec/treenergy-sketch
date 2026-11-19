@@ -86,10 +86,14 @@ const glow = (() => {
   const pr = gl.createProgram();
   gl.attachShader(pr, sh_(gl.VERTEX_SHADER, "attribute vec2 p;varying vec2 v;void main(){v=vec2(p.x*.5+.5,.5-p.y*.5);gl_Position=vec4(p,0.,1.);}"));
   gl.attachShader(pr, sh_(gl.FRAGMENT_SHADER, [
-    "precision mediump float;varying vec2 v;uniform sampler2D m;uniform vec4 c;uniform vec2 px;uniform float t;",
+    "precision mediump float;varying vec2 v;uniform sampler2D m;uniform vec4 c;uniform vec2 px;uniform float t;uniform float md,nr;",
     "void main(){vec2 u=(v-c.xy)/c.zw;",
     "if(u.x<0.||u.y<0.||u.x>1.||u.y>1.){gl_FragColor=vec4(0.);return;}",
     "vec4 s=texture2D(m,u);float k=s.r,d=s.g;",
+    // rows mode (solar): the map holds one panel row per index; one row at a time fills with green, then hands over to the next
+    "if(md>.5){float i=floor(d*nr),x=mod(mod(t/1.8,nr)-i+nr,nr);",
+    "float e=smoothstep(0.,.3,x)*(1.-smoothstep(.62,1.,x))*step(x,1.);",
+    "float g=k*e*(.5+.12*sin(t*3.+v.x*40.));vec3 col=vec3(.19,.97,.48)*g;gl_FragColor=vec4(col,col.g);return;}",
     "float halo=(texture2D(m,u+vec2(px.x,0.)).r+texture2D(m,u-vec2(px.x,0.)).r+texture2D(m,u+vec2(0.,px.y)).r+texture2D(m,u-vec2(0.,px.y)).r)*.25;",
     "float f=fract(d*2.-t*.075);",
     "float head=smoothstep(.80,.985,f)*(1.-smoothstep(.985,1.,f));",
@@ -105,10 +109,13 @@ const glow = (() => {
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
   const aP = gl.getAttribLocation(pr, "p"); gl.enableVertexAttribArray(aP); gl.vertexAttribPointer(aP, 2, gl.FLOAT, false, 0, 0);
   const uC = gl.getUniformLocation(pr, "c"), uPx = gl.getUniformLocation(pr, "px"), uT = gl.getUniformLocation(pr, "t");
+  const uMd = gl.getUniformLocation(pr, "md"), uNr = gl.getUniformLocation(pr, "nr");
   gl.uniform1i(gl.getUniformLocation(pr, "m"), 0);
   // each domain page names its own maps on the opening (data-glow-w / data-glow-t); solar's are the default
   const dg = ($(".sh") || {}).dataset || {};
-  const MAPS = { wide: { src: dg.glowW || "assets/img/solar/hero-w-glow.png", w: 2400, h: 1340 }, tall: { src: dg.glowT || "assets/img/solar/hero-t-glow.png", w: 1080, h: 1935 } };
+  // data-glow-rows="7,6" (wide, tall) switches to the row-by-row fill; otherwise pulses run along the lines
+  const rowsN = (dg.glowRows || "").split(",").map(Number);
+  const MAPS = { wide: { src: dg.glowW || "assets/img/solar/hero-w-glow.png", w: 2400, h: 1340, rows: rowsN[0] || 0 }, tall: { src: dg.glowT || "assets/img/solar/hero-t-glow.png", w: 1080, h: 1935, rows: rowsN[1] || 0 } };
   let map = null, want = null, tex = null, ready = false, seen = true, past = false, raf = 0, last = 0, W = 1, H = 1;
   const t0 = performance.now();
   function load(m) {
@@ -120,7 +127,7 @@ const glow = (() => {
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, im);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      map = m; gl.uniform2f(uPx, 3 / (m.w / 2), 3 / (m.h / 2)); cover();
+      map = m; gl.uniform2f(uPx, 3 / (m.w / 2), 3 / (m.h / 2)); gl.uniform1f(uMd, m.rows ? 1 : 0); gl.uniform1f(uNr, m.rows || 1); cover();
       ready = true; cv.classList.add("is-on"); go();
     };
     im.src = m.src;
@@ -158,7 +165,7 @@ const glow = (() => {
 // The picture shows a big roof, the storage containers and an agrivoltaic field, with the green energy line running
 // through them. The trail is born at the roof's corner (the point below, in the picture's own pixels, for each of its two
 // shapes), and the first scroll leans the picture in towards it and thins it into the night.
-const flow = $(".dp-flow"), sh = $(".sh", flow), shPic = $(".sh-pic", sh), shImg = $(".sh-pic img", sh), shSay = $(".sh-say", sh);
+const flow = $(".dp-flow"), sh = $(".sh", flow), shPic = $(".sh-pic", sh), shImg = $(".sh-pic img:not(.sh-mark-fb)", sh) || new Image(), shSay = $(".sh-say", sh);
 const shGlow = $(".sh-glow", sh);
 // (the same points the glow map's pulses start from, so the wave and the trail leave the roof's corner together)
 // (a page whose picture is another place gives its own points: data-birth="wide x,wide y,tall x,tall y")
@@ -178,6 +185,28 @@ let birth = { x: 0, y: 0 }, foot = null, shH = 1, shP = -1, shZ = null;
 let skCap = spark && !reduce ? 0 : -1;   // how far the intro lets the trail be drawn, px (-1: no limit)
 function layoutHero() {
   const r = sh.getBoundingClientRect(), W = r.width, H = r.height;
+  // the about page (.sh-mkb): no picture, the brand's triangle as a solid (mark3d.js) in the open side, a square box
+  // whose mark spans 0.245..0.86 of its height (the camera's framing); the trail is born at the triangle's tip, the
+  // point it turns about, so the tip stays put while the solid moves
+  const mkb = $(".sh-mkb", sh);
+  if (mkb) {
+    const hdH = ($("#hd") || {}).offsetHeight || 80, say = shSay.getBoundingClientRect();
+    let size, cx, top;
+    if (W >= 1024) {
+      const open = say.left - r.left;
+      size = Math.min(open * 1.25, (H - hdH - 30) / 0.66, 1100);
+      cx = open / 2; top = (hdH + H) / 2 - 0.5525 * size;
+    } else {
+      const aT = hdH + 8, aH = Math.max(140, say.top - r.top - 20 - aT);
+      size = Math.min(W * 1.15, aH / 0.64);
+      cx = W / 2; top = aT - 0.245 * size + (aH - 0.615 * size) / 2;
+    }
+    mkb.style.cssText = `left:${(cx - size / 2).toFixed(1)}px;top:${top.toFixed(1)}px;width:${size.toFixed(1)}px;height:${size.toFixed(1)}px`;
+    birth = { x: cx, y: top + 0.86 * size };
+    shZ = null; foot = null; shH = H; shP = -1;
+    heroPut(0);
+    return;
+  }
   const isW = shSrc && shSrc.media ? matchMedia(shSrc.media).matches : W / H >= 0.9, k = isW ? BIRTH.wide : BIRTH.tall;
   const s = Math.max(W / k.w, H / k.h), ox = (W - k.w * s) / 2, oy = (H - k.h * s) / 2;
   birth = { x: ox + k.x * s, y: oy + k.y * s };
@@ -392,7 +421,7 @@ function layoutProc() {
   } else {
     const x0 = P[0].x, R = 52, k = R * 0.5523, sb = steps.map((s) => { const b = s.getBoundingClientRect(); return { t: b.top - r.top, b: b.bottom - r.top }; });
     const last = sb[sb.length - 1].b, yS = ($(".kick", proc) || $(".proc-head", proc)).getBoundingClientRect().top - r.top - R - 36;
-    const nh = $("#uq-h");
+    const nh = $("#uq-h") || $("[data-after-proc]");
     const yE = nh ? (last + nh.getBoundingClientRect().top - r.top) / 2 : last + R + 40, yl = Math.max(last + 8, yE - R);
     procTop = yS;
     segs.push(["L", inX, yS, x0 - R, yS]);
@@ -485,25 +514,30 @@ function cmpTo(n) {
 // a question (or a cell) opened or closed moves everything under it
 $$("main details").forEach((d) => d.addEventListener("toggle", () => { clearTimeout(rz); rz = setTimeout(relayout, 30); }));
 
-/* ---------- the stations (charging): a pin opens its row, an open row lights its pin, a coming place lights its dot ---------- */
+/* ---------- the stations (charging): flat rows; a pin lights its row, a row lights its pin or its coming dot ---------- */
 const stRows = $$(".st[data-st]"), pins = $$(".pin[data-st]"), dots = $$(".dot[data-st]");
 if (stRows.length) {
-  const rowOf = (k) => stRows.find((d) => d.dataset.st === k);
-  const sync = () => { const open = stRows.find((d) => d.open); pins.forEach((p) => p.classList.toggle("is-on", !!open && p.dataset.st === open.dataset.st)); };
-  stRows.forEach((d) => d.addEventListener("toggle", sync));
+  const rowOf = (k) => stRows.find((r) => r.dataset.st === k);
+  const pick = (k) => {
+    pins.forEach((p) => p.classList.toggle("is-on", p.dataset.st === k));
+    stRows.forEach((r) => r.classList.toggle("is-on", r.dataset.st === k));
+  };
   pins.forEach((p) => p.addEventListener("click", () => {
-    const d = rowOf(p.dataset.st); if (!d) return;
-    d.open = true; sync();
-    const b = d.getBoundingClientRect();
-    if (b.top < 70 || b.bottom > innerHeight - 70) d.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
-    $("summary", d).focus({ preventScroll: true });
+    const r = rowOf(p.dataset.st); if (!r) return;
+    pick(p.dataset.st);
+    const b = r.getBoundingClientRect();
+    if (b.top < 70 || b.bottom > innerHeight - 70) r.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
+    const a = $("a", r); if (a) a.focus({ preventScroll: true });
   }));
-  $$(".st-soon li[data-st]").forEach((li) => {
-    const dot = dots.find((x) => x.dataset.st === li.dataset.st); if (!dot) return;
-    const on = () => dot.classList.add("is-hl"), off = () => dot.classList.remove("is-hl");
-    li.addEventListener("pointerenter", on); li.addEventListener("pointerleave", off);
+  stRows.forEach((r) => {
+    const k = r.dataset.st, dot = dots.find((x) => x.dataset.st === k), pin = pins.find((x) => x.dataset.st === k);
+    if (pin) { r.addEventListener("pointerenter", () => pick(k)); r.addEventListener("focusin", () => pick(k)); return; }
+    if (!dot) return;
+    const on = () => { dot.classList.add("is-hl"); r.classList.add("is-hl"); };
+    const off = () => { dot.classList.remove("is-hl"); r.classList.remove("is-hl"); };
+    r.addEventListener("pointerenter", on); r.addEventListener("pointerleave", off);
   });
-  sync();
+  const first = pins.find((p) => p.classList.contains("is-on")); if (first) pick(first.dataset.st);
 }
 
 /* ---------- leads: the form (to Monday once the client's details come) ---------- */
@@ -551,6 +585,20 @@ $$(".cv-file input").forEach((i) => {
   i.addEventListener("change", () => { const has = i.files.length > 0; t.textContent = has ? i.files[0].name : d; i.parentNode.classList.toggle("has-file", has); if (has) i.removeAttribute("aria-invalid"); });
 });
 
+/* ---------- the CV window: a button opens it, Esc, the X or a click outside closes it ---------- */
+const cvDlg = $("#cv-dlg"), cvOpen = $(".cv-open");
+if (cvDlg && cvOpen && cvDlg.showModal) {
+  const shut = () => cvDlg.close();
+  cvOpen.addEventListener("click", () => {
+    cvDlg.showModal();
+    if (window.__lenis) window.__lenis.stop();
+    const first = $("input", cvDlg); if (first) first.focus();
+  });
+  $(".cv-x", cvDlg).addEventListener("click", shut);
+  cvDlg.addEventListener("click", (e) => { if (e.target === cvDlg) { const b = cvDlg.getBoundingClientRect(); if (e.clientX < b.left || e.clientX > b.right || e.clientY < b.top || e.clientY > b.bottom) shut(); } });
+  cvDlg.addEventListener("close", () => { if (window.__lenis) window.__lenis.start(); cvOpen.focus({ preventScroll: true }); });
+} else if (cvDlg) { cvDlg.setAttribute("open", ""); if (cvOpen) cvOpen.hidden = true; }
+
 /* ---------- the close: the trail comes in for the last time and lights the socket ---------- */
 const closeWrap = $(".close-wrap"), closeBg = $(".close-bg"), closeSec = closeWrap && $(".close", closeWrap), closeSvg = closeSec && $(".close-trail", closeSec), plug = closeSec && $(".plug", closeSec);
 const closeRibbon = !closeSec ? null : new Ribbon(closeSvg, { ...BAND, amp: trailAmp, wave: 520, taperStart: 0, taperEnd: 50, sparks: 4, seed: 11 });
@@ -589,7 +637,8 @@ function ftTick() {
   const p = clamp01((ih - r.top) / Math.max(1, Math.min(r.height, ih * 0.9))).toFixed(3);
   if (ft._p !== p) { ft._p = p; ft.style.setProperty("--fp", p); }
 }
-const drifts = $$("[data-drift]").map((el) => ({ el, k: +el.dataset.drift || 0, dy: 0, to: 0 }));
+// data-tilt also gets --dp, where the element is on the screen from -1 (low) to 1 (high), for a turn that follows the scroll
+const drifts = $$("[data-drift]").map((el) => ({ el, k: +el.dataset.drift || 0, dy: 0, to: 0, tilt: el.hasAttribute("data-tilt"), p: 0, pt: 0 }));
 function driftRead() {
   if (reduce) return;
   const ih = innerHeight;
@@ -598,9 +647,15 @@ function driftRead() {
     const r = d.el.getBoundingClientRect(), top = r.top - d.dy;
     if (top > ih + 200 || top + r.height < -200) continue;
     d.to = Math.round(((top + r.height / 2) / ih - 0.5) * d.k * 2) / 2;
+    if (d.tilt) d.pt = Math.round(Math.max(-1, Math.min(1, ((top + r.height / 2) / ih - 0.5) * -2)) * 200) / 200;
   }
 }
-function driftWrite() { for (const d of drifts) if (d.to !== d.dy) { d.dy = d.to; d.el.style.setProperty("--dy", d.dy + "px"); } }
+function driftWrite() {
+  for (const d of drifts) {
+    if (d.to !== d.dy) { d.dy = d.to; d.el.style.setProperty("--dy", d.dy + "px"); }
+    if (d.tilt && d.pt !== d.p) { d.p = d.pt; d.el.style.setProperty("--dp", d.p); }
+  }
+}
 const mbar = $("[data-mbar]"), ctaOrigin = $("[data-cta-origin]"), ctaEnds = $$("[data-cta-end]");
 let typing = false;
 function mbarRead() {

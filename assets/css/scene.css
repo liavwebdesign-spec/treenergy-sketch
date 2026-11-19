@@ -46,6 +46,9 @@ html.open-anim .lb-h.is-in > span + span{transition-delay:.48s}
 /* a soft pool of night under the words, so they read over the lit city on any screen */
 .lb-sub::before{content:"";position:absolute;inset:-90px -160px -80px;z-index:-1;pointer-events:none;
   background:radial-gradient(closest-side,rgba(var(--n0),.8),rgba(var(--n0),.66) 50%,rgba(var(--n0),.3) 78%,rgba(var(--n0),0))}
+/* a wide screen: under the title, on its side (the client 18.11; scene.js sets .is-under and --sub-y from the title's foot) */
+.lb-sub.is-under{inset-inline-start:var(--gutter);inset-inline-end:auto;bottom:auto;top:var(--sub-y,40vh);
+  max-width:min(42ch,38vw);font-size:clamp(16px,1.08vw,21px);text-align:start}
 html.open-anim .lb-sub{opacity:0;animation:lb-in 0s 3.4s forwards}
 html.open-anim .lb-sub.is-in{animation:none;opacity:var(--ho,1);transition:opacity 1.2s var(--ease) .9s}
 

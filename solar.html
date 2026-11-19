@@ -22,14 +22,14 @@
     if (ax.text) d.classList.add("ax-t" + ax.text); })(document.documentElement);
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 </script>
-<link rel="stylesheet" href="assets/css/site.css?v=r35">
-<link rel="stylesheet" href="assets/css/domain.css?v=r35">
+<link rel="stylesheet" href="assets/css/site.css?v=r36">
+<link rel="stylesheet" href="assets/css/domain.css?v=r36">
 <!-- the page's own files carry the round (?v=), so a visitor never gets this round's code with pieces of the last one from the cache -->
-<script type="importmap">{"imports":{"./assets/js/ribbon.js":"./assets/js/ribbon.js?v=r35","./assets/js/arc-rings.js":"./assets/js/arc-rings.js?v=r35","./assets/js/sky.js":"./assets/js/sky.js?v=r35"}}</script>
+<script type="importmap">{"imports":{"./assets/js/ribbon.js":"./assets/js/ribbon.js?v=r36","./assets/js/arc-rings.js":"./assets/js/arc-rings.js?v=r36","./assets/js/sky.js":"./assets/js/sky.js?v=r36"}}</script>
 <script defer src="vendor/gsap/gsap.min.js"></script>
 <script defer src="vendor/lenis/lenis.min.js"></script>
-<script type="module" src="assets/js/page.js?v=r35"></script>
-<script type="module" src="assets/js/domain.js?v=r35"></script>
+<script type="module" src="assets/js/page.js?v=r36"></script>
+<script type="module" src="assets/js/domain.js?v=r36"></script>
 </head>
 <body>
 <canvas id="sky" aria-hidden="true"></canvas>
@@ -66,6 +66,7 @@
     </div>
     <nav class="mn-nav" aria-label="ניווט ראשי">
       <ol class="mn-list">
+        <li class="mn-it"><a href="index.html"><span class="mn-t">דף הבית</span></a></li>
         <li class="mn-it"><a class="is-on" href="solar.html" aria-current="page"><span class="mn-t">אנרגיה סולארית</span></a></li>
         <li class="mn-it"><a href="charge.html"><span class="mn-t">טעינת רכבים</span></a></li>
         <li class="mn-it"><a href="storage.html"><span class="mn-t">אגירת אנרגיה</span></a></li>
@@ -89,7 +90,7 @@
 <div class="dp-flow">
   <svg class="dp-trail" aria-hidden="true" focusable="false"></svg>
 
-  <section class="sh" aria-labelledby="sh-h">
+  <section class="sh" aria-labelledby="sh-h" data-glow-w="assets/img/solar/hero-w-rows.png" data-glow-t="assets/img/solar/hero-t-rows.png" data-glow-rows="7,6">
     <div class="sh-pic" aria-hidden="true">
       <picture>
         <source media="(min-aspect-ratio:9/10)" srcset="assets/img/solar/hero-w.webp" width="2400" height="1340">
@@ -154,7 +155,7 @@
     <ol class="steps">
       <li class="step"><i class="step-node" aria-hidden="true"></i><span class="step-hd"><span class="step-n num"><span class="sr">שלב </span>01</span><i class="step-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></i></span><h3>בדיקת היתכנות ראשונית</h3><p>אחד מיועצי האנרגיה שלנו יגיע עד אליכם לבדיקת התאמה, בחירת מודל והצגה ראשונית של המערכת האפשרית בנכס שלכם.</p></li>
       <li class="step"><i class="step-node" aria-hidden="true"></i><span class="step-hd"><span class="step-n num"><span class="sr">שלב </span>02</span><i class="step-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M10 13l2 2 3-3.5"/></svg></i></span><h3>תהליך רישוי</h3><p>אנו נחל בתהליך רישוי מול חברת החשמל והרשויות הנדרשות על מנת להסדיר את המערכת שלכם בהתאם לרגולציה.</p></li>
-      <li class="step"><i class="step-node" aria-hidden="true"></i><span class="step-hd"><span class="step-n num"><span class="sr">שלב </span>03</span><i class="step-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="5" r="1.6"/><path d="M11.2 6.5L6 20M12.8 6.5L18 20M8 15h8"/></svg></i></span><h3>תכנון הנדסי וסגירה פיננסית</h3><p>מיטב המהנדסים שלנו יערכו תכנון מקיף למערכת הסולארית העתידית שלכם, כדי שאתם תראו את התמונה המלאה עוד לפני שלב ההתקנה.</p></li>
+      <li class="step"><i class="step-node" aria-hidden="true"></i><span class="step-hd"><span class="step-n num"><span class="sr">שלב </span>03</span><i class="step-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 20H4V4h12v8"/><path d="M7 8h6M7 11h4M7 14h2"/><circle cx="17" cy="17" r="4.2"/><path d="M15.2 17.1l1.2 1.2 2.4-2.5"/></svg></i></span><h3>תכנון הנדסי וסגירה פיננסית</h3><p>מיטב המהנדסים שלנו יערכו תכנון מקיף למערכת הסולארית העתידית שלכם, כדי שאתם תראו את התמונה המלאה עוד לפני שלב ההתקנה.</p></li>
       <li class="step"><i class="step-node" aria-hidden="true"></i><span class="step-hd"><span class="step-n num"><span class="sr">שלב </span>04</span><i class="step-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 3v5M15 3v5M7 8h10v3a5 5 0 0 1-10 0z"/><path d="M12 16v5"/></svg></i></span><h3>הקמת המתקן וחיבור לרשת החשמל</h3><p>ניהול ופיקוח מלא על כלל שלבי ההקמה, תוך הקפדה על איכות ביצוע גבוהה, עמידה בסטנדרטים הנדסיים מחמירים ובקרת איכות שוטפת עד להפעלה מסחרית של הפרויקט.</p></li>
       <li class="step"><i class="step-node" aria-hidden="true"></i><span class="step-hd"><span class="step-n num"><span class="sr">שלב </span>05</span><i class="step-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M6 11h3l2-3 2 5 2-2h3"/></svg></i></span><h3>ניטור, ניהול ותחזוקה</h3><p>מעקב שוטף אחר ביצועי המערכת, ביצוע תחזוקה ואופטימיזציה של ביצועי המערכת לאורך שנות הפרויקט.</p></li>
     </ol>
@@ -162,22 +163,11 @@
 </section>
 </div>
 
-<!-- what sets us apart and the questions: a faint thread of the trail beside them, on the start rail -->
+<!-- the questions: a faint thread of the trail beside them, on the start rail -->
 <div class="dp-tail">
   <svg class="tail-trail" aria-hidden="true" focusable="false"></svg>
-  <section class="uq" id="unique" aria-labelledby="uq-h">
-    <h2 id="uq-h" data-drift="30">מה מייחד את <span lang="en" dir="ltr">TREENERGY</span>?</h2>
-    <ul class="uq-list rv-wait">
-      <li class="rv">תכנון מותאם אישית לחלוטין</li>
-      <li class="rv">שקיפות מלאה</li>
-      <li class="rv">חדשנות טכנולוגית אמיתית</li>
-      <li class="rv">ליווי מקצה לקצה</li>
-      <li class="rv">אחריות ושירות ארוך טווח</li>
-    </ul>
-  </section>
-
   <section class="faq" id="faq" aria-labelledby="faq-h">
-    <h2 id="faq-h" data-drift="30">שאלות נפוצות</h2>
+    <h2 id="faq-h" data-drift="30" data-after-proc>שאלות נפוצות</h2>
     <div class="faq-list">
       <details><summary><span>כמה זמן לוקחת התקנה?</span><i aria-hidden="true"></i></summary><p>בדרך כלל יום אחד עד שלושה, בהתאם לגודל המערכת.</p></details>
       <details><summary><span>כמה גג צריך?</span><i aria-hidden="true"></i></summary><p>מינימום כ-45 מ"ר, אך נבדוק עבורך גם פתרונות מותאמים לשטח חלקי.</p></details>
@@ -218,6 +208,7 @@
       </fieldset>
       <div class="fld"><label for="ct-name">שם מלא</label><input id="ct-name" name="name" type="text" autocomplete="name" required></div>
       <div class="fld"><label for="ct-tel">טלפון</label><input id="ct-tel" name="phone" type="tel" inputmode="tel" autocomplete="tel" required></div>
+      <div class="fld fld-wide"><label for="ct-mail">מייל</label><input id="ct-mail" name="email" type="email" inputmode="email" autocomplete="email" dir="ltr"></div>
       <button class="btn btn-lg" type="submit">שליחה<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
       <p class="lead-msg" role="status"></p>
       <p class="reach-tel">או חייגו <a class="num" href="tel:*6223">6223*</a></p>
@@ -231,8 +222,8 @@
 <footer class="ft" id="ft">
   <div class="ft-cols">
     <nav class="ft-col" aria-label="ניווט מהיר"><p class="ft-k">ניווט מהיר</p><a href="about.html">אודות</a><a href="knowledge.html">מרכז הידע</a><a href="contact.html">יצירת קשר</a></nav>
-    <nav class="ft-col" aria-label="תחומי פעילות"><p class="ft-k">תחומי פעילות</p><a href="solar.html" aria-current="page">אנרגיה סולארית</a><a href="charge.html">טעינת רכבים</a><a href="storage.html">אגירת אנרגיה</a></nav>
-    <div class="ft-col"><p class="ft-k">דברו איתנו</p><a href="tel:*6223">חייגו <span class="num">6223*</span></a><a class="lat" href="mailto:info@treenergy.co.il">info@treenergy.co.il</a><span>ישורון 3, תל אביב</span></div>
+    <nav class="ft-col" aria-label="תחומי פעילות"><p class="ft-k">תחומי פעילות</p><a href="solar.html" aria-current="page">אנרגיה סולארית</a><a href="charge.html">טעינת רכבים</a><a href="storage.html">אגירת אנרגיה</a><span class="ft-soon">מכירת חשמל</span></nav>
+    <div class="ft-col"><p class="ft-k">דברו איתנו</p><a href="tel:*6223">חייגו <span class="num">6223*</span></a><a class="lat" href="mailto:service@treenergy.co.il">service@treenergy.co.il</a><span>האומן 15, ירושלים</span></div>
     <div class="ft-col"><p class="ft-k">עקבו אחרינו</p><a href="https://www.facebook.com/treenergygroup" target="_blank" rel="noopener">פייסבוק</a><a href="https://www.instagram.com/treenergygroup" target="_blank" rel="noopener">אינסטגרם</a></div>
   </div>
   <div class="ft-sky" aria-hidden="true"><i class="ft-glow"></i><i class="ft-rim"></i></div>
