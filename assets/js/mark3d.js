@@ -1,6 +1,7 @@
 /* The about page's opening: the brand's triangle as a heavy solid in space.
-   The mark is a slab of dark blue glass-metal, extruded from the logo's own outline (a distance map of it, data-sdf),
-   with rounded edges that catch a soft light, its slots lit green from inside, and a slow pulse running down the slots
+   The mark is a thick block of dark blue-grey stone (matte, grained and mottled, no gloss or see-through), extruded
+   from the logo's own outline (a distance map of it, data-sdf), with chiselled edges that catch the light, its slots
+   lit a soft green from inside, and a slow pulse running down the slots
    to the tip, where the page's trail is born. It turns a little on its own, leans towards the pointer and tips back
    as the page scrolls. Ray-marched in one small WebGL pass; without WebGL, or if anything fails, the flat mark shows
    (.is-flat on the box). Stop-motion gets one still frame. */
@@ -19,7 +20,7 @@ void main(){vUv=a*vec2(uRes.x/uRes.y,1.);gl_Position=vec4(a,0.,1.);}`;
   const FS = `precision highp float;
 varying vec2 vUv;
 uniform sampler2D uT;uniform mat3 uR,uRT;uniform vec2 uRes;uniform float uTime;
-const float H=0.11,RR=0.012,BAND=0.06,F=0.2516;
+const float H=0.15,RR=0.02,BAND=0.06,F=0.2516;
 const vec3 TIP=vec3(0.,-0.4957,0.);
 const vec3 GRN=vec3(0.19,0.97,0.48);
 float sd2(vec2 p){
@@ -44,6 +45,11 @@ float sdTri(vec2 p){
   vec2 d=min(min(vec2(dot(q0,q0),s*(v0.x*e0.y-v0.y*e0.x)),vec2(dot(q1,q1),s*(v1.x*e1.y-v1.y*e1.x))),vec2(dot(q2,q2),s*(v2.x*e2.y-v2.y*e2.x)));
   return -sqrt(d.x)*sign(d.y);
 }
+float hs(vec3 p){p=fract(p*.3183099+.1);p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
+float vn(vec3 x){vec3 i=floor(x),f=fract(x);f=f*f*(3.-2.*f);
+  return mix(mix(mix(hs(i),hs(i+vec3(1.,0.,0.)),f.x),mix(hs(i+vec3(0.,1.,0.)),hs(i+vec3(1.,1.,0.)),f.x),f.y),
+             mix(mix(hs(i+vec3(0.,0.,1.)),hs(i+vec3(1.,0.,1.)),f.x),mix(hs(i+vec3(0.,1.,1.)),hs(i+vec3(1.,1.,1.)),f.x),f.y),f.z);}
+float fbm(vec3 x){float v=0.,a=.5;for(int i=0;i<4;i++){v+=a*vn(x);x=x*2.03+vec3(1.7,9.2,3.1);a*=.5;}return v;}
 vec2 ibox(vec3 o,vec3 d,vec3 b){
   vec3 m=1./(d+vec3(1e-7));vec3 n=m*o;vec3 k=abs(m)*b;
   vec3 t1=-n-k,t2=-n+k;
@@ -76,30 +82,43 @@ void main(){
   vec3 p=o+d*tm;
   const vec2 e=vec2(.0015,0.);
   vec3 no=normalize(vec3(map(p+e.xyy)-map(p-e.xyy),map(p+e.yxy)-map(p-e.yxy),map(p+e.yyx)-map(p-e.yyx)));
-  vec3 n=uR*no;
+  // stone: the surface is pitted a little (a rough micro-normal), so the light breaks up instead of sliding across
+  vec3 jit=vec3(vn(p*55.),vn(p*55.+7.3),vn(p*55.+13.1))-.5;
+  vec3 nn=normalize(no+jit*.16);
+  vec3 n=uR*nn;
   vec3 L=normalize(vec3(.5,.7,.6));
-  float dif=max(dot(n,L),0.);
-  float ao=clamp(map(p+no*.03)/.03,0.,1.);
-  // the face is deep and dark (little reflection head-on); the rounded edges and the sides take the light
+  float ld=dot(n,L),dif=max(ld,0.);
+  float ao=clamp(map(p+no*.035)/.035,0.,1.);
+  // the body: mottled deep blue-grey, fine grain and a few pale veins, the same all through (it turns with the block)
+  float mo=fbm(p*7.);
+  float gr=vn(p*90.);
+  float ve=smoothstep(.016,0.,abs(fbm(p*2.6+vec3(0.,0.,1.7))-.5));
+  vec3 alb=mix(vec3(.014,.019,.036),vec3(.05,.06,.095),smoothstep(.25,.75,mo));
+  alb*=.8+.4*gr;
+  alb+=vec3(.07,.085,.12)*ve*.3;
+  // the inside of the slots is deep and darker
   float face=smoothstep(.85,.98,abs(no.z));
-  vec3 F0=mix(vec3(.1,.14,.22),vec3(.02,.03,.06),face);
+  // light: a broad key from the upper right, the blue of the room bouncing back from below and the sides, almost no shine
+  float hemi=.5+.5*n.y;
+  vec3 amb=mix(vec3(.03,.05,.11),vec3(.1,.15,.28),hemi);
+  vec3 col=alb*(amb*1.3+vec3(1.,.97,.93)*(dif*1.45+max(-ld,0.)*.06))*(.35+.65*ao);
   float c=1.-max(dot(n,-rd),0.);
-  vec3 fr=F0+(1.-F0)*c*c*c*c*c;
-  vec3 base=mix(vec3(.02,.045,.1),vec3(.002,.006,.02),face);
-  float sp=pow(max(dot(reflect(-L,n),-rd),0.),48.);
-  vec3 col=base*(.25+.9*dif)*(.4+.6*ao)+fr*env(reflect(rd,n))*(.5+.5*ao)+vec3(.85,.92,1.)*sp*(1.-face*.75)*.9;
-  // a faint vertical sheen across the face, so the slab reads as polished rather than flat
-  col+=vec3(.01,.03,.09)*face*smoothstep(.5,-.5,p.y)*.3;
+  float fr=.03+.97*c*c*c*c*c;
+  col+=env(reflect(rd,n))*fr*.08*ao;
+  col+=vec3(.9,.95,1.)*pow(max(dot(reflect(-L,n),-rd),0.),10.)*.07;
+  // the chiselled edges and the sides pick up a cool rim from behind
+  col+=vec3(.3,.45,.8)*pow(c,3.)*.1*(1.-face*.6);
   float inT=sdTri(p.xy);
-  // the slots' walls glow green from inside, with a pulse running down to the tip
+  // the slots' walls are cut stone that glows green from deep inside (stronger the further in), with a pulse running down to the tip
   if(inT<-.01&&abs(no.z)<.7){
     float pu=.55+.9*pow(1.-fract(-p.y*1.2-uTime*.25),5.);
-    col+=GRN*.55*pu*smoothstep(-.01,-.03,inT);
+    float dp=clamp((H-p.z)/(2.*H),0.,1.);
+    col+=GRN*.5*pu*smoothstep(-.01,-.03,inT)*(.12+.88*dp*dp);
   }
   // and spill a little onto the face round the slots' edges
   if(inT<-.02&&no.z>.5){
     float d2=sd2(p.xy);
-    col+=GRN*exp(-abs(d2)*80.)*.18;
+    col+=GRN*exp(-abs(d2)*110.)*.12;
   }
   col=1.-exp(-col*1.4);
   col=pow(col,vec3(1./2.2));
