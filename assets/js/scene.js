@@ -384,7 +384,7 @@ async function loadSet() {
   // the tour's sharper patches come after the scene itself, and step in when they are all here
   if (tourOn) {
     s.patchReady = false;
-    Promise.all(s.tour.patches.map(([k]) => loadImg(`assets/img/scene/${s.name}-p-${k}.webp`))).then((imgs) => {
+    Promise.all(s.tour.patches.map(([k]) => loadImg(`assets/img/scene/${s.name}-p-${k}.webp?v=r39`))).then((imgs) => {
       if (s !== set) return;
       imgs.forEach((im, i) => texture(gl, 3 + i, im));
       s.patchReady = true;
